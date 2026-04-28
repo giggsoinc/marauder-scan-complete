@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PatronAI — Architecture v2.1</title>
+<link rel="icon" type="image/png" href="ghost-ai-scanner/assets/branding/patronai-icon.png">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#f0f2f5;font-family:'IBM Plex Sans',sans-serif;padding:32px 20px;}
+.page{background:#fff;max-width:1440px;margin:0 auto;border-radius:12px;
+  box-shadow:0 2px 20px rgba(0,0,0,0.1);padding:40px;}
+.hdr{display:flex;justify-content:space-between;align-items:flex-start;
+  margin-bottom:24px;flex-wrap:wrap;gap:12px;}
+h1{font-size:22px;font-weight:700;color:#1B2A4A;}
+.sub{color:#6c757d;font-size:11px;letter-spacing:1px;text-transform:uppercase;margin-top:4px;}
+.ver{display:inline-block;background:#2E5D9E;color:#fff;font-size:10px;
+  font-family:'IBM Plex Mono',monospace;padding:2px 8px;border-radius:4px;margin-top:6px;}
+.btn{background:#2E5D9E;color:#fff;border:none;padding:8px 20px;
+  border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;}
+.svg-wrap{border:1.5px solid #dee2e6;border-radius:10px;padding:16px;overflow-x:auto;}
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px;padding:12px;
+  background:#f8f9fa;border-radius:8px;border:1px solid #dee2e6;}
+.li{display:flex;align-items:center;gap:6px;font-size:11px;color:#6c757d;}
+.ld{width:12px;height:12px;border-radius:3px;}
+@media print{.btn{display:none;}body{background:#fff;padding:0;}.page{box-shadow:none;}}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="hdr">
+    <div>
+      <h1 style="display:flex;align-items:center;gap:12px;">
+        <img src="ghost-ai-scanner/assets/branding/patronai-icon.png" alt="" width="32" height="32" style="border-radius:8px;">
+        PatronAI — Full Architecture
+      </h1>
+      <div class="sub">Multi-cloud . Edge agents . Provider adapters . Grafana + Streamlit . LogAnalyzer on demand</div>
+      <span class="ver">v2.1 — PatronAI rebrand · Marauder Scan code layer · multi-cloud provider pattern</span>
+    </div>
+    <button class="btn" onclick="window.print()">Export / Print</button>
+  </div>
+  <div class="svg-wrap">
+<svg viewBox="0 0 1380 1080" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <marker id="a" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#6c757d"/></marker>
+  <marker id="ag" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#00884d"/></marker>
+  <marker id="ar" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#c0392b"/></marker>
+  <marker id="ao" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#d4680a"/></marker>
+  <marker id="ab" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#2E5D9E"/></marker>
+  <marker id="ap" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#6c3483"/></marker>
+</defs>
+
+<!-- ROW 1: EDGE LAYER -->
+<rect x="8" y="8" width="1364" height="172" rx="10" fill="#f0f5ff" stroke="#2E5D9E" stroke-width="1.5" stroke-dasharray="6,3"/>
+<text x="690" y="26" text-anchor="middle" fill="#2E5D9E" font-size="10" font-family="IBM Plex Mono" font-weight="600" letter-spacing="2">EDGE LAYER — Laptops . EC2 . ECS . EKS . On-premise</text>
+
+<rect x="22" y="36" width="174" height="80" rx="6" fill="#fff" stroke="#2E5D9E" stroke-width="1.5"/>
+<text x="109" y="54" text-anchor="middle" fill="#1B2A4A" font-size="10" font-weight="700">Managed Laptops</text>
+<text x="109" y="68" text-anchor="middle" fill="#6c757d" font-size="8">Packetbeat (Apache 2.0)</text>
+<text x="109" y="80" text-anchor="middle" fill="#6c757d" font-size="8">HTTP+DNS metadata/process</text>
+<text x="109" y="92" text-anchor="middle" fill="#6c757d" font-size="8">Thin Python agent</text>
+<rect x="22" y="122" width="174" height="18" rx="3" fill="#e8f0fb" stroke="#2E5D9E" stroke-width="1"/>
+<text x="109" y="135" text-anchor="middle" fill="#2E5D9E" font-size="8">Jamf / Intune / Ansible</text>
+
+<rect x="208" y="36" width="174" height="80" rx="6" fill="#fff" stroke="#d4680a" stroke-width="1.5"/>
+<text x="295" y="54" text-anchor="middle" fill="#1B2A4A" font-size="10" font-weight="700">EC2 Instances</text>
+<text x="295" y="68" text-anchor="middle" fill="#6c757d" font-size="8">VPC Flow Logs</text>
+<text x="295" y="80" text-anchor="middle" fill="#6c757d" font-size="8">Packetbeat sidecar</text>
+<text x="295" y="92" text-anchor="middle" fill="#6c757d" font-size="8">CloudTrail API calls</text>
+<rect x="208" y="122" width="174" height="18" rx="3" fill="#fff8f0" stroke="#d4680a" stroke-width="1"/>
+<text x="295" y="135" text-anchor="middle" fill="#d4680a" font-size="8">Terraform userdata</text>
+
+<rect x="394" y="36" width="174" height="80" rx="6" fill="#fff" stroke="#d4680a" stroke-width="1.5"/>
+<text x="481" y="54" text-anchor="middle" fill="#1B2A4A" font-size="10" font-weight="700">ECS / EKS</text>
+<text x="481" y="68" text-anchor="middle" fill="#6c757d" font-size="8">Container Flow Logs</text>
+<text x="481" y="80" text-anchor="middle" fill="#6c757d" font-size="8">Packetbeat sidecar container</text>
+<text x="481" y="92" text-anchor="middle" fill="#6c757d" font-size="8">K8s audit logs</text>
+<rect x="394" y="122" width="174" height="18" rx="3" fill="#fff8f0" stroke="#d4680a" stroke-width="1"/>
+<text x="481" y="135" text-anchor="middle" fill="#d4680a" font-size="8">Terraform task definition</text>
+
+<rect x="580" y="36" width="174" height="80" rx="6" fill="#fff" stroke="#00884d" stroke-width="1.5"/>
+<text x="667" y="54" text-anchor="middle" fill="#1B2A4A" font-size="10" font-weight="700">Zeek (BSD)</text>
+<text x="667" y="68" text-anchor="middle" fill="#6c757d" font-size="8">Passive tap perimeter</text>
+<text x="667" y="80" text-anchor="middle" fill="#6c757d" font-size="8">Mirror port core switch</text>
+<text x="667" y="92" text-anchor="middle" fill="#6c757d" font-size="8">DNS + connection logs</text>
+<rect x="580" y="122" width="174" height="18" rx="3" fill="#e6f5ee" stroke="#00884d" stroke-width="1"/>
+<text x="667" y="135" text-anchor="middle" fill="#00884d" font-size="8">Network hardware access</text>
+
+<rect x="766" y="36" width="174" height="80" rx="6" fill="#fff" stroke="#d4680a" stroke-width="1.5"/>
+<text x="853" y="54" text-anchor="middle" fill="#1B2A4A" font-size="10" font-weight="700">Network Firewall</text>
+<text x="853" y="68" text-anchor="middle" fill="#6c757d" font-size="8">AWS / GCP / Azure</text>
+<text x="853" y="80" text-anchor="middle" fill="#6c757d" font-size="8">DNS query logs</text>
+<text x="853" y="92" text-anchor="middle" fill="#6c757d" font-size="8">Connection logs</text>
+<rect x="766" y="122" width="174" height="18" rx="3" fill="#fff8f0" stroke="#d4680a" stroke-width="1"/>
+<text x="853" y="135" text-anchor="middle" fill="#d4680a" font-size="8">enable_firewall_logs.sh</text>
+
+<rect x="952" y="36" width="174" height="80" rx="6" fill="#fff" stroke="#6c3483" stroke-width="1.5"/>
+<text x="1039" y="54" text-anchor="middle" fill="#1B2A4A" font-size="10" font-weight="700">NAC / Identity</text>
+<text x="1039" y="68" text-anchor="middle" fill="#6c757d" font-size="8">IP → MAC → user mapping</text>
+<text x="1039" y="80" text-anchor="middle" fill="#6c757d" font-size="8">SSO / AD / Identity Center</text>
+<text x="1039" y="92" text-anchor="middle" fill="#6c757d" font-size="8">NAC CSV export to S3</text>
+<rect x="952" y="122" width="174" height="18" rx="3" fill="#f5eef8" stroke="#6c3483" stroke-width="1"/>
+<text x="1039" y="135" text-anchor="middle" fill="#6c3483" font-size="8">customer_prereqs.tf</text>
+
+<rect x="1138" y="36" width="218" height="80" rx="6" fill="#fff" stroke="#8a6d0b" stroke-width="1.5"/>
+<text x="1247" y="54" text-anchor="middle" fill="#1B2A4A" font-size="10" font-weight="700">Git Scanner</text>
+<text x="1247" y="68" text-anchor="middle" fill="#6c757d" font-size="8">GitLeaks / Trufflehog</text>
+<text x="1247" y="80" text-anchor="middle" fill="#6c757d" font-size="8">Hardcoded key detection</text>
+<text x="1247" y="92" text-anchor="middle" fill="#6c757d" font-size="8">CI/CD pipeline block</text>
+<rect x="1138" y="122" width="218" height="18" rx="3" fill="#fffbf0" stroke="#8a6d0b" stroke-width="1"/>
+<text x="1247" y="135" text-anchor="middle" fill="#8a6d0b" font-size="8">CI/CD config — no Terraform</text>
+
+<!-- Edge down arrows -->
+<line x1="109" y1="154" x2="109" y2="196" stroke="#2E5D9E" stroke-width="1.5" marker-end="url(#ab)"/>
+<line x1="295" y1="154" x2="295" y2="196" stroke="#d4680a" stroke-width="1.5" marker-end="url(#ao)"/>
+<line x1="481" y1="154" x2="481" y2="196" stroke="#d4680a" stroke-width="1.5" marker-end="url(#ao)"/>
+<line x1="667" y1="154" x2="667" y2="196" stroke="#00884d" stroke-width="1.5" marker-end="url(#ag)"/>
+<line x1="853" y1="154" x2="853" y2="196" stroke="#d4680a" stroke-width="1.5" marker-end="url(#ao)"/>
+<line x1="1039" y1="154" x2="1039" y2="196" stroke="#6c3483" stroke-width="1.5" marker-end="url(#ap)"/>
+
+<!-- ROW 2: OCSF NORMALISATION -->
+<rect x="8" y="186" width="1364" height="70" rx="10" fill="#fff8f0" stroke="#d4680a" stroke-width="1.5" stroke-dasharray="6,3"/>
+<text x="690" y="204" text-anchor="middle" fill="#d4680a" font-size="10" font-family="IBM Plex Mono" font-weight="600" letter-spacing="2">OCSF NORMALISATION — Lambda / Cloud Function — 3 input format parsers → class_uid 4001</text>
+<rect x="80" y="210" width="230" height="36" rx="5" fill="#fff" stroke="#d4680a" stroke-width="1"/>
+<text x="195" y="226" text-anchor="middle" fill="#d4680a" font-size="9" font-family="IBM Plex Mono">Format 1: Packetbeat JSON</text>
+<text x="195" y="239" text-anchor="middle" fill="#6c757d" font-size="8">normalizer.py parser A</text>
+<rect x="530" y="210" width="320" height="36" rx="5" fill="#fff" stroke="#d4680a" stroke-width="1"/>
+<text x="690" y="226" text-anchor="middle" fill="#d4680a" font-size="9" font-family="IBM Plex Mono">Format 2: VPC Flow / Zeek / Firewall</text>
+<text x="690" y="239" text-anchor="middle" fill="#6c757d" font-size="8">normalizer.py parser B</text>
+<rect x="1070" y="210" width="280" height="36" rx="5" fill="#fff" stroke="#d4680a" stroke-width="1"/>
+<text x="1210" y="226" text-anchor="middle" fill="#d4680a" font-size="9" font-family="IBM Plex Mono">Format 3: NAC CSV / Security Tracker</text>
+<text x="1210" y="239" text-anchor="middle" fill="#6c757d" font-size="8">normalizer.py parser C</text>
+<line x1="195" y1="246" x2="195" y2="272" stroke="#d4680a" stroke-width="1.5" marker-end="url(#ao)"/>
+<line x1="690" y1="246" x2="690" y2="272" stroke="#d4680a" stroke-width="1.5" marker-end="url(#ao)"/>
+<line x1="1210" y1="246" x2="1210" y2="272" stroke="#d4680a" stroke-width="1.5" marker-end="url(#ao)"/>
+
+<!-- ROW 3: S3 -->
+<rect x="8" y="262" width="1364" height="88" rx="10" fill="#fffbf0" stroke="#8a6d0b" stroke-width="1.5" stroke-dasharray="6,3"/>
+<text x="690" y="280" text-anchor="middle" fill="#8a6d0b" font-size="10" font-family="IBM Plex Mono" font-weight="600" letter-spacing="2">S3 BUCKET — Single source of truth · GCS on GCP · Azure Blob on Azure</text>
+<rect x="22" y="288" width="122" height="52" rx="4" fill="#fff" stroke="#8a6d0b" stroke-width="1"/>
+<text x="83" y="306" text-anchor="middle" fill="#8a6d0b" font-size="9" font-family="IBM Plex Mono" font-weight="600">config/</text>
+<text x="83" y="320" text-anchor="middle" fill="#6c757d" font-size="7">settings.json + CSVs</text>
+<rect x="156" y="288" width="130" height="52" rx="4" fill="#fff" stroke="#8a6d0b" stroke-width="1"/>
+<text x="221" y="306" text-anchor="middle" fill="#8a6d0b" font-size="9" font-family="IBM Plex Mono" font-weight="600">ocsf/</text>
+<text x="221" y="320" text-anchor="middle" fill="#6c757d" font-size="7">YYYY/MM/DD incoming</text>
+<rect x="298" y="288" width="166" height="52" rx="4" fill="#fdecea" stroke="#c0392b" stroke-width="1"/>
+<text x="381" y="306" text-anchor="middle" fill="#c0392b" font-size="9" font-family="IBM Plex Mono" font-weight="600">findings/</text>
+<text x="381" y="320" text-anchor="middle" fill="#6c757d" font-size="7">YYYY/MM/DD/critical|high|medium.jsonl</text>
+<rect x="476" y="288" width="148" height="52" rx="4" fill="#e6f5ee" stroke="#00884d" stroke-width="1"/>
+<text x="550" y="306" text-anchor="middle" fill="#00884d" font-size="9" font-family="IBM Plex Mono" font-weight="600">summary/</text>
+<text x="550" y="320" text-anchor="middle" fill="#6c757d" font-size="7">daily pre-aggregated stats</text>
+<rect x="636" y="288" width="120" height="52" rx="4" fill="#fff" stroke="#8a6d0b" stroke-width="1"/>
+<text x="696" y="306" text-anchor="middle" fill="#8a6d0b" font-size="9" font-family="IBM Plex Mono" font-weight="600">cursor/</text>
+<text x="696" y="320" text-anchor="middle" fill="#6c757d" font-size="7">state.json idempotent</text>
+<rect x="768" y="288" width="120" height="52" rx="4" fill="#fff" stroke="#8a6d0b" stroke-width="1"/>
+<text x="828" y="306" text-anchor="middle" fill="#8a6d0b" font-size="9" font-family="IBM Plex Mono" font-weight="600">dedup/</text>
+<text x="828" y="320" text-anchor="middle" fill="#6c757d" font-size="7">60 min alert window</text>
+<rect x="900" y="288" width="130" height="52" rx="4" fill="#f5eef8" stroke="#6c3483" stroke-width="1"/>
+<text x="965" y="306" text-anchor="middle" fill="#6c3483" font-size="9" font-family="IBM Plex Mono" font-weight="600">identity/</text>
+<text x="965" y="320" text-anchor="middle" fill="#6c757d" font-size="7">nac-mapping.csv</text>
+<rect x="1042" y="288" width="318" height="52" rx="4" fill="#e6f5ee" stroke="#00884d" stroke-width="1"/>
+<text x="1201" y="306" text-anchor="middle" fill="#00884d" font-size="9" font-family="IBM Plex Mono" font-weight="600">reports/</text>
+<text x="1201" y="320" text-anchor="middle" fill="#6c757d" font-size="7">YYYY-MM-DD-report.pdf · pre-signed URL</text>
+
+<!-- S3 down -->
+<line x1="690" y1="350" x2="690" y2="376" stroke="#8a6d0b" stroke-width="1.5" marker-end="url(#a)"/>
+
+<!-- ROW 4: FARGATE -->
+<rect x="8" y="366" width="860" height="288" rx="10" fill="#f0faf5" stroke="#00884d" stroke-width="2"/>
+<text x="438" y="384" text-anchor="middle" fill="#00884d" font-size="10" font-family="IBM Plex Mono" font-weight="600" letter-spacing="1">FARGATE SERVICE 1 — Scanner + Streamlit · fixed 1 task · 0.5 vCPU 1GB RAM</text>
+
+<!-- Scanner box -->
+<rect x="22" y="392" width="524" height="252" rx="7" fill="#fff" stroke="#00884d" stroke-width="1.5"/>
+<text x="284" y="410" text-anchor="middle" fill="#00884d" font-size="10" font-weight="700">PatronAI — Audit Loop (background thread)</text>
+<rect x="34" y="420" width="100" height="32" rx="4" fill="#e6f5ee" stroke="#00884d" stroke-width="1"/>
+<text x="84" y="435" text-anchor="middle" fill="#00884d" font-size="8" font-family="IBM Plex Mono">ingestor.py</text>
+<text x="84" y="446" text-anchor="middle" fill="#6c757d" font-size="7">S3 cursor + Select</text>
+<rect x="144" y="420" width="100" height="32" rx="4" fill="#e6f5ee" stroke="#00884d" stroke-width="1"/>
+<text x="194" y="435" text-anchor="middle" fill="#00884d" font-size="8" font-family="IBM Plex Mono">normalizer.py</text>
+<text x="194" y="446" text-anchor="middle" fill="#6c757d" font-size="7">OCSF validate</text>
+<rect x="254" y="420" width="100" height="32" rx="4" fill="#e6f5ee" stroke="#00884d" stroke-width="1"/>
+<text x="304" y="435" text-anchor="middle" fill="#00884d" font-size="8" font-family="IBM Plex Mono">matcher.py</text>
+<text x="304" y="446" text-anchor="middle" fill="#6c757d" font-size="7">CSV 4 outcomes</text>
+<rect x="364" y="420" width="100" height="32" rx="4" fill="#e6f5ee" stroke="#00884d" stroke-width="1"/>
+<text x="414" y="435" text-anchor="middle" fill="#00884d" font-size="8" font-family="IBM Plex Mono">identity_resolver</text>
+<text x="414" y="446" text-anchor="middle" fill="#6c757d" font-size="7">4-step + MAC</text>
+<rect x="474" y="420" width="64" height="32" rx="4" fill="#e6f5ee" stroke="#00884d" stroke-width="1"/>
+<text x="506" y="435" text-anchor="middle" fill="#00884d" font-size="8" font-family="IBM Plex Mono">store.py</text>
+<text x="506" y="446" text-anchor="middle" fill="#6c757d" font-size="7">Polars + S3</text>
+
+<rect x="34" y="462" width="100" height="32" rx="4" fill="#fdecea" stroke="#c0392b" stroke-width="1"/>
+<text x="84" y="477" text-anchor="middle" fill="#c0392b" font-size="8" font-family="IBM Plex Mono">alerter.py</text>
+<text x="84" y="488" text-anchor="middle" fill="#6c757d" font-size="7">SNS + webhook</text>
+<rect x="144" y="462" width="100" height="32" rx="4" fill="#e6f5ee" stroke="#00884d" stroke-width="1"/>
+<text x="194" y="477" text-anchor="middle" fill="#00884d" font-size="8" font-family="IBM Plex Mono">summarizer.py</text>
+<text x="194" y="488" text-anchor="middle" fill="#6c757d" font-size="7">daily JSON</text>
+<rect x="254" y="462" width="100" height="32" rx="4" fill="#fffbf0" stroke="#8a6d0b" stroke-width="1"/>
+<text x="304" y="477" text-anchor="middle" fill="#8a6d0b" font-size="8" font-family="IBM Plex Mono">reporter.py</text>
+<text x="304" y="488" text-anchor="middle" fill="#6c757d" font-size="7">PDF ReportLab</text>
+<rect x="364" y="462" width="174" height="32" rx="4" fill="#f0f5ff" stroke="#2E5D9E" stroke-width="1"/>
+<text x="451" y="477" text-anchor="middle" fill="#2E5D9E" font-size="8" font-family="IBM Plex Mono">main.py</text>
+<text x="451" y="488" text-anchor="middle" fill="#6c757d" font-size="7">starts threads, loads provider</text>
+
+<!-- Provider adapter -->
+<rect x="34" y="506" width="504" height="44" rx="4" fill="#f0f5ff" stroke="#2E5D9E" stroke-width="1.5"/>
+<text x="286" y="524" text-anchor="middle" fill="#2E5D9E" font-size="9" font-weight="600">providers/ — CLOUD_PROVIDER = aws | gcp | azure</text>
+<text x="100" y="540" text-anchor="middle" fill="#6c757d" font-size="7">aws/storage·identity·alerts·logs</text>
+<text x="286" y="540" text-anchor="middle" fill="#6c757d" font-size="7">gcp/storage·identity·alerts·logs</text>
+<text x="472" y="540" text-anchor="middle" fill="#6c757d" font-size="7">azure/storage·identity·alerts</text>
+
+<!-- base.py -->
+<rect x="34" y="558" width="504" height="32" rx="4" fill="#fff" stroke="#dee2e6" stroke-width="1"/>
+<text x="286" y="574" text-anchor="middle" fill="#6c757d" font-size="8" font-family="IBM Plex Mono">base.py — BaseStore · BaseIdentityResolver · BaseAlerter · BaseLogIngestor</text>
+
+<!-- Streamlit box -->
+<rect x="558" y="392" width="298" height="252" rx="7" fill="#f5eef8" stroke="#6c3483" stroke-width="1.5"/>
+<text x="707" y="410" text-anchor="middle" fill="#6c3483" font-size="10" font-weight="700">Streamlit :8501 — Settings UI</text>
+<text x="707" y="424" text-anchor="middle" fill="#6c757d" font-size="8">Steve only · setup and tuning</text>
+<rect x="570" y="432" width="274" height="200" rx="5" fill="#fff" stroke="#6c3483" stroke-width="1"/>
+<text x="707" y="450" text-anchor="middle" fill="#6c3483" font-size="9" font-family="IBM Plex Mono" font-weight="600">settings.json form</text>
+<text x="580" y="466" fill="#6c757d" font-size="8">S3 bucket . scan interval</text>
+<text x="580" y="480" fill="#6c757d" font-size="8">SNS ARN . Trinity webhook URL</text>
+<text x="580" y="494" fill="#6c757d" font-size="8">CLOUD_PROVIDER flag</text>
+<text x="580" y="508" fill="#6c757d" font-size="8">Identity method priority</text>
+<text x="580" y="522" fill="#6c757d" font-size="8">CrowdStrike toggle</text>
+<text x="580" y="536" fill="#6c757d" font-size="8">Dedup window</text>
+<text x="580" y="550" fill="#6c757d" font-size="8">Authorized CSV editor</text>
+<rect x="570" y="558" width="274" height="24" rx="4" fill="#6c3483"/>
+<text x="707" y="574" text-anchor="middle" fill="#fff" font-size="9" font-weight="600">Save → writes settings.json to S3</text>
+<rect x="570" y="590" width="274" height="36" rx="4" fill="#e8f0fb" stroke="#2E5D9E" stroke-width="1"/>
+<text x="707" y="605" text-anchor="middle" fill="#2E5D9E" font-size="8">→ Open Pam Grafana :3000/d/pam</text>
+<text x="707" y="620" text-anchor="middle" fill="#2E5D9E" font-size="8">→ Open Steve Grafana :3000/d/steve</text>
+
+<!-- Grafana service -->
+<rect x="880" y="366" width="492" height="288" rx="10" fill="#fff8f0" stroke="#d4680a" stroke-width="2"/>
+<text x="1126" y="384" text-anchor="middle" fill="#d4680a" font-size="10" font-family="IBM Plex Mono" font-weight="600" letter-spacing="1">FARGATE SERVICE 2 — Grafana :3000 · auto-scale 1-5 tasks · 1 vCPU 2GB</text>
+
+<rect x="892" y="392" width="230" height="252" rx="7" fill="#f0f5ff" stroke="#2E5D9E" stroke-width="1.5"/>
+<text x="1007" y="410" text-anchor="middle" fill="#2E5D9E" font-size="10" font-weight="700">PAM Dashboard</text>
+<text x="1007" y="424" text-anchor="middle" fill="#6c757d" font-size="8">pam.json provisioned on boot</text>
+<text x="902" y="442" fill="#6c757d" font-size="8">Tab 1 — AI Landscape</text>
+<text x="912" y="455" fill="#6c757d" font-size="7">Bubble + world map + topology</text>
+<text x="902" y="470" fill="#6c757d" font-size="8">Tab 2 — Risk Heatmap</text>
+<text x="912" y="483" fill="#6c757d" font-size="7">Dept × severity · top offenders</text>
+<text x="902" y="498" fill="#6c757d" font-size="8">Tab 3 — Data Exposure</text>
+<text x="912" y="511" fill="#6c757d" font-size="7">Sankey · incident timeline</text>
+<text x="902" y="526" fill="#2E5D9E" font-size="7" font-weight="600">Drill downs A B C</text>
+<text x="902" y="542" fill="#6c757d" font-size="7">summary/ for charts</text>
+<text x="902" y="555" fill="#6c757d" font-size="7">S3 Select for drill downs</text>
+<text x="902" y="568" fill="#6c757d" font-size="7">Polars lazy read</text>
+<rect x="892" y="582" width="230" height="24" rx="4" fill="#e8f0fb" stroke="#2E5D9E" stroke-width="1"/>
+<text x="1007" y="598" text-anchor="middle" fill="#2E5D9E" font-size="8">→ Link to Streamlit :8501</text>
+<rect x="892" y="612" width="230" height="24" rx="4" fill="#fffbf0" stroke="#8a6d0b" stroke-width="1"/>
+<text x="1007" y="628" text-anchor="middle" fill="#8a6d0b" font-size="8">→ LogAnalyzer referral button</text>
+
+<rect x="1134" y="392" width="226" height="252" rx="7" fill="#fdecea" stroke="#c0392b" stroke-width="1.5"/>
+<text x="1247" y="410" text-anchor="middle" fill="#c0392b" font-size="10" font-weight="700">STEVE Dashboard</text>
+<text x="1247" y="424" text-anchor="middle" fill="#6c757d" font-size="8">steve.json provisioned on boot</text>
+<text x="1144" y="442" fill="#6c757d" font-size="8">Tab 1 — Inventory</text>
+<text x="1154" y="455" fill="#6c757d" font-size="7">Assets · MAC · geo · CrowdStrike banner</text>
+<text x="1144" y="470" fill="#6c757d" font-size="8">Tab 2 — Risks</text>
+<text x="1154" y="483" fill="#6c757d" font-size="7">Alerts · source system · reviewer</text>
+<text x="1144" y="498" fill="#6c757d" font-size="8">Tab 3 — Log View</text>
+<text x="1154" y="511" fill="#6c757d" font-size="7">OCSF raw · geo + flag · MAC</text>
+<text x="1144" y="526" fill="#6c757d" font-size="8">Tab 4 — Alerts</text>
+<text x="1154" y="539" fill="#6c757d" font-size="7">Pipeline health · reviewer · SNS log</text>
+<text x="1144" y="555" fill="#c0392b" font-size="7" font-weight="600">Drill to raw OCSF JSON</text>
+<text x="1144" y="570" fill="#6c757d" font-size="7">S3 Select push-down</text>
+<rect x="1134" y="582" width="226" height="24" rx="4" fill="#fdecea" stroke="#c0392b" stroke-width="1"/>
+<text x="1247" y="598" text-anchor="middle" fill="#c0392b" font-size="8">→ Link to Streamlit :8501</text>
+<rect x="1134" y="612" width="226" height="24" rx="4" fill="#fffbf0" stroke="#8a6d0b" stroke-width="1"/>
+<text x="1247" y="628" text-anchor="middle" fill="#8a6d0b" font-size="8">→ LogAnalyzer referral button</text>
+
+<!-- ROW 5: OUTPUTS -->
+<rect x="8" y="672" width="1364" height="130" rx="10" fill="#f9f0ff" stroke="#6c3483" stroke-width="1.5" stroke-dasharray="6,3"/>
+<text x="690" y="690" text-anchor="middle" fill="#6c3483" font-size="10" font-family="IBM Plex Mono" font-weight="600" letter-spacing="2">OUTPUTS AND ACTIONS</text>
+
+<rect x="22" y="700" width="186" height="88" rx="6" fill="#fdecea" stroke="#c0392b" stroke-width="1.5"/>
+<text x="115" y="718" text-anchor="middle" fill="#c0392b" font-size="10" font-weight="700">SNS Alert</text>
+<text x="115" y="733" text-anchor="middle" fill="#6c757d" font-size="8">Unauthorized match</text>
+<text x="115" y="747" text-anchor="middle" fill="#6c757d" font-size="8">GCP: Pub/Sub</text>
+<text x="115" y="761" text-anchor="middle" fill="#6c757d" font-size="8">Azure: Service Bus</text>
+
+<rect x="220" y="700" width="186" height="88" rx="6" fill="#e6f5ee" stroke="#00884d" stroke-width="1.5"/>
+<text x="313" y="718" text-anchor="middle" fill="#00884d" font-size="10" font-weight="700">Trinity Incident</text>
+<text x="313" y="733" text-anchor="middle" fill="#6c757d" font-size="8">Webhook POST</text>
+<text x="313" y="747" text-anchor="middle" fill="#6c757d" font-size="8">Auto-opened incident</text>
+<text x="313" y="761" text-anchor="middle" fill="#6c757d" font-size="8">CRITICAL → AIRTaaS</text>
+
+<rect x="418" y="700" width="220" height="88" rx="6" fill="#fffbf0" stroke="#8a6d0b" stroke-width="1.5"/>
+<text x="528" y="718" text-anchor="middle" fill="#8a6d0b" font-size="10" font-weight="700">LogAnalyzer</text>
+<text x="528" y="733" text-anchor="middle" fill="#6c757d" font-size="8">On-demand referral only</text>
+<text x="528" y="747" text-anchor="middle" fill="#6c757d" font-size="8">Grafana anomaly → webhook</text>
+<text x="528" y="761" text-anchor="middle" fill="#6c757d" font-size="8">RCA + semantic + past issues</text>
+
+<rect x="650" y="700" width="186" height="88" rx="6" fill="#e8f0fb" stroke="#2E5D9E" stroke-width="1.5"/>
+<text x="743" y="718" text-anchor="middle" fill="#2E5D9E" font-size="10" font-weight="700">PDF Report</text>
+<text x="743" y="733" text-anchor="middle" fill="#6c757d" font-size="8">On-demand via Grafana</text>
+<text x="743" y="747" text-anchor="middle" fill="#6c757d" font-size="8">Pre-signed S3 URL</text>
+<text x="743" y="761" text-anchor="middle" fill="#6c757d" font-size="8">Board-ready format</text>
+
+<rect x="848" y="700" width="186" height="88" rx="6" fill="#f5eef8" stroke="#6c3483" stroke-width="1.5"/>
+<text x="941" y="718" text-anchor="middle" fill="#6c3483" font-size="10" font-weight="700">AIRTaaS</text>
+<text x="941" y="733" text-anchor="middle" fill="#6c757d" font-size="8">Red team on CRITICAL</text>
+<text x="941" y="747" text-anchor="middle" fill="#6c757d" font-size="8">3 layers auto/human/AI</text>
+<text x="941" y="761" text-anchor="middle" fill="#6c757d" font-size="8">Monthly report</text>
+
+<rect x="1046" y="700" width="186" height="88" rx="6" fill="#e6f5ee" stroke="#00884d" stroke-width="1.5"/>
+<text x="1139" y="718" text-anchor="middle" fill="#00884d" font-size="10" font-weight="700">Param Store</text>
+<text x="1139" y="733" text-anchor="middle" fill="#6c757d" font-size="8">Company AI keys only</text>
+<text x="1139" y="747" text-anchor="middle" fill="#6c757d" font-size="8">GCP: Secret Manager</text>
+<text x="1139" y="761" text-anchor="middle" fill="#6c757d" font-size="8">Azure: Key Vault</text>
+
+<rect x="1244" y="700" width="120" height="88" rx="6" fill="#f8f9fa" stroke="#dee2e6" stroke-width="1.5"/>
+<text x="1304" y="718" text-anchor="middle" fill="#6c757d" font-size="10" font-weight="700">ALB</text>
+<text x="1304" y="733" text-anchor="middle" fill="#6c757d" font-size="8">/grafana :3000</text>
+<text x="1304" y="747" text-anchor="middle" fill="#6c757d" font-size="8">/settings :8501</text>
+<text x="1304" y="761" text-anchor="middle" fill="#6c757d" font-size="8">Option B: DNS</text>
+
+<!-- ROW 6: TERRAFORM -->
+<rect x="8" y="818" width="1364" height="88" rx="10" fill="#f8f9fa" stroke="#dee2e6" stroke-width="1.5"/>
+<text x="690" y="836" text-anchor="middle" fill="#1B2A4A" font-size="10" font-family="IBM Plex Mono" font-weight="600" letter-spacing="2">TERRAFORM IaC — one repo · CLOUD_PROVIDER flag drives which module loads</text>
+<rect x="22" y="844" width="140" height="52" rx="4" fill="#fff" stroke="#dee2e6" stroke-width="1"/>
+<text x="92" y="864" text-anchor="middle" fill="#2E5D9E" font-size="9" font-family="IBM Plex Mono" font-weight="600">terraform/aws/</text>
+<text x="92" y="878" text-anchor="middle" fill="#6c757d" font-size="7">s3·ecs·iam·alb·ecr</text>
+<rect x="174" y="844" width="140" height="52" rx="4" fill="#fff" stroke="#dee2e6" stroke-width="1"/>
+<text x="244" y="864" text-anchor="middle" fill="#2E5D9E" font-size="9" font-family="IBM Plex Mono" font-weight="600">terraform/gcp/</text>
+<text x="244" y="878" text-anchor="middle" fill="#6c757d" font-size="7">gcs·cloudrun·iam</text>
+<rect x="326" y="844" width="140" height="52" rx="4" fill="#fff" stroke="#dee2e6" stroke-width="1"/>
+<text x="396" y="864" text-anchor="middle" fill="#2E5D9E" font-size="9" font-family="IBM Plex Mono" font-weight="600">terraform/azure/</text>
+<text x="396" y="878" text-anchor="middle" fill="#6c757d" font-size="7">blob·aci·iam</text>
+<rect x="478" y="844" width="140" height="52" rx="4" fill="#fff" stroke="#dee2e6" stroke-width="1"/>
+<text x="548" y="864" text-anchor="middle" fill="#2E5D9E" font-size="9" font-family="IBM Plex Mono" font-weight="600">terraform/edge/</text>
+<text x="548" y="878" text-anchor="middle" fill="#6c757d" font-size="7">kinesis·iam_edge</text>
+<rect x="630" y="844" width="220" height="52" rx="4" fill="#fff8f0" stroke="#d4680a" stroke-width="1"/>
+<text x="740" y="864" text-anchor="middle" fill="#d4680a" font-size="9" font-family="IBM Plex Mono" font-weight="600">deploy/ (customer)</text>
+<text x="740" y="878" text-anchor="middle" fill="#6c757d" font-size="7">prereqs·flowlogs·ocsf_transform</text>
+<rect x="862" y="844" width="200" height="52" rx="4" fill="#fff" stroke="#dee2e6" stroke-width="1"/>
+<text x="962" y="864" text-anchor="middle" fill="#2E5D9E" font-size="9" font-family="IBM Plex Mono" font-weight="600">agent/install/</text>
+<text x="962" y="878" text-anchor="middle" fill="#6c757d" font-size="7">jamf.sh·intune.ps1·ansible.yml</text>
+<rect x="1074" y="844" width="290" height="52" rx="4" fill="#e6f5ee" stroke="#00884d" stroke-width="1"/>
+<text x="1219" y="864" text-anchor="middle" fill="#00884d" font-size="9" font-family="IBM Plex Mono" font-weight="600">variables.tf · outputs.tf</text>
+<text x="1219" y="878" text-anchor="middle" fill="#6c757d" font-size="7">CLOUD_PROVIDER · URLs · ARNs · bucket names</text>
+
+<!-- LOCK-IN ROW -->
+<rect x="8" y="916" width="1364" height="92" rx="10" fill="#fdecea" stroke="#c0392b" stroke-width="1"/>
+<text x="690" y="934" text-anchor="middle" fill="#c0392b" font-size="10" font-family="IBM Plex Mono" font-weight="600" letter-spacing="1">CLOUD LOCK-IN — 4 HIGH (code) · 6 MEDIUM (config) · 5 LOW (zero) — all isolated in providers/ layer</text>
+<rect x="22" y="944" width="310" height="56" rx="5" fill="#fff" stroke="#c0392b" stroke-width="1"/>
+<text x="177" y="962" text-anchor="middle" fill="#c0392b" font-size="9" font-weight="600">HIGH — requires code change in providers/</text>
+<text x="177" y="976" text-anchor="middle" fill="#6c757d" font-size="8">VPC Flow Logs format · IAM Identity Center API</text>
+<text x="177" y="990" text-anchor="middle" fill="#6c757d" font-size="8">CloudTrail cross-ref · EC2 describe API</text>
+<rect x="344" y="944" width="360" height="56" rx="5" fill="#fff" stroke="#d4680a" stroke-width="1"/>
+<text x="524" y="962" text-anchor="middle" fill="#d4680a" font-size="9" font-weight="600">MEDIUM — config change only</text>
+<text x="524" y="976" text-anchor="middle" fill="#6c757d" font-size="8">S3→GCS/Blob · SNS→PubSub/ServiceBus</text>
+<text x="524" y="990" text-anchor="middle" fill="#6c757d" font-size="8">Param Store→SecretMgr · Fargate→CloudRun · S3 Select · Kinesis→Dataflow</text>
+<rect x="716" y="944" width="310" height="56" rx="5" fill="#e6f5ee" stroke="#00884d" stroke-width="1"/>
+<text x="871" y="962" text-anchor="middle" fill="#00884d" font-size="9" font-weight="600">LOW — zero change needed</text>
+<text x="871" y="976" text-anchor="middle" fill="#6c757d" font-size="8">ECR → any registry · Docker image identical</text>
+<text x="871" y="990" text-anchor="middle" fill="#6c757d" font-size="8">Grafana · Streamlit · Polars · Zeek · Packetbeat</text>
+<rect x="1038" y="944" width="326" height="56" rx="5" fill="#f0f5ff" stroke="#2E5D9E" stroke-width="1.5"/>
+<text x="1201" y="962" text-anchor="middle" fill="#2E5D9E" font-size="9" font-weight="600">One flag to switch clouds</text>
+<text x="1201" y="978" text-anchor="middle" fill="#6c3483" font-size="11" font-family="IBM Plex Mono" font-weight="600">CLOUD_PROVIDER=gcp</text>
+<text x="1201" y="994" text-anchor="middle" fill="#6c757d" font-size="8">providers/ adapter loads · core scanner unchanged</text>
+
+<!-- Connecting arrows -->
+<line x1="84" y1="654" x2="84" y2="700" stroke="#c0392b" stroke-width="1.5" marker-end="url(#ar)" stroke-dasharray="4,3"/>
+<line x1="284" y1="654" x2="313" y2="700" stroke="#00884d" stroke-width="1.5" marker-end="url(#ag)" stroke-dasharray="4,3"/>
+<line x1="528" y1="672" x2="528" y2="700" stroke="#8a6d0b" stroke-width="1.5" marker-end="url(#a)" stroke-dasharray="5,3"/>
+<line x1="743" y1="672" x2="743" y2="700" stroke="#2E5D9E" stroke-width="1.5" marker-end="url(#ab)" stroke-dasharray="4,3"/>
+<line x1="1126" y1="654" x2="1126" y2="700" stroke="#d4680a" stroke-width="1.5" marker-end="url(#ao)"/>
+
+</svg>
+  </div>
+  <div class="legend">
+    <div class="li"><div class="ld" style="background:#2E5D9E"></div>Edge agents / managed devices / provider adapter</div>
+    <div class="li"><div class="ld" style="background:#d4680a"></div>OCSF normalisation / AWS services / Grafana service</div>
+    <div class="li"><div class="ld" style="background:#8a6d0b"></div>S3 state bucket / LogAnalyzer / reporter</div>
+    <div class="li"><div class="ld" style="background:#00884d"></div>Scanner core / Pam dashboard / Trinity / Param Store</div>
+    <div class="li"><div class="ld" style="background:#c0392b"></div>Alert path / Steve dashboard / SNS</div>
+    <div class="li"><div class="ld" style="background:#6c3483"></div>Streamlit settings / AIRTaaS / NAC identity</div>
+  </div>
+
+  <!-- Phase 1A + 1B addendum (added 2026-04-26) -->
+  <div style="margin-top:32px;padding:24px;background:#fff;border-radius:10px;border:2px solid #00884d;font-family:'Inter',sans-serif">
+    <h2 style="margin:0 0 16px 0;color:#1B2A4A;font-size:18px;letter-spacing:1px;">
+      Phase 1A + 1B additions (2026-04-26) — what's new since the diagram above was drawn
+    </h2>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+      <div>
+        <h3 style="color:#2E5D9E;font-size:13px;letter-spacing:.5px;margin:0 0 8px 0;">EDGE — 7 new scanner fragments</h3>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#3a3a3a;line-height:1.7">
+          • <b>scan_redactor</b> — strips API keys / JWTs / paths<br>
+          • <b>scan_repo_discovery</b> — auto-walks $HOME for .git/ dirs<br>
+          • <b>scan_first_run</b> — baseline-vs-recurring scan flag<br>
+          • <b>scan_mcp_configs</b> — Claude Desktop / Cursor / Continue / Cline<br>
+          • <b>scan_agents_workflows</b> — n8n / Flowise / cron / launchd<br>
+          • <b>scan_tools_code</b> — @tool decorators in repos<br>
+          • <b>scan_vector_dbs</b> — Chroma / FAISS / LanceDB / Qdrant
+        </div>
+        <div style="margin-top:6px;color:#6c757d;font-size:10px">Each fragment ≤ 150 LOC. Loader concat-order updated to 14 entries (was 8).</div>
+      </div>
+
+      <div>
+        <h3 style="color:#00884d;font-size:13px;letter-spacing:.5px;margin:0 0 8px 0;">SERVER — new modules</h3>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#3a3a3a;line-height:1.7">
+          • <b>store/users_store.py</b> — RBAC CRUD + env-var migration<br>
+          • <b>store/findings_query.py</b> — read_by_email / repo + MCP hashes<br>
+          • <b>normalizer/agent_explode.py</b> — ENDPOINT_SCAN explosion<br>
+          • <b>normalizer/agent_explode_fields.py</b> — field promotion<br>
+          • <b>ingestor/pipeline_mcp_change.py</b> — hash-flip → MCP_CONFIG_CHANGED
+        </div>
+      </div>
+
+      <div>
+        <h3 style="color:#6c3483;font-size:13px;letter-spacing:.5px;margin:0 0 8px 0;">DASHBOARD — Phase 1A + 1B</h3>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#3a3a3a;line-height:1.7">
+          • <b>Manager → AI INVENTORY</b> tab (5th)<br>
+          • <b>AI Asset Map</b> page — Plotly Treemap per-user<br>
+          • <b>RBAC</b> via S3 users.json (exec/manager/support + admin)<br>
+          • <b>Time format</b> helper — DD-MMM-YY HH:MM:SS TZ everywhere<br>
+          • <b>Global search</b> on every grid — Risks, Inventory, Logs, Signals, Rules<br>
+          • <b>Users CRUD</b> — admin can add/edit/remove without redeploy
+        </div>
+      </div>
+
+      <div>
+        <h3 style="color:#8a6d0b;font-size:13px;letter-spacing:.5px;margin:0 0 8px 0;">S3 — new prefixes</h3>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#3a3a3a;line-height:1.7">
+          • <b>users/users.json</b> — RBAC source of truth (Phase 1B)<br>
+          • <b>mcp_hashes/{device}/{host}.txt</b> — change-detection registry<br>
+          • <b>findings/YYYY/MM/DD/*.jsonl</b> — now carries Phase 1A categories<br>
+          • <b>ocsf/agent/heartbeats|scans/</b> — agent overwrites (Step 0.5)
+        </div>
+        <div style="margin-top:6px;color:#6c757d;font-size:10px">Bucket name: <b>patronai</b> (canonical for Marauder Scan; finance projects use a separate bucket).</div>
+      </div>
+    </div>
+
+    <div style="margin-top:18px;padding:12px;background:#f0faf5;border-left:4px solid #00884d;font-size:11px;color:#1B2A4A">
+      <b>Detection coverage delta</b> — was 6 finding categories (browser / package / process / ide_plugin / container_image / shell_history). Now 11: + <b>mcp_server</b>, <b>mcp_config_changed</b>, <b>agent_workflow</b>, <b>agent_scheduled</b>, <b>tool_registration</b>, <b>vector_db</b>. Each routed to severity tier and provider label by the explode pipeline.
+    </div>
+  </div>
+</div>
+</body>
+</html>

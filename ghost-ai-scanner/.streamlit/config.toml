@@ -1,0 +1,26 @@
+# =============================================================
+# FILE: .streamlit/config.toml
+# VERSION: 1.0.0
+# UPDATED: 2026-04-19
+# OWNER: Giggso Inc
+# PURPOSE: PatronAI dark enterprise theme. Bloomberg/Palantir density.
+#          Copied into container by Dockerfile — overrides inline printf.
+# =============================================================
+
+[server]
+headless = true
+address  = "0.0.0.0"
+port     = 8501
+enableCORS = false
+fileWatcherType = "none"
+
+[browser]
+gatherUsageStats = false
+
+[theme]
+base                   = "dark"
+primaryColor           = "#1F6FEB"
+backgroundColor        = "#0D1117"
+secondaryBackgroundColor = "#161B22"
+textColor              = "#E6EDF3"
+font                   = "sans serif"

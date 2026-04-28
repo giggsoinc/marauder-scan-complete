@@ -1,0 +1,14 @@
+# =============================================================
+# FILE: config/unauthorized_code_custom.csv
+# VERSION: 1.0.0
+# UPDATED: 2026-04-25
+# OWNER: Customer admin (edited via Provider Lists tab in the UI)
+# PURPOSE: Customer additions to the Marauder Scan code-deny list.
+#          Survives Docker image rebuilds — never overwritten by seed.
+#          Merged with the Giggso baseline at scan time. On collision
+#          (same pattern), this row WINS.
+# EDIT VIA: Streamlit → Provider Lists → Custom code denylist
+# AUDIT LOG:
+#   v1.0.0  2026-04-25  Initial empty seed.
+# =============================================================
+name,type,pattern,severity,notes

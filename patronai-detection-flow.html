@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PatronAI — Detection Flow v1.2</title>
+<link rel="icon" type="image/png" href="ghost-ai-scanner/assets/branding/patronai-icon.png">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#f0f2f5;font-family:'IBM Plex Sans',sans-serif;padding:32px 20px;}
+.page{background:#fff;max-width:1300px;margin:0 auto;border-radius:12px;
+  box-shadow:0 2px 16px rgba(0,0,0,0.1);padding:40px;}
+h1{font-size:22px;font-weight:700;color:#1B2A4A;margin-bottom:4px;}
+.sub{color:#6c757d;font-size:11px;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;}
+.ver{display:inline-block;background:#2E5D9E;color:#fff;font-size:10px;
+  font-family:'IBM Plex Mono',monospace;padding:2px 8px;border-radius:4px;margin-bottom:16px;}
+.print-btn{background:#2E5D9E;color:#fff;border:none;padding:8px 20px;border-radius:6px;
+  font-size:12px;font-weight:600;cursor:pointer;margin-bottom:20px;display:block;}
+.svg-wrap{border:1.5px solid #dee2e6;border-radius:10px;padding:16px;overflow-x:auto;}
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px;padding:12px;
+  background:#f8f9fa;border-radius:8px;border:1px solid #dee2e6;}
+.li{display:flex;align-items:center;gap:6px;font-size:11px;color:#6c757d;}
+.ld{width:12px;height:12px;border-radius:3px;}
+@media print{.print-btn{display:none;}body{background:#fff;padding:0;}.page{box-shadow:none;}}
+</style>
+</head>
+<body>
+<div class="page">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+    <div>
+      <h1 style="display:flex;align-items:center;gap:12px;">
+        <img src="ghost-ai-scanner/assets/branding/patronai-icon.png" alt="" width="32" height="32" style="border-radius:8px;">
+        PatronAI — Detection Data Flow
+      </h1>
+      <div class="sub">unauthorized.csv . authorized.csv . Parameter Store Key Enforcement . Outcomes</div>
+      <span class="ver">v1.2 — PatronAI rebrand · Marauder Scan code layer detail retained</span>
+    </div>
+    <button class="print-btn" onclick="window.print()">Export / Print</button>
+  </div>
+  <div class="svg-wrap">
+<svg viewBox="0 0 1240 1060" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <marker id="a" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#6c757d"/></marker>
+  <marker id="ag" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#00884d"/></marker>
+  <marker id="ar" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#c0392b"/></marker>
+  <marker id="ao" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#d4680a"/></marker>
+  <marker id="ap" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#6c3483"/></marker>
+  <marker id="ab" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#2E5D9E"/></marker>
+</defs>
+
+<!-- ══ LANE 1: INPUTS ══ -->
+<rect x="8" y="8" width="186" height="860" rx="10" fill="#f0f5ff" stroke="#2E5D9E" stroke-width="1.5" stroke-dasharray="5,3"/>
+<text x="101" y="25" text-anchor="middle" fill="#2E5D9E" font-size="9" font-family="IBM Plex Mono" font-weight="600" letter-spacing="1">INPUTS</text>
+
+<rect x="20" y="34" width="162" height="50" rx="6" fill="#fff" stroke="#2E5D9E" stroke-width="1.5"/>
+<text x="101" y="52" text-anchor="middle" fill="#1B2A4A" font-size="10" font-family="IBM Plex Sans" font-weight="700">Network Event</text>
+<text x="101" y="65" text-anchor="middle" fill="#6c757d" font-size="8" font-family="IBM Plex Sans">OCSF class_uid 4001</text>
+<text x="101" y="78" text-anchor="middle" fill="#6c3483" font-size="8" font-family="IBM Plex Mono">src_ip . dst_domain . port</text>
+
+<rect x="20" y="96" width="162" height="80" rx="5" fill="#f8f9fa" stroke="#dee2e6" stroke-width="1"/>
+<text x="30" y="113" fill="#6c3483" font-size="8" font-family="IBM Plex Mono">src_endpoint.ip</text>
+<text x="30" y="126" fill="#6c3483" font-size="8" font-family="IBM Plex Mono">dst_endpoint.domain</text>
+<text x="30" y="139" fill="#6c3483" font-size="8" font-family="IBM Plex Mono">dst_endpoint.ip</text>
+<text x="30" y="152" fill="#6c3483" font-size="8" font-family="IBM Plex Mono">dst_endpoint.port</text>
+<text x="30" y="165" fill="#6c3483" font-size="8" font-family="IBM Plex Mono">traffic.bytes_out</text>
+
+<rect x="20" y="190" width="162" height="36" rx="5" fill="#e8f0fb" stroke="#2E5D9E" stroke-width="1.5"/>
+<text x="101" y="205" text-anchor="middle" fill="#2E5D9E" font-size="10" font-family="IBM Plex Sans" font-weight="600">authorized.csv</text>
+<text x="101" y="219" text-anchor="middle" fill="#6c757d" font-size="8" font-family="IBM Plex Sans">Customer allow list</text>
+
+<rect x="20" y="236" width="162" height="36" rx="5" fill="#fdecea" stroke="#c0392b" stroke-width="1.5"/>
+<text x="101" y="251" text-anchor="middle" fill="#c0392b" font-size="10" font-family="IBM Plex Sans" font-weight="600">unauthorized.csv</text>
+<text x="101" y="265" text-anchor="middle" fill="#6c757d" font-size="8" font-family="IBM Plex Sans">Giggso deny-all list</text>
+
+<rect x="20" y="284" width="162" height="48" rx="5" fill="#e6f5ee" stroke="#00884d" stroke-width="1.5"/>
+<text x="101" y="301" text-anchor="middle" fill="#00884d" font-size="10" font-family="IBM Plex Sans" font-weight="600">Parameter Store</text>
+<text x="101" y="314" text-anchor="middle" fill="#6c757d" font-size="8" font-family="IBM Plex Sans">Company AI API keys only</text>
+<text x="101" y="326" text-anchor="middle" fill="#6c757d" font-size="8" font-family="IBM Plex Sans">CloudTrail logs every read</text>
+
+<rect x="20" y="344" width="162" height="34" rx="5" fill="#fffbf0" stroke="#8a6d0b" stroke-width="1"/>
+<text x="101" y="360" text-anchor="middle" fill="#8a6d0b" font-size="10" font-family="IBM Plex Sans" font-weight="600">CloudTrail</text>
+<text x="101" y="373" text-anchor="middle" fill="#6c757d" font-size="8" font-family="IBM Plex Sans">GetParameter events</text>
+
+<rect x="20" y="390" width="162" height="34" rx="5" fill="#f5eef8" stroke="#6c3483" stroke-width="1"/>
+<text x="101" y="406" text-anchor="middle" fill="#6c3483" font-size="10" font-family="IBM Plex Sans" font-weight="600">Git Scanner</text>
+<text x="101" y="419" text-anchor="middle" fill="#6c757d" font-size="8" font-family="IBM Plex Sans">GitLeaks / Trufflehog CI/CD</text>
+
+<!-- ══ LANE 2: MATCHER ENGINE ══ -->
+<rect x="202" y="8" width="208" height="860" rx="10" fill="#f0faf5" stroke="#00884d" stroke-width="1.5" stroke-dasharray="5,3"/>
+<text x="306" y="25" text-anchor="middle" fill="#00884d" font-size="9" font-family="IBM Plex Mono" font-weight="600" letter-spacing="1">MATCHER ENGINE</text>
+
+<rect x="214" y="34" width="184" height="36" rx="6" fill="#fff" stroke="#dee2e6" stroke-width="1.5"/>
+<text x="306" y="51" text-anchor="middle" fill="#1B2A4A" font-size="10" font-family="IBM Plex Sans" font-weight="600">1. Normalize event</text>
+<text x="306" y="64" text-anchor="middle" fill="#6c757d" font-size="8" font-family="IBM Plex Sans">Lowercase. Strip trailing dot.</text>
+<line x1="306" y1="70" x2="306" y2="86" stroke="#6c757d" stroke-width="1.5" marker-end="url(#a)"/>
+
+<rect x="214" y="86" width="184" height="36" rx="6" fill="#e8f0fb" stroke="#2E5D9E" stroke-width="1.5"/>
+<text x="306" y="103" text-anchor="middle" fill="#2E5D9E" font-size="10" font-family="IBM Plex Sans" font-weight="600">2. Check authorized.csv</text>
+<text x="306" y="116" text-anchor="middle" fill="#6c757d" font-size="8" font-family="IBM Plex Sans">Glob match on domain_pattern</text>
+<line x1="306" y1="122" x2="306" y2="138" stroke="#6c757d" stroke-width="1.5" marker-end="url(#a)"/>
+
+<polygon points="306,146 352,170 306,194 260,170" fill="#fff" stroke="#2E5D9E" stroke-width="1.5"/>
+<text x="306" y="167" text-anchor="middle" fill="#1B2A4A" font-size="9" font-family="IBM Plex Sans" font-weight="600">Authorized</text>
+<text x="306" y="179" text-anchor="middle" fill="#1B2A4A" font-size="9" font-family="IBM Plex Sans" font-weight="600">match?</text>
+
+<line x1="352" y1="170" x2="418" y2="170" stroke="#2E5D9E" stroke-width="1.5" marker-end="url(#ab)"/>
+<text x="385" y="162" text-anchor="middle" fill="#2E5D9E" font-size="8" font-family="IBM Plex Mono">YES</text>
+
+<line x1="306" y1="194" x2="306" y2="212" stroke="#c0392b" stroke-width="1.5" marker-end="url(#ar)"/>
+<text x="320" y="207" fill="#c0392b" font-size="8" font-family="IBM Plex Mono">NO</text>
+
+<rect x="214" y="212" width="184" height="36" rx="6" fill="#fdecea" stroke="#c0392b" stroke-width="1.5"/>
+<text x="306" y="229" text-anchor="middle" fill="#c0392b" font-size="10" font-family="IBM Plex Sans" font-weight="600">3. Check unauthorized.csv</text>
+<text x="306" y="242" text-anchor="middle" fill="#6c757d" font-size="8" font-family="IBM Plex Sans">Domain glob match</text>
+<line x1="306" y1="248" x2="306" y2="264" stroke="#6c757d" stroke-width="1.5" marker-end="url(#a)"/>
+
+<polygon points="306,272 352,296 306,320 260,296" fill="#fff" stroke="#c0392b" stroke-width="1.5"/>
+<text x="306" y="293" text-anchor="middle" fill="#1B2A4A" font-size="9" font-family="IBM Plex Sans" font-weight="600">Domain</text>
+<text x="306" y="305" text-anchor="middle" fill="#1B2A4A" font-size="9" font-family="IBM Plex Sans" font-weight="600">match?</text>
+
+<line x1="352" y1="296" x2="418" y2="296" stroke="#c0392b" stroke-width="1.5" marker-end="url(#ar)"/>
+<text x="385" y="288" text-anchor="middle" fill="#c0392b" font-size="8" font-family="IBM Plex Mono">YES</text>
+
+<line x1="306" y1="320" x2="306" y2="338" stroke="#6c757d" stroke-width="1.5" marker-end="url(#a)"/>
+<text x="320" y="333" fill="#6c757d" font-size="8" font-family="IBM Plex Mono">NO</text>
+
+<rect x="214" y="338" width="184" height="36" rx="6" fill="#fff8f0" stroke="#d4680a" stroke-width="1.5"/>
+<text x="306" y="355" text-anchor="middle" fill="#d4680a" font-size="10" font-family="IBM Plex Sans" font-weight="600">4. Check port only</text>
+<text x="306" y="368" text-anchor="middle" fill="#6c757d" font-size="8" font-family="IBM Plex Sans">Match dst_port to AI ports</text>
+<line x1="306" y1="374" x2="306" y2="390" stroke="#6c757d" stroke-width="1.5" marker-end="url(#a)"/>
+
+<polygon points="306,398 352,422 306,446 260,422" fill="#fff" stroke="#d4680a" stroke-width="1.5"/>
+<text x="306" y="419" text-anchor="middle" fill="#1B2A4A" font-size="9" font-family="IBM Plex Sans" font-weight="600">Port</text>
+<text x="306" y="431" text-anchor="middle" fill="#1B2A4A" font-size="9" font-family="IBM Plex Sans" font-weight="600">match?</text>
+
+<line x1="352" y1="422" x2="418" y2="422" stroke="#d4680a" stroke-width="1.5" marker-end="url(#ao)"/>
+<text x="385" y="414" text-anchor="middle" fill="#d4680a" font-size="8" font-family="IBM Plex Mono">YES</text>
+
+<line x1="306" y1="446" x2="306" y2="464" stroke="#6c757d" stroke-width="1.5" marker-end="url(#a)"/>
+<text x="320" y="459" fill="#6c757d" font-size="8" font-family="IBM Plex Mono">NO</text>
+
+<rect x="214" y="464" width="184" height="36" rx="6" fill="#f5eef8" stroke="#6c3483" stroke-width="1.5"/>
+<text x="306" y="481" text-anchor="middle" fill="#6c3483" font-size="10" font-family="IBM Plex Sans" font-weight="600">5. No match — UNKNOWN</text>
+<text x="306" y="494" text-anchor="middle" fill="#6c757d" font-size="8" font-family="IBM Plex Sans">Never silently passed</text>
+<line x1="352" y1="482" x2="418" y2="482" stroke="#6c3483" stroke-width="1.5" marker-end="url(#ap)"/>
+
+<!-- ══ LANE 3: PARAM STORE CHECK ══ -->
+<rect x="418" y="8" width="210" height="460" rx="10" fill="#e8f0fb" stroke="#2E5D9E" stroke-width="1.5" stroke-dasharray="5,3"/>
+<text x="523" y="25" text-anchor="middle" fill="#2E5D9E" font-size="9" font-family="IBM Plex Mono" font-weight="600" letter-spacing="1">PARAM STORE CHECK</text>
+<text x="523" y="38" text-anchor="middle" fill="#6c757d" font-size="8" font-family="IBM Plex Sans">Runs only when domain is authorized</text>
+
+<rect x="430" y="48" width="186" height="44" rx="6" fill="#fff" stroke="#2E5D9E" stroke-width="1.5"/>
+<text x="523" y="66" text-anchor="middle" fill="#1B2A4A" font-size="10" font-family="IBM Plex Sans" font-weight="600">A. Cross-ref CloudTrail</text>
+<text x="523" y="79" text-anchor="middle" fill="#6c757d" font-size="8" font-family="IBM Plex Sans">Did same IAM identity call</text>
+<text x="523" y="90" text-anchor="middle" fill="#6c757d" font-size="8" font-family="IBM Plex Sans">GetParameter before API call?</text>
+<line x1="523" y1="92" x2="523" y2="108" stroke="#6c757d" stroke-width="1.5" marker-end="url(#a)"/>
+
+<polygon points="523,116 568,140 523,164 478,140" fill="#fff" stroke="#2E5D9E" stroke-width="1.5"/>
+<text x="523" y="137" text-anchor="middle" fill="#1B2A4A" font-size="9" font-family="IBM Plex Sans" font-weight="600">Company</text>
+<text x="523" y="149" text-anchor="middle" fill="#1B2A4A" font-size="9" font-family="IBM Plex Sans" font-weight="600">key used?</text>
+
+<line x1="523" y1="164" x2="523" y2="182" stroke="#00884d" stroke-width="1.5" marker-end="url(#ag)"/>
+<text x="537" y="177" fill="#00884d" font-size="8" font-family="IBM Plex Mono">YES</text>
+
+<line x1="568" y1="140" x2="634" y2="140" stroke="#c0392b" stroke-width="1.5" marker-end="url(#ar)"/>
+<text x="601" y="132" text-anchor="middle" fill="#c0392b" font-size="8" font-family="IBM Plex Mono">NO</text>
+
+<rect x="430" y="182" width="186" height="34" rx="6" fill="#e6f5ee" stroke="#00884d" stroke-width="1.5"/>
+<text x="523" y="199" text-anchor="middle" fill="#00884d" font-size="10" font-family="IBM Plex Sans" font-weight="600">Legitimate. Suppress.</text>
+<text x="523" y="212" text-anchor="middle" fill="#6c757d" font-size="8" font-family="IBM Plex Sans">Company key confirmed.</text>
+
+<rect x="430" y="232" width="186" height="40" rx="6" fill="#f5eef8" stroke="#6c3483" stroke-width="1"/>
+<text x="523" y="249" text-anchor="middle" fill="#6c3483" font-size="10" font-family="IBM Plex Sans" font-weight="600">B. Git scanner (CI/CD)</text>
+<text x="523" y="262" text-anchor="middle" fill="#6c757d" font-size="8" font-family="IBM Plex Sans">Blocks hardcoded keys in commits</text>
+<text x="523" y="273" text-anchor="middle" fill="#6c757d" font-size="8" font-family="IBM Plex Sans">GitLeaks / Trufflehog</text>
+
+<rect x="430" y="284" width="186" height="40" rx="6" fill="#fffbf0" stroke="#8a6d0b" stroke-width="1"/>
+<text x="523" y="301" text-anchor="middle" fill="#8a6d0b" font-size="10" font-family="IBM Plex Sans" font-weight="600">C. Policy enforcement</text>
+<text x="523" y="314" text-anchor="middle" fill="#6c757d" font-size="8" font-family="IBM Plex Sans">Personal keys on corp devices</text>
+<text x="523" y="325" text-anchor="middle" fill="#6c757d" font-size="8" font-family="IBM Plex Sans">= policy violation</text>
+
+<!-- ══ LANE 4: OUTCOMES ══ -->
+<rect x="636" y="8" width="596" height="860" rx="10" fill="#fafafa" stroke="#dee2e6" stroke-width="1.5" stroke-dasharray="5,3"/>
+<text x="934" y="25" text-anchor="middle" fill="#6c757d" font-size="9" font-family="IBM Plex Mono" font-weight="600" letter-spacing="1">OUTCOMES</text>
+
+<!-- O1: Suppress -->
+<rect x="648" y="34" width="572" height="58" rx="8" fill="#e6f5ee" stroke="#00884d" stroke-width="2"/>
+<text x="670" y="56" fill="#00884d" font-size="12" font-family="IBM Plex Sans" font-weight="700">SUPPRESS</text>
+<text x="670" y="72" fill="#6c757d" font-size="9" font-family="IBM Plex Sans">Authorized domain. Company key confirmed via CloudTrail GetParameter cross-reference.</text>
+<text x="670" y="85" fill="#6c757d" font-size="9" font-family="IBM Plex Sans">Debug log only. Zero dashboard noise. Example: Trinity proxy calling api.anthropic.com.</text>
+
+<!-- O2: Personal key -->
+<rect x="648" y="104" width="572" height="84" rx="8" fill="#fdecea" stroke="#c0392b" stroke-width="2"/>
+<text x="670" y="126" fill="#c0392b" font-size="12" font-family="IBM Plex Sans" font-weight="700">PERSONAL KEY DETECTED</text>
+<text x="670" y="142" fill="#6c757d" font-size="9" font-family="IBM Plex Sans">Authorized domain (e.g. api.openai.com) but no GetParameter in CloudTrail for same</text>
+<text x="670" y="156" fill="#6c757d" font-size="9" font-family="IBM Plex Sans">IAM identity before this API call. Personal API key used on corporate device.</text>
+<text x="670" y="172" fill="#c0392b" font-size="9" font-family="IBM Plex Sans" font-weight="600">HIGH severity. Alert fires. Identity resolved via IAM/SSO at alert time only.</text>
+<rect x="1072" y="112" width="140" height="68" rx="5" fill="#fff" stroke="#c0392b" stroke-width="1"/>
+<text x="1142" y="132" text-anchor="middle" fill="#c0392b" font-size="9" font-family="IBM Plex Sans" font-weight="600">Actions</text>
+<text x="1084" y="148" fill="#6c757d" font-size="8" font-family="IBM Plex Sans">-> Write to findings</text>
+<text x="1084" y="161" fill="#6c757d" font-size="8" font-family="IBM Plex Sans">-> SNS HIGH alert</text>
+<text x="1084" y="174" fill="#6c757d" font-size="8" font-family="IBM Plex Sans">-> Trinity incident</text>
+
+<!-- O3: Domain alert -->
+<rect x="648" y="200" width="572" height="98" rx="8" fill="#fdecea" stroke="#c0392b" stroke-width="2"/>
+<text x="670" y="222" fill="#c0392b" font-size="12" font-family="IBM Plex Sans" font-weight="700">UNAUTHORIZED -- Domain Match</text>
+<text x="670" y="238" fill="#6c757d" font-size="9" font-family="IBM Plex Sans">dst_domain matches glob in unauthorized.csv. Not in authorized.csv.</text>
+<text x="670" y="252" fill="#6c757d" font-size="9" font-family="IBM Plex Sans">Example: developer calls api.groq.com. Not approved. Not proxied.</text>
+<rect x="670" y="262" width="58" height="16" rx="3" fill="#c0392b"/>
+<text x="699" y="274" text-anchor="middle" fill="#fff" font-size="8" font-family="IBM Plex Mono">CRITICAL</text>
+<rect x="736" y="262" width="42" height="16" rx="3" fill="#d4680a"/>
+<text x="757" y="274" text-anchor="middle" fill="#fff" font-size="8" font-family="IBM Plex Mono">HIGH</text>
+<rect x="786" y="262" width="50" height="16" rx="3" fill="#8a6d0b"/>
+<text x="811" y="274" text-anchor="middle" fill="#fff" font-size="8" font-family="IBM Plex Mono">MEDIUM</text>
+<text x="844" y="274" fill="#6c757d" font-size="8" font-family="IBM Plex Sans">from severity column in unauthorized.csv</text>
+<text x="670" y="291" fill="#6c757d" font-size="9" font-family="IBM Plex Sans">IAM/SSO identity resolved at alert time only. Not in hot path.</text>
+<rect x="1072" y="208" width="140" height="82" rx="5" fill="#fff" stroke="#c0392b" stroke-width="1"/>
+<text x="1142" y="228" text-anchor="middle" fill="#c0392b" font-size="9" font-family="IBM Plex Sans" font-weight="600">Actions</text>
+<text x="1084" y="244" fill="#6c757d" font-size="8" font-family="IBM Plex Sans">-> Write to findings</text>
+<text x="1084" y="257" fill="#6c757d" font-size="8" font-family="IBM Plex Sans">-> Dedup 60 min</text>
+<text x="1084" y="270" fill="#6c757d" font-size="8" font-family="IBM Plex Sans">-> SNS publish</text>
+<text x="1084" y="283" fill="#6c757d" font-size="8" font-family="IBM Plex Sans">-> Trinity incident</text>
+
+<!-- O4: Port alert -->
+<rect x="648" y="310" width="572" height="84" rx="8" fill="#fff8f0" stroke="#d4680a" stroke-width="2"/>
+<text x="670" y="332" fill="#d4680a" font-size="12" font-family="IBM Plex Sans" font-weight="700">UNAUTHORIZED -- Port Match</text>
+<text x="670" y="348" fill="#6c757d" font-size="9" font-family="IBM Plex Sans">dst_port matches port-only entry. No domain. Local AI server on device.</text>
+<text x="670" y="362" fill="#6c757d" font-size="9" font-family="IBM Plex Sans">Example: port 11434 = Ollama running locally. Port 1234 = LM Studio.</text>
+<text x="670" y="378" fill="#d4680a" font-size="9" font-family="IBM Plex Sans" font-weight="600">Always MEDIUM. No external transfer confirmed yet.</text>
+<rect x="1072" y="318" width="140" height="68" rx="5" fill="#fff" stroke="#d4680a" stroke-width="1"/>
+<text x="1142" y="338" text-anchor="middle" fill="#d4680a" font-size="9" font-family="IBM Plex Sans" font-weight="600">Actions</text>
+<text x="1084" y="354" fill="#6c757d" font-size="8" font-family="IBM Plex Sans">-> Write to findings</text>
+<text x="1084" y="367" fill="#6c757d" font-size="8" font-family="IBM Plex Sans">-> SNS MEDIUM</text>
+<text x="1084" y="380" fill="#6c757d" font-size="8" font-family="IBM Plex Sans">-> Dashboard flag</text>
+
+<!-- O5: Unknown -->
+<rect x="648" y="406" width="572" height="84" rx="8" fill="#f5eef8" stroke="#6c3483" stroke-width="2"/>
+<text x="670" y="428" fill="#6c3483" font-size="12" font-family="IBM Plex Sans" font-weight="700">UNKNOWN -- Not in Either CSV</text>
+<text x="670" y="444" fill="#6c757d" font-size="9" font-family="IBM Plex Sans">No match in authorized.csv or unauthorized.csv. Never silently passed.</text>
+<text x="670" y="458" fill="#6c757d" font-size="9" font-family="IBM Plex Sans">Possible new AI provider not yet catalogued by Giggso.</text>
+<text x="670" y="474" fill="#6c3483" font-size="9" font-family="IBM Plex Sans" font-weight="600">LOW severity. Batched for Giggso weekly review. Added to unauthorized.csv if confirmed.</text>
+<rect x="1072" y="414" width="140" height="68" rx="5" fill="#fff" stroke="#6c3483" stroke-width="1"/>
+<text x="1142" y="434" text-anchor="middle" fill="#6c3483" font-size="9" font-family="IBM Plex Sans" font-weight="600">Actions</text>
+<text x="1084" y="450" fill="#6c757d" font-size="8" font-family="IBM Plex Sans">-> Write unknown table</text>
+<text x="1084" y="463" fill="#6c757d" font-size="8" font-family="IBM Plex Sans">-> LOW SNS notify</text>
+<text x="1084" y="476" fill="#6c757d" font-size="8" font-family="IBM Plex Sans">-> Weekly review</text>
+
+<!-- ══ DEVICE SCENARIOS ══ -->
+<rect x="8" y="878" width="1224" height="170" rx="10" fill="#f8f9fa" stroke="#dee2e6" stroke-width="1.5"/>
+<text x="620" y="898" text-anchor="middle" fill="#1B2A4A" font-size="11" font-family="IBM Plex Sans" font-weight="700">Corporate Device Scenarios — Coverage Map</text>
+
+<rect x="20" y="908" width="1200" height="20" rx="4" fill="#1B2A4A"/>
+<text x="220" y="922" text-anchor="middle" fill="#fff" font-size="9" font-family="IBM Plex Sans" font-weight="600">Scenario</text>
+<text x="580" y="922" text-anchor="middle" fill="#fff" font-size="9" font-family="IBM Plex Sans" font-weight="600">Scanner Catches?</text>
+<text x="860" y="922" text-anchor="middle" fill="#fff" font-size="9" font-family="IBM Plex Sans" font-weight="600">Control</text>
+<text x="1130" y="922" text-anchor="middle" fill="#fff" font-size="9" font-family="IBM Plex Sans" font-weight="600">Scope</text>
+<line x1="420" y1="908" x2="420" y2="1048" stroke="#dee2e6" stroke-width="1"/>
+<line x1="740" y1="908" x2="740" y2="1048" stroke="#dee2e6" stroke-width="1"/>
+<line x1="980" y1="908" x2="980" y2="1048" stroke="#dee2e6" stroke-width="1"/>
+
+<rect x="20" y="928" width="1200" height="24" fill="#e6f5ee"/>
+<text x="220" y="944" text-anchor="middle" fill="#1B2A4A" font-size="9" font-family="IBM Plex Sans">Corp device . company key via proxy</text>
+<text x="580" y="944" text-anchor="middle" fill="#00884d" font-size="9" font-family="IBM Plex Sans" font-weight="600">YES -- Authorized. Suppressed.</text>
+<text x="860" y="944" text-anchor="middle" fill="#6c757d" font-size="9" font-family="IBM Plex Sans">Working as designed</text>
+<text x="1130" y="944" text-anchor="middle" fill="#00884d" font-size="9" font-family="IBM Plex Sans" font-weight="600">In scope</text>
+
+<rect x="20" y="952" width="1200" height="24" fill="#fff"/>
+<text x="220" y="968" text-anchor="middle" fill="#1B2A4A" font-size="9" font-family="IBM Plex Sans">Corp device . personal key . no VPN</text>
+<text x="580" y="968" text-anchor="middle" fill="#00884d" font-size="9" font-family="IBM Plex Sans" font-weight="600">YES -- Param Store cross-ref catches it</text>
+<text x="860" y="968" text-anchor="middle" fill="#6c757d" font-size="9" font-family="IBM Plex Sans">No GetParameter in CloudTrail. HIGH alert.</text>
+<text x="1130" y="968" text-anchor="middle" fill="#00884d" font-size="9" font-family="IBM Plex Sans" font-weight="600">In scope</text>
+
+<rect x="20" y="976" width="1200" height="24" fill="#e6f5ee"/>
+<text x="220" y="992" text-anchor="middle" fill="#1B2A4A" font-size="9" font-family="IBM Plex Sans">Corp device . hardcoded key in code</text>
+<text x="580" y="992" text-anchor="middle" fill="#00884d" font-size="9" font-family="IBM Plex Sans" font-weight="600">YES -- Git scanner blocks at CI/CD</text>
+<text x="860" y="992" text-anchor="middle" fill="#6c757d" font-size="9" font-family="IBM Plex Sans">GitLeaks fails pipeline before deploy</text>
+<text x="1130" y="992" text-anchor="middle" fill="#00884d" font-size="9" font-family="IBM Plex Sans" font-weight="600">In scope</text>
+
+<rect x="20" y="1000" width="1200" height="24" fill="#fff"/>
+<text x="220" y="1016" text-anchor="middle" fill="#1B2A4A" font-size="9" font-family="IBM Plex Sans">Corp device . personal key . personal VPN</text>
+<text x="580" y="1016" text-anchor="middle" fill="#d4680a" font-size="9" font-family="IBM Plex Sans" font-weight="600">PARTIAL -- CrowdStrike catches VPN process</text>
+<text x="860" y="1016" text-anchor="middle" fill="#6c757d" font-size="9" font-family="IBM Plex Sans">VPN client process flagged on device</text>
+<text x="1130" y="1016" text-anchor="middle" fill="#d4680a" font-size="9" font-family="IBM Plex Sans" font-weight="600">Partial</text>
+
+<rect x="20" y="1024" width="1200" height="24" fill="#fdecea"/>
+<text x="220" y="1040" text-anchor="middle" fill="#1B2A4A" font-size="9" font-family="IBM Plex Sans">Personal laptop . outside VPN</text>
+<text x="580" y="1040" text-anchor="middle" fill="#c0392b" font-size="9" font-family="IBM Plex Sans" font-weight="600">NO -- Accepted company risk</text>
+<text x="860" y="1040" text-anchor="middle" fill="#6c757d" font-size="9" font-family="IBM Plex Sans">Device unmanaged. Out of scope.</text>
+<text x="1130" y="1040" text-anchor="middle" fill="#c0392b" font-size="9" font-family="IBM Plex Sans" font-weight="600">Out of scope</text>
+
+<!-- ARROWS -->
+<line x1="418" y1="170" x2="428" y2="170" stroke="#2E5D9E" stroke-width="1.5" marker-end="url(#ab)"/>
+<line x1="523" y1="216" x2="523" y2="232" stroke="#00884d" stroke-width="1" stroke-dasharray="3,2"/>
+<line x1="523" y1="232" x2="645" y2="63" stroke="#00884d" stroke-width="1" marker-end="url(#ag)" stroke-dasharray="3,2"/>
+<line x1="634" y1="140" x2="646" y2="140" stroke="#c0392b" stroke-width="1.5" marker-end="url(#ar)"/>
+<line x1="418" y1="296" x2="646" y2="255" stroke="#c0392b" stroke-width="1.5" marker-end="url(#ar)"/>
+<line x1="418" y1="422" x2="646" y2="370" stroke="#d4680a" stroke-width="1.5" marker-end="url(#ao)"/>
+<line x1="418" y1="482" x2="646" y2="450" stroke="#6c3483" stroke-width="1.5" marker-end="url(#ap)"/>
+
+</svg>
+  </div>
+  <div class="legend">
+    <div class="li"><div class="ld" style="background:#2E5D9E"></div>Authorized + Parameter Store check</div>
+    <div class="li"><div class="ld" style="background:#00884d"></div>Suppress (legitimate)</div>
+    <div class="li"><div class="ld" style="background:#c0392b"></div>Alert (unauthorized or personal key)</div>
+    <div class="li"><div class="ld" style="background:#d4680a"></div>Alert (port match / local AI server)</div>
+    <div class="li"><div class="ld" style="background:#6c3483"></div>Unknown (flagged for review)</div>
+    <div class="li"><div class="ld" style="background:#8a6d0b"></div>Git scanner + policy controls</div>
+  </div>
+
+  <!-- Phase 1A flow addendum (added 2026-04-26) -->
+  <div style="margin-top:32px;padding:24px;background:#fff;border-radius:10px;border:2px solid #c0392b;font-family:'Inter',sans-serif">
+    <h2 style="margin:0 0 16px 0;color:#1B2A4A;font-size:18px;letter-spacing:1px;">
+      Phase 1A — five new finding categories on top of network detection
+    </h2>
+
+    <table style="width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:11px">
+      <thead>
+        <tr style="background:#f6f7f9;border-bottom:2px solid #1B2A4A">
+          <th style="text-align:left;padding:8px">CATEGORY</th>
+          <th style="text-align:left;padding:8px">SOURCE</th>
+          <th style="text-align:left;padding:8px">SEVERITY</th>
+          <th style="text-align:left;padding:8px">DETECTION TRIGGER</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid #ececec">
+          <td style="padding:8px"><b style="color:#c0392b">mcp_server</b></td>
+          <td style="padding:8px">Claude Desktop / Cursor / Continue / Cline JSON config</td>
+          <td style="padding:8px"><span style="background:#fdecea;color:#c0392b;padding:2px 6px;border-radius:4px">HIGH</span></td>
+          <td style="padding:8px">Per-server entry in `mcpServers` block of any of 4 known config paths</td>
+        </tr>
+        <tr style="border-bottom:1px solid #ececec">
+          <td style="padding:8px"><b style="color:#c0392b">mcp_config_changed</b></td>
+          <td style="padding:8px">Server-side derived event</td>
+          <td style="padding:8px"><span style="background:#fdecea;color:#c0392b;padding:2px 6px;border-radius:4px">HIGH</span></td>
+          <td style="padding:8px">SHA-256 of config file flips between scans (last_known_hash registry)</td>
+        </tr>
+        <tr style="border-bottom:1px solid #ececec">
+          <td style="padding:8px"><b style="color:#c0392b">agent_workflow</b></td>
+          <td style="padding:8px">n8n / Flowise / langflow / dify JSON-or-YAML files on disk</td>
+          <td style="padding:8px"><span style="background:#fdecea;color:#c0392b;padding:2px 6px;border-radius:4px">HIGH</span></td>
+          <td style="padding:8px">Files matching framework signatures in known workflow root dirs</td>
+        </tr>
+        <tr style="border-bottom:1px solid #ececec">
+          <td style="padding:8px"><b style="color:#c0392b">agent_scheduled</b></td>
+          <td style="padding:8px">crontab + macOS launchd plists</td>
+          <td style="padding:8px"><span style="background:#fdecea;color:#c0392b;padding:2px 6px;border-radius:4px">HIGH</span></td>
+          <td style="padding:8px">Lines / plists referencing AI keywords (openai, langchain, n8n, …)</td>
+        </tr>
+        <tr style="border-bottom:1px solid #ececec">
+          <td style="padding:8px"><b style="color:#d4680a">tool_registration</b></td>
+          <td style="padding:8px">Python files inside auto-discovered git repos</td>
+          <td style="padding:8px"><span style="background:#fff8f0;color:#d4680a;padding:2px 6px;border-radius:4px">MEDIUM</span></td>
+          <td style="padding:8px">@tool / @function_tool / Tool() / register_tool decorators (counts only)</td>
+        </tr>
+        <tr style="border-bottom:1px solid #ececec">
+          <td style="padding:8px"><b style="color:#d4680a">vector_db</b></td>
+          <td style="padding:8px">Home caches + inside discovered repos</td>
+          <td style="padding:8px"><span style="background:#fff8f0;color:#d4680a;padding:2px 6px;border-radius:4px">MEDIUM</span></td>
+          <td style="padding:8px">chroma.sqlite3 / *.faiss / *.lance / Qdrant meta.json / Milvus meta.kv</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div style="margin-top:18px;padding:12px;background:#fff8f0;border-left:4px solid #d4680a;font-size:11px;color:#1B2A4A">
+      <b>Privacy gate</b> — every Phase 1A finding goes through `_safe_finding()` (redactor) BEFORE upload. API keys, JWTs, AWS access keys, GitHub PATs, Slack tokens are stripped; user-home paths replaced with `~`. Findings that still contain a secret regex match after redaction are <b>dropped entirely</b> — better to lose visibility than to leak.
+    </div>
+
+    <div style="margin-top:12px;padding:12px;background:#f0faf5;border-left:4px solid #00884d;font-size:11px;color:#1B2A4A">
+      <b>Repo scope</b> — Phase 1A scanners stay inside discovered git repos (auto-walked from `$HOME` looking for `.git/`). They do NOT trawl the home dir; they do NOT read system dirs (`Library`, `Applications`, `.Trash`). Depth-capped at 6 levels; time-capped at 60 seconds.
+    </div>
+  </div>
+</div>
+</body>
+</html>

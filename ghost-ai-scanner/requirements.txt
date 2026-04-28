@@ -1,0 +1,46 @@
+# =============================================================
+# FILE: requirements.txt
+# VERSION: 1.0.0
+# UPDATED: 2026-04-18
+# OWNER: Giggso Inc
+# PURPOSE: All Python dependencies for PatronAI.
+#          Pinned to minor versions for reproducible builds.
+#          All libraries are MIT, Apache 2.0 or BSD licensed.
+# =============================================================
+
+# ── Core AWS ──────────────────────────────────────────────────
+boto3>=1.34.0,<2.0.0           # AWS SDK — S3, SNS, EC2, CloudTrail, Identity Center
+botocore>=1.34.0,<2.0.0        # AWS core (boto3 dependency — pin together)
+
+# ── Data processing ───────────────────────────────────────────
+polars>=0.20.0,<1.0.0          # MIT — lazy dataframes, S3 Select results, zero-copy
+pandas>=2.0.0,<3.0.0           # BSD — Plotly chart inputs, CSV export
+
+# ── Dashboard ─────────────────────────────────────────────────
+streamlit>=1.42.0,<2.0.0       # Apache 2.0 — settings UI and ghost_dashboard
+plotly>=5.18.0,<6.0.0          # MIT — all charts: choropleth, bubble, heatmap, Sankey
+networkx>=3.1.0,<4.0.0         # BSD — graph layout for AI inventory mind map
+
+# ── PDF reporting ─────────────────────────────────────────────
+reportlab>=4.1.0,<5.0.0        # BSD — PDF generation for board reports
+
+# ── HTTP / alerting ───────────────────────────────────────────
+requests>=2.31.0,<3.0.0        # Apache 2.0 — Trinity webhook, LogAnalyzer referral
+
+# ── Identity resolution ───────────────────────────────────────
+ldap3>=2.9.1,<3.0.0            # LGPL — Active Directory LDAP lookup (optional source)
+
+# ── Utilities ─────────────────────────────────────────────────
+python-dateutil>=2.8.2,<3.0.0  # Apache 2.0 — robust datetime parsing across log formats
+pytz>=2024.1                    # MIT — timezone handling for OCSF timestamps
+pyyaml>=6.0.1,<7.0.0           # MIT — packetbeat.yml and agent config parsing
+watchdog>=4.0.0,<5.0.0         # Apache 2.0 — file system watcher for Marauder Scan edge agent
+
+# ── Security ──────────────────────────────────────────────────
+bcrypt>=4.0.0,<5.0.0           # Apache 2.0 — OTP hashing for agent delivery
+
+# ── Dev / test only (not installed in production image) ───────
+# pytest>=8.0.0
+# pytest-cov>=4.0.0
+# moto>=5.0.0                   # AWS mock for unit tests
+# localstack-client>=2.0.0      # LocalStack SDK for integration tests

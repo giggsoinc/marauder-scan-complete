@@ -1,0 +1,73 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "TenantStorage",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:ListBucket",
+        "s3:DeleteObject",
+        "s3:GetBucketLocation"
+      ],
+      "Resource": [
+        "arn:aws:s3:::patronai",
+        "arn:aws:s3:::patronai/*"
+      ]
+    },
+    {
+      "Sid": "AlertPublish",
+      "Effect": "Allow",
+      "Action": ["sns:Publish"],
+      "Resource": "arn:aws:sns:us-east-1:*:*"
+    },
+    {
+      "Sid": "NetworkInspection",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:DescribeInstances",
+        "ec2:DescribeNetworkInterfaces"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "AuditTrail",
+      "Effect": "Allow",
+      "Action": ["cloudtrail:LookupEvents"],
+      "Resource": "*"
+    },
+    {
+      "Sid": "IdentityCenter",
+      "Effect": "Allow",
+      "Action": [
+        "identitystore:ListUsers",
+        "identitystore:DescribeUser"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "HookAgentsDelivery",
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject",
+        "s3:GetObject",
+        "s3:GetObjectAttributes",
+        "s3:DeleteObject"
+      ],
+      "Resource": [
+        "arn:aws:s3:::*/config/HOOK_AGENTS/*"
+      ]
+    },
+    {
+      "Sid": "HookAgentsSES",
+      "Effect": "Allow",
+      "Action": [
+        "ses:SendEmail",
+        "ses:SendRawEmail",
+        "ses:GetIdentityVerificationAttributes"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

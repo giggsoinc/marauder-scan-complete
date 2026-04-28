@@ -1,0 +1,95 @@
+Persona,Feature Group,Feature,Outcome,Likely Code Location,Status (verify)
+End User,Install,One-time MDM 'Allow' prompt on the device,Device joined to PatronAI fleet without IT shoulder-surf,agent/install/jamf.sh + .app bundle plist,TBD
+End User,Runtime,Transparent background agent (no UI / no popups),Zero workflow disruption,agent/install/patronai_agent.py (planned),TBD
+End User,Privacy,Metadata-only telemetry — no payload exfiltration,User trust + GDPR posture,agent/heartbeat schema,TBD
+End User,Privacy,Email hashing (default-on toggle),PII protection in alerts,settings.json hash_emails flag,TBD
+End User,Optional,Coaching message when blocked AI tool used,Education without escalation,scanner/coaching_email (planned),TBD
+Security Executive,Dashboard,Exec view world map of AI tool usage,Geographic visualisation for board reporting,grafana/dashboards/exec.json,TBD
+Security Executive,Dashboard,Risk heatmap — dept × severity,Focus on highest-impact areas,grafana/dashboards/exec.json,TBD
+Security Executive,Dashboard,AI Landscape — bubble chart + topology,Vendor distribution insight,grafana/dashboards/exec.json,TBD
+Security Executive,Dashboard,Data exposure Sankey + incident timeline,Trend visibility for governance,grafana/dashboards/exec.json,TBD
+Security Executive,Dashboard,Top offenders summary,Surfaces repeat offenders,scanner/summary_builder.py,TBD
+Security Executive,Reporting,Board-level PDF report download,Quarterly governance evidence,scanner/pdf_report.py,TBD
+Security Executive,Reporting,Refresh Now button (on-demand summary rebuild),Pre-meeting freshness,user_interface/refresh_handler.py,TBD
+Security Executive,Reporting,Compliance posture indicator (SOC 2 / ISO mapping),Audit-ready stance,(missing — design only),TBD
+Security Executive,Access,Read-only role across dashboards,Governance without ops burden,auth/role_viewer.py,TBD
+SecOps Manager,Dashboard,Asset Inventory — every device with MAC + geo,Who has what AI footprint,grafana/dashboards/manager.json,TBD
+SecOps Manager,Dashboard,Risk Alerts — open alerts + bulk actions,Triage queue,grafana/dashboards/manager.json,TBD
+SecOps Manager,Dashboard,Log View — raw OCSF + filters + CSV export,Forensic investigation,scanner/log_view.py,TBD
+SecOps Manager,Dashboard,Pipeline Health tile — scan lag + SNS delivery,Platform observability,scanner/pipeline_health.py,TBD
+SecOps Manager,Operations,Force Rescan button,Skip the wait between scan cycles,user_interface/force_rescan.py,TBD
+SecOps Manager,Operations,Backfill — re-scan historical period,Catch-up after outage / new rule deployment,user_interface/backfill.py,TBD
+SecOps Manager,Operations,Refresh Now — rebuild summary on demand,Live data on demand,user_interface/refresh_handler.py,TBD
+SecOps Manager,Configuration,Allow list editor (authorized.csv),Reduce false positives for sanctioned endpoints,user_interface/allowlist_editor.py,TBD
+SecOps Manager,Configuration,Scan interval setting,Tune frequency vs cost,settings.json scan_interval_secs,TBD
+SecOps Manager,Configuration,Dedup window control,Prevent alert spam,settings.json dedup_window_minutes,TBD
+SecOps Manager,Configuration,CrowdStrike (endpoint protection) toggle,Honest gap banner when disabled,settings.json crowdstrike_enabled,TBD
+SecOps Manager,Alerting,SNS alert delivery (email / SMS),Out-of-band notification,scanner/sns_dispatcher.py,TBD
+SecOps Manager,Alerting,Trinity incident auto-create on HIGH / CRITICAL,Workflow handoff to ITSM,scanner/trinity_webhook.py,TBD
+SecOps Manager,Alerting,LogAnalyzer on-demand referral,Enriched deeper investigation,scanner/loganalyzer_referral.py,TBD
+SecOps Manager,Identity,User invite / remove,Tenant access control,user_interface/users.py,TBD
+SecOps Manager,Identity,IP-to-user mapping inspection,Attribute alert to a person,scanner/identity_resolver.py,TBD
+SecOps Manager,Integration,OCSF CSV export to external SIEM,Plug into existing security stack,scanner/ocsf_export.py,TBD
+SecOps Manager,Integration,AIRTaaS red team trigger,Validate detection coverage,scanner/airtaas_trigger.py (planned),TBD
+Support Team,Detection Rules,Maintain 70+ AI provider denylist,Catch new AI tools as they emerge,config/unauthorized.csv,Done (audit)
+Support Team,Detection Rules,Maintain code-layer denylist (frameworks / MCP / keys),Pre-commit detection coverage,config/unauthorized_code.csv,Done (audit)
+Support Team,Detection Rules,Multi-signal detection (image digest > name > DNS > process > .app > port),Defeats Docker port-mapping evasion,scanner/multi_signal_matcher.py (planned),Pending
+Support Team,Detection Rules,Local inference port detection (Ollama 11434 / LM Studio 1234 / etc.),Catch self-hosted models,config/unauthorized.csv local-port rows,Done
+Support Team,Detection Rules,Hardcoded API key patterns (sk-proj- / sk-ant- / hf_ / etc.),Catch keys at commit time,config/unauthorized_code.csv key rows,Done
+Support Team,Detection Rules,Add coverage for n8n cloud / sim.ai / Google Opal / Langflow / Dify,Coverage parity with 2026 AI tooling landscape,config/unauthorized.csv + unauthorized_code.csv (planned),Pending
+Support Team,Engineering,Marauder Scan code layer (GitLeaks custom rules),Detect frameworks at git commit,marauder-scan/gitleaks_rules/,TBD
+Support Team,Engineering,Pre-commit hook (zero inference / writes git-diffs to S3),Catch ambiguous diffs for offline classification,agent/install/git_hook_pre_commit.sh,Done
+Support Team,Engineering,Local LLM classifier (Gemma 4 E4B via llama.cpp on EC2),Disambiguate marginal signals — never on edge,scanner/llm_classifier.py,TBD
+Support Team,Engineering,OCSF normaliser (VPC Flow / Packetbeat / Zeek → universal JSON),Single schema for all telemetry,scanner/ocsf_normaliser.py,TBD
+Support Team,Engineering,Cloud-agnostic adapter (AWS / GCP / Azure switch),Single codebase across clouds,scanner/cloud_adapters/,TBD
+Support Team,Engineering,Polars + S3 Select push-down (under 200MB memory),Cost + speed efficiency at 10K devices,scanner/match_engine.py,TBD
+Support Team,Engineering,Dedup engine (one alert per source per provider per window),Quality over noise,scanner/dedup.py,TBD
+Support Team,Engineering,VPC Flow Log noise filter (NODATA / EFS / NAT / endpoint),Suppress non-actionable ENI traffic,scanner/vpc_flow_filter.py (planned),Pending
+Support Team,Engineering,Cursor / state management in S3,Resumable scans across restarts,scanner/cursor.py,TBD
+Support Team,Engineering,57 regression tests with HTML report,Confidence on every release,tests/ + pytest-html,TBD
+Support Team,Onboarding,Customer platform stand-up (setup.sh + IaC),Tenant operational within hours,scripts/setup.sh + terraform/,TBD
+Support Team,Onboarding,Trinity integration wiring,Customer ITSM alignment,docs/trinity_integration.md,TBD
+Support Team,Onboarding,Identity Center / LDAP / NAC adapter wiring,Alerts attribute to people,scanner/identity_adapters/,TBD
+Support Team,Distribution,Sign + notarise macOS DMG (Apple Developer ID),Kernel-level trust + Gatekeeper pass,build/build-dmg.sh (planned),Pending
+Support Team,Distribution,Hardened Runtime + entitlements,System integrity,build/entitlements.plist (planned),Pending
+Support Team,Distribution,Marketplace rules push channel (under 6-hour propagation),Zero-touch rule updates,infra/rules_channel/,TBD
+Support Team,Distribution,Cryptographically signed denylist updates,Agent trusts only authentic rules,infra/sign_rules.py,TBD
+Support Team,Red Team,AIRTaaS quarterly attack coordination,Proven detection coverage,partnerships/airtaas/,TBD
+Platform Admin,Subscription,AWS Marketplace subscription,Licensing + consolidated billing,Marketplace listing,TBD
+Platform Admin,Subscription,Cloud-provider selection (CLOUD_PROVIDER env),Multi-cloud deployment,scanner/cloud_adapters/,TBD
+Platform Admin,IAM,Tenant IAM role + STS + external_id,Scoped least-privilege access,terraform/iam.tf,TBD
+Platform Admin,IAM,Infrastructure-as-code apply (Terraform / CloudFormation),Repeatable stand-up,terraform/ + cloudformation/,TBD
+Platform Admin,Governance,Approves rule updates from Marketplace channel,Customer-side governance control,user_interface/rule_approval.py (planned),TBD
+Platform Admin,Governance,Read-only governance view across all dashboards,Oversight without daily ops burden,auth/role_governance.py,TBD
+Platform Admin,Governance,Budget / tagging / cost allocation,Financial accountability,terraform/tags.tf,TBD
+Platform Admin,Rollout,MDM agent packaging (Jamf / Intune / Ansible),Fleet-wide coverage,agent/install/{jamf,intune,ansible}.sh,Pending (macOS first)
+Platform Admin,Rollout,Pilot device group selector,Phased rollout,user_interface/pilot_groups.py,TBD
+Platform Admin,Identity,Identity Center / SSO wiring,Enterprise sign-in,scanner/identity_adapters/sso.py,TBD
+Platform Admin,Identity,NAC / IP-to-user CSV upload,Alerts attributed to users,identity/ prefix in S3,TBD
+Platform Admin,Configuration,Initial allow list seed (internal AI endpoints),Pre-approved internal gateways,config/authorized.csv,Done (template)
+Platform Admin,Configuration,Admin password rotation,Security hygiene,user_interface/admin_password.py,TBD
+Platform Admin,Telemetry,Enable VPC Flow Logs across all VPCs,Cloud workload coverage,scripts/enable_flow_logs.sh,TBD
+Platform Admin,Telemetry,Network sensor (Packetbeat / Zeek) deployment to perimeter,On-prem perimeter coverage,agent/install/network_sensor.sh,TBD
+Cross-cutting,Storage,S3 single source of truth (config / ocsf / findings / summary / cursor / dedup / identity / reports),All state in one place — no DB to manage,s3 prefix layout,TBD
+Cross-cutting,Storage,Hive-style partitioning (group=.../user=.../device=.../YYYY/MM/DD/),Efficient query + lifecycle,scanner/s3_paths.py,Pending
+Cross-cutting,Storage,30-day hot then archive lifecycle,Cost containment,terraform/s3_lifecycle.tf,TBD
+Cross-cutting,Detection,Network layer (VPC Flow / Packetbeat / Zeek),Catch outbound AI calls,scanner/ingesters/,TBD
+Cross-cutting,Detection,Code layer (Marauder Scan + GitLeaks),Catch frameworks + keys at commit,marauder-scan/,TBD
+Cross-cutting,Detection,Desktop agent layer (macOS DMG first),Catch off-network laptops,agent/macos/ (planned),Pending
+Cross-cutting,Detection,Heartbeat ingestion from agents,Device liveness + signal feed,scanner/heartbeat_ingester.py (planned),Pending
+Cross-cutting,Coverage Gaps,Fully offline local inference (USB-copied model),Documented as accepted gap,docs/known_gaps.md,Done (documented)
+Cross-cutting,Coverage Gaps,Personal cloud accounts (personal credit card),Documented as accepted gap,docs/known_gaps.md,Done (documented)
+Cross-cutting,Coverage Gaps,Web UI manual copy-paste into ChatGPT,Documented as accepted gap,docs/known_gaps.md,Done (documented)
+Cross-cutting,Coverage Gaps,Personal laptop outside VPN,Out of scope — accepted risk,docs/known_gaps.md,Done (documented)
+SecOps Manager,AI Inventory,MCP server inventory across fleet (Claude Desktop / Cursor / Continue / Cline),Real per-server visibility with config hash for change detection,agent/install/scan_mcp_configs.py.frag,Done (Phase 1A)
+SecOps Manager,AI Inventory,Agent workflow + scheduled-agent inventory (n8n / Flowise / cron / launchd),Catches autonomous loops that don't show as running processes,agent/install/scan_agents_workflows.py.frag,Done (Phase 1A)
+SecOps Manager,AI Inventory,Tool registration discovery (`@tool` decorators in repos),Inventory of LLM tools agents have access to,agent/install/scan_tools_code.py.frag,Done (Phase 1A)
+SecOps Manager,AI Inventory,Local vector DB inventory (Chroma / FAISS / LanceDB / Qdrant / Milvus),Discover RAG stores holding org data,agent/install/scan_vector_dbs.py.frag,Done (Phase 1A)
+SecOps Manager,AI Inventory,Per-user AI Asset Map (Plotly Treemap),Click any owner email to see their full AI footprint grouped by repo,dashboard/ui/asset_map.py,Done (Phase 1A)
+SecOps Manager,AI Inventory,MCP config-change alerts (HIGH severity),Fires when someone edits their MCP config — hash-flip detection,src/ingestor/pipeline_mcp_change.py,Done (Phase 1A)
+SecOps Manager,Privacy,Secret redaction on every agent finding (API keys / JWTs / paths),Privacy gate — partial redactions never shipped,agent/install/scan_redactor.py.frag,Done (Phase 1A)
+Platform Admin,RBAC,Interactive Users settings tab — add / edit / remove users,No more env-var redeploy to change access,dashboard/ui/tabs/users.py,Done (Phase 1B)
+Platform Admin,RBAC,Three roles (exec / manager / support) + admin checkbox,Per-role tab visibility; admin sees all + Settings,src/store/users_store.py,Done (Phase 1B)
+Platform Admin,RBAC,First-run env-var migration to s3 users.json,Existing access preserved without redeploy,src/store/users_store.py:_migrate_from_env,Done (Phase 1B)
+End User,UX,Browser-local timezone on every timestamp,Read DD-MMM-YY HH:MM:SS in your local TZ; UTC tooltip on hover,dashboard/ui/time_fmt.py,Done (Phase 1B)
+End User,UX,Global search bar on every grid,Substring match across all string columns,dashboard/ui/filtered_table.py,Done (Phase 1B)

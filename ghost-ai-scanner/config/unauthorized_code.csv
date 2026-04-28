@@ -1,0 +1,108 @@
+# =============================================================
+# FILE: config/unauthorized_code.csv
+# PROJECT: PatronAI — Marauder Scan code layer
+# VERSION: 1.1.0
+# UPDATED: 2026-04-25
+# OWNER: Giggso Inc
+# PURPOSE: Deny-all list of AI framework, MCP and agent patterns.
+#          Maintained by Giggso. Do not edit — use authorized_code.csv
+#          to approve specific items for your organisation.
+#          Checked AFTER authorized_code.csv.
+#          Match = CODE_ALERT with specified severity.
+# FORMAT: name, type, pattern, severity, notes
+# AUDIT LOG:
+#   v1.0.0  2026-04-18  Initial.
+#   v1.1.0  2026-04-25  Group 2.A — IDE plugin IDs (VS Code + JetBrains)
+#                       for Copilot, Codeium, Tabnine, Continue, Amazon Q.
+# =============================================================
+name,type,pattern,severity,notes
+
+# ── LLM API FRAMEWORKS ────────────────────────────────────────
+LangChain,framework,langchain,HIGH,LLM application framework — may send data to AI providers
+LangGraph,framework,langgraph,HIGH,Stateful agent workflows — LangChain ecosystem
+LlamaIndex,framework,llama_index,HIGH,LLM data framework — indexes and queries via AI
+LlamaIndex Alt,framework,llama-index,HIGH,Alt import pattern
+Haystack,framework,haystack,HIGH,NLP/LLM pipeline framework by deepset
+FastAgency,framework,fastagency,HIGH,Multi-agent framework built on AutoGen
+Mastra,framework,mastra,HIGH,TypeScript agent framework
+
+# ── MULTI-AGENT FRAMEWORKS ────────────────────────────────────
+AutoGen,framework,autogen,HIGH,Microsoft multi-agent framework — now in maintenance mode
+AutoGen AG2,framework,ag2,HIGH,AG2 continuation of AutoGen
+Microsoft Agent Framework,framework,microsoft.agents,HIGH,Unified AutoGen + Semantic Kernel framework
+Semantic Kernel,framework,semantic_kernel,HIGH,Microsoft .NET/Python AI orchestration
+SemanticKernel Alt,framework,SemanticKernel,HIGH,Alt import pattern
+CrewAI,framework,crewai,HIGH,Role-based multi-agent orchestration framework
+OpenAI Agents SDK,framework,from agents import,HIGH,OpenAI official agents SDK
+OpenAI Agents SDK Alt,framework,openai.agents,HIGH,Alt import pattern
+OpenAI Runner,framework,Runner.run,HIGH,OpenAI agent runner pattern
+Google ADK,framework,google.adk,HIGH,Google Agent Development Kit
+Google ADK Alt,framework,from google_adk,HIGH,Alt import pattern
+Anthropic SDK Agents,framework,anthropic.agents,HIGH,Anthropic multi-agent SDK pattern
+Pydantic AI,framework,pydantic_ai,HIGH,Type-safe LLM application framework
+SmolaAgents,framework,smolagents,HIGH,HuggingFace lightweight agents library
+MetaGPT,framework,metagpt,HIGH,Software-development multi-agent framework
+Rasa,framework,rasa,MEDIUM,Conversational AI framework — may use external LLMs
+n8n AI,framework,n8n,MEDIUM,Workflow automation with embedded AI agent builder
+Flowise,framework,flowise,HIGH,Visual LLM flow builder
+Superagent,framework,superagent,HIGH,Cloud-based agent framework
+
+# ── MCP — MODEL CONTEXT PROTOCOL ─────────────────────────────
+MCP Server,mcp,MCPServer,HIGH,MCP server implementation — check authorized_code.csv
+MCP Server Alt,mcp,mcp_server,HIGH,Alt naming pattern
+MCP stdio server,mcp,stdio_server,HIGH,Local MCP server via stdio transport
+MCP run,mcp,mcp.run(,HIGH,MCP server start pattern
+MCP tool call,mcp,use_mcp_tool,HIGH,Direct MCP tool invocation
+MCP call tool,mcp,call_tool(,HIGH,Generic MCP tool call pattern
+MCP import,mcp,from mcp import,HIGH,MCP Python SDK import
+MCP modelcontextprotocol,mcp,modelcontextprotocol,HIGH,Official MCP package
+MCP client,mcp,mcp.Client,HIGH,MCP client connection pattern
+Tool decorator,mcp,@function_tool,MEDIUM,OpenAI/MCP tool registration decorator
+Tool decorator alt,mcp,@tool,MEDIUM,Generic tool registration — may be MCP
+JSON-RPC MCP,mcp,jsonrpc.*tool,HIGH,JSON-RPC tool call pattern typical of MCP
+
+# ── CODE ASSISTANT TOOLS ──────────────────────────────────────
+Cursor AI,tool,cursor.sh,MEDIUM,Cursor AI code assistant — check if company licensed
+Cursor API,tool,api2.cursor.sh,MEDIUM,Cursor backend API
+Cline,tool,cline,MEDIUM,VS Code AI coding agent
+Roo Code,tool,roo-code,MEDIUM,AI coding agent
+Kilo Code,tool,kilo-code,MEDIUM,AI coding agent
+Aider,tool,aider,MEDIUM,AI pair programmer via terminal
+
+# ── IDE PLUGIN IDS (VS Code + JetBrains) ─────────────────────
+GitHub Copilot VSCode,ide_plugin,github.copilot,HIGH,VS Code Copilot extension
+GitHub Copilot Chat VSCode,ide_plugin,github.copilot-chat,HIGH,VS Code Copilot Chat
+Codeium VSCode,ide_plugin,codeium.codeium,HIGH,VS Code Codeium extension
+Tabnine VSCode,ide_plugin,tabnine.tabnine-vscode,HIGH,VS Code Tabnine extension
+Continue VSCode,ide_plugin,continue.continue,MEDIUM,Open-source AI coding agent
+Amazon Q VSCode,ide_plugin,aws.amazon-q-vscode,HIGH,Amazon Q Developer extension
+GitHub Copilot JetBrains,ide_plugin,com.github.copilot,HIGH,JetBrains Copilot plugin
+Codeium JetBrains,ide_plugin,com.codeium.intellij,HIGH,JetBrains Codeium plugin
+Tabnine JetBrains,ide_plugin,com.tabnine.intellij,HIGH,JetBrains Tabnine plugin
+
+# ── HARDCODED AI ENDPOINTS ────────────────────────────────────
+Hardcoded OpenAI,api,api.openai.com,CRITICAL,Hardcoded endpoint — must use Parameter Store key
+Hardcoded Anthropic,api,api.anthropic.com,CRITICAL,Hardcoded endpoint — must use Parameter Store key
+Hardcoded Cohere,api,api.cohere.ai,CRITICAL,Hardcoded endpoint
+Hardcoded Mistral,api,api.mistral.ai,CRITICAL,Hardcoded endpoint
+Hardcoded HuggingFace,api,api-inference.huggingface.co,CRITICAL,Hardcoded endpoint
+Hardcoded Together,api,api.together.xyz,CRITICAL,Hardcoded endpoint
+Hardcoded Replicate,api,api.replicate.com,CRITICAL,Hardcoded endpoint
+Hardcoded Groq,api,api.groq.com,CRITICAL,Hardcoded endpoint
+Hardcoded Perplexity,api,api.perplexity.ai,CRITICAL,Hardcoded endpoint
+Hardcoded Google AI,api,generativelanguage.googleapis.com,CRITICAL,Hardcoded Gemini endpoint
+
+# ── LOCAL INFERENCE SERVERS ───────────────────────────────────
+Ollama import,local,import ollama,HIGH,Ollama Python client — local model server
+Ollama from,local,from ollama,HIGH,Ollama Python client alt
+LM Studio SDK,local,lm_studio,HIGH,LM Studio SDK import
+Llama CPP Python,local,llama_cpp,HIGH,Local llama.cpp Python bindings
+GPT4All,local,gpt4all,HIGH,Local GPT4All model runner
+LocalAI,local,localai,HIGH,LocalAI server client
+
+# ── AI KEY PATTERNS ───────────────────────────────────────────
+OpenAI Key Hardcoded,key,sk-proj-,CRITICAL,Hardcoded OpenAI project key
+OpenAI Key Old,key,sk-[a-zA-Z0-9]{48},CRITICAL,Hardcoded OpenAI legacy key pattern
+Anthropic Key,key,sk-ant-,CRITICAL,Hardcoded Anthropic API key
+HuggingFace Token,key,hf_[a-zA-Z0-9]{36},CRITICAL,Hardcoded HuggingFace token
+Cohere Key,key,co-[a-zA-Z0-9]{40},CRITICAL,Hardcoded Cohere API key

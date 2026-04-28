@@ -1,0 +1,43 @@
+# =============================================================
+# .gitignore — marauder-scan-complete
+# NEVER commit credentials, keys, or generated configs
+# =============================================================
+.claude
+CLAUDE.md
+codecleanup.md
+WHY_FRAGMENTS_AND_WHERE.md
+patronai-spec.docx
+# ── SSH keys ─────────────────────────────────────────────────
+keys/
+*.pem
+
+# ── Generated credentials and configs ────────────────────────
+ghost-ai-scanner/.env
+ghost-ai-scanner/packetbeat.yml
+ghost-ai-scanner/agent/config.json
+ghost-ai-scanner/grafana/datasources/s3.json
+
+# ── Python ───────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.eggs/
+dist/
+build/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ── macOS ────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+
+# ── Logs ─────────────────────────────────────────────────────
+*.log
+
+# ── Terraform (if added later) ───────────────────────────────
+**/.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars

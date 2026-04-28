@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PatronAI — Operator Guide</title>
+<link rel="icon" type="image/png" href="ghost-ai-scanner/assets/branding/patronai-icon.png">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap');
+
+:root {
+  --bg:       #0D1117;
+  --surface:  #161B22;
+  --border:   #21262D;
+  --border2:  #30363D;
+  --text:     #C9D1D9;
+  --muted:    #8B949E;
+  --blue:     #1F6FEB;
+  --blue-lt:  #58A6FF;
+  --green:    #3FB950;
+  --orange:   #D29922;
+  --red:      #F85149;
+  --purple:   #BC8CFF;
+  --teal:     #39D353;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;line-height:1.7;}
+
+/* LAYOUT */
+.wrap{max-width:1100px;margin:0 auto;padding:40px 24px 80px;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+@media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr;}}
+
+/* HEADER */
+.hero{text-align:center;padding:60px 0 48px;}
+.hero-eyebrow{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--blue-lt);margin-bottom:14px;}
+.hero-title{font-size:42px;font-weight:600;color:#E6EDF3;letter-spacing:-0.02em;margin-bottom:10px;}
+.hero-sub{color:var(--muted);font-size:15px;max-width:560px;margin:0 auto;}
+.hero-meta{margin-top:20px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--border2);}
+.dot-pulse{display:inline-block;width:8px;height:8px;background:var(--green);border-radius:50%;margin-right:6px;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(63,185,80,0.4)}50%{box-shadow:0 0 0 6px rgba(63,185,80,0)}}
+
+/* NAV */
+.nav{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:48px;}
+.nav a{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:6px 18px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);text-decoration:none;letter-spacing:0.06em;transition:all 0.15s;}
+.nav a:hover{border-color:var(--blue);color:var(--blue-lt);}
+
+/* SECTION HEADERS */
+.section{margin-bottom:48px;}
+.section-label{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--blue);margin-bottom:6px;}
+.section-title{font-size:22px;font-weight:600;color:#E6EDF3;margin-bottom:6px;letter-spacing:-0.01em;}
+.section-desc{color:var(--muted);font-size:13px;margin-bottom:20px;}
+.divider{border:none;border-top:1px solid var(--border);margin:40px 0;}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px 22px;transition:border-color 0.15s;}
+.card:hover{border-color:var(--border2);}
+.card-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.card-title{font-size:15px;font-weight:600;color:#E6EDF3;margin-bottom:6px;}
+.card-body{font-size:13px;color:var(--muted);line-height:1.6;}
+.card.blue{border-color:rgba(31,111,235,0.3);background:rgba(31,111,235,0.04);}
+.card.green{border-color:rgba(63,185,80,0.3);background:rgba(63,185,80,0.04);}
+.card.orange{border-color:rgba(210,153,34,0.3);background:rgba(210,153,34,0.04);}
+.card.red{border-color:rgba(248,81,73,0.3);background:rgba(248,81,73,0.04);}
+.card.purple{border-color:rgba(188,140,255,0.3);background:rgba(188,140,255,0.04);}
+
+/* ROLE CARDS */
+.role-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.role-header{padding:16px 20px;border-bottom:1px solid var(--border);}
+.role-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;padding:3px 10px;border-radius:12px;margin-bottom:8px;}
+.role-name{font-size:16px;font-weight:600;color:#E6EDF3;}
+.role-desc{font-size:12px;color:var(--muted);margin-top:3px;}
+.role-body{padding:16px 20px;}
+.access-item{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;font-size:13px;}
+.access-item .icon{flex-shrink:0;margin-top:2px;}
+.access-yes{color:var(--green);}
+.access-no{color:var(--border2);}
+
+/* DATA FLOW SVG */
+.flow-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;overflow-x:auto;}
+
+/* STEPS */
+.steps{counter-reset:step;}
+.step{display:flex;gap:16px;margin-bottom:20px;align-items:flex-start;}
+.step-num{flex-shrink:0;width:28px;height:28px;background:var(--blue);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:#fff;}
+.step-content{flex:1;}
+.step-title{font-weight:600;color:#E6EDF3;font-size:14px;margin-bottom:4px;}
+.step-body{font-size:13px;color:var(--muted);}
+
+/* CODE BLOCKS */
+.code{background:#010409;border:1px solid var(--border);border-radius:8px;padding:16px 18px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#A5D6FF;overflow-x:auto;line-height:1.8;margin:10px 0;}
+.code .comment{color:var(--muted);}
+.code .cmd{color:var(--green);}
+.code .flag{color:var(--orange);}
+.code .val{color:var(--purple);}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;font-size:13px;}
+.tbl th{background:var(--surface);color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;padding:10px 14px;border-bottom:1px solid var(--border);text-align:left;font-weight:500;}
+.tbl td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:top;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tr:hover td{background:rgba(255,255,255,0.02);}
+.tbl-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin:12px 0;}
+
+/* BADGES */
+.badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.08em;padding:2px 8px;border-radius:4px;font-weight:600;text-transform:uppercase;}
+.badge-req{background:rgba(248,81,73,0.15);color:var(--red);border:1px solid rgba(248,81,73,0.25);}
+.badge-opt{background:rgba(139,148,158,0.1);color:var(--muted);border:1px solid rgba(139,148,158,0.2);}
+.badge-auto{background:rgba(63,185,80,0.12);color:var(--green);border:1px solid rgba(63,185,80,0.25);}
+.badge-cust{background:rgba(210,153,34,0.12);color:var(--orange);border:1px solid rgba(210,153,34,0.25);}
+
+/* CHECKLIST */
+.checklist{list-style:none;padding:0;}
+.checklist li{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.checklist li:last-child{border-bottom:none;}
+.checklist .check{width:16px;height:16px;border:1.5px solid var(--border2);border-radius:3px;flex-shrink:0;margin-top:2px;}
+.checklist .who{font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 6px;border-radius:3px;flex-shrink:0;margin-top:1px;}
+.who-support{background:rgba(31,111,235,0.15);color:var(--blue-lt);}
+.who-cust{background:rgba(210,153,34,0.12);color:var(--orange);}
+
+/* FOOTER */
+footer{text-align:center;padding:32px 0;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--border2);border-top:1px solid var(--border);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- HERO -->
+<div class="hero">
+  <div style="display:flex;justify-content:center;margin-bottom:18px;">
+    <img src="ghost-ai-scanner/assets/branding/patronai-logo.png" alt="PatronAI" style="max-width:320px;width:100%;height:auto;filter:drop-shadow(0 4px 24px rgba(31,111,235,0.25));">
+  </div>
+  <div class="hero-eyebrow"><span class="dot-pulse"></span>PatronAI · Operator Reference Guide</div>
+  <h1 class="hero-title">PatronAI</h1>
+  <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#BC8CFF;margin-bottom:8px;letter-spacing:0.1em;">PATRONAI — Framework · MCP · Agent · Key Detection</div>
+  <p class="hero-sub">Enterprise AI governance and security platform. Detects unauthorised AI tool usage across corporate networks and source code. PatronAI extends coverage to AI frameworks, MCP servers, agent patterns and hardcoded keys at git commit time.</p>
+  <div class="hero-meta">PatronAI &nbsp;·&nbsp; v1.1.0 &nbsp;·&nbsp; 2026-04-19 &nbsp;·&nbsp; CONFIDENTIAL</div>
+</div>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="#dataflow">Data Flow</a>
+  <a href="#roles">Who Sees What</a>
+  <a href="#raci">Work Split</a>
+  <a href="#configure">Configure</a>
+  <a href="#startup">Start Up</a>
+  <a href="#checklist">Checklist</a>
+  <a href="#gaps">Known Gaps</a>
+</nav>
+
+<!-- ══ DATA FLOW ══ -->
+<section class="section" id="dataflow">
+  <div class="section-label">Section 1</div>
+  <h2 class="section-title">How Data Flows</h2>
+  <p class="section-desc">From laptop to alert in under 5 minutes.</p>
+
+  <div class="flow-wrap">
+<svg viewBox="0 0 1040 480" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <marker id="arr" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto">
+    <polygon points="0 0,7 2.5,0 5" fill="#30363D"/>
+  </marker>
+  <marker id="arr-b" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto">
+    <polygon points="0 0,7 2.5,0 5" fill="#1F6FEB"/>
+  </marker>
+  <marker id="arr-g" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto">
+    <polygon points="0 0,7 2.5,0 5" fill="#3FB950"/>
+  </marker>
+  <marker id="arr-r" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto">
+    <polygon points="0 0,7 2.5,0 5" fill="#F85149"/>
+  </marker>
+</defs>
+
+<!-- ROW 1: SOURCES -->
+<!-- Laptop -->
+<rect x="10" y="30" width="130" height="64" rx="8" fill="#161B22" stroke="#21262D" stroke-width="1.5"/>
+<text x="75" y="54" text-anchor="middle" fill="#8B949E" font-size="9" font-family="JetBrains Mono" letter-spacing="1">EDGE</text>
+<text x="75" y="70" text-anchor="middle" fill="#E6EDF3" font-size="12" font-family="DM Sans" font-weight="600">Laptops</text>
+<text x="75" y="84" text-anchor="middle" fill="#8B949E" font-size="9" font-family="JetBrains Mono">Network sensor + Agent</text>
+
+<!-- Cloud Workloads -->
+<rect x="160" y="30" width="130" height="64" rx="8" fill="#161B22" stroke="#21262D" stroke-width="1.5"/>
+<text x="225" y="54" text-anchor="middle" fill="#8B949E" font-size="9" font-family="JetBrains Mono" letter-spacing="1">CLOUD</text>
+<text x="225" y="70" text-anchor="middle" fill="#E6EDF3" font-size="12" font-family="DM Sans" font-weight="600">Cloud Workloads</text>
+<text x="225" y="84" text-anchor="middle" fill="#8B949E" font-size="9" font-family="JetBrains Mono">Network flow logs</text>
+
+<!-- Zeek -->
+<rect x="310" y="30" width="130" height="64" rx="8" fill="#161B22" stroke="#21262D" stroke-width="1.5"/>
+<text x="375" y="54" text-anchor="middle" fill="#8B949E" font-size="9" font-family="JetBrains Mono" letter-spacing="1">PERIMETER</text>
+<text x="375" y="70" text-anchor="middle" fill="#E6EDF3" font-size="12" font-family="DM Sans" font-weight="600">Zeek (BSD)</text>
+<text x="375" y="84" text-anchor="middle" fill="#8B949E" font-size="9" font-family="JetBrains Mono">Passive tap</text>
+
+<!-- NAC -->
+<rect x="460" y="30" width="130" height="64" rx="8" fill="#161B22" stroke="#21262D" stroke-width="1.5"/>
+<text x="525" y="54" text-anchor="middle" fill="#8B949E" font-size="9" font-family="JetBrains Mono" letter-spacing="1">IDENTITY</text>
+<text x="525" y="70" text-anchor="middle" fill="#E6EDF3" font-size="12" font-family="DM Sans" font-weight="600">NAC / SSO</text>
+<text x="525" y="84" text-anchor="middle" fill="#8B949E" font-size="9" font-family="JetBrains Mono">IP → User mapping</text>
+
+<!-- Firewall -->
+<rect x="610" y="30" width="130" height="64" rx="8" fill="#161B22" stroke="#21262D" stroke-width="1.5"/>
+<text x="675" y="54" text-anchor="middle" fill="#8B949E" font-size="9" font-family="JetBrains Mono" letter-spacing="1">NETWORK</text>
+<text x="675" y="70" text-anchor="middle" fill="#E6EDF3" font-size="12" font-family="DM Sans" font-weight="600">Firewall Logs</text>
+<text x="675" y="84" text-anchor="middle" fill="#8B949E" font-size="9" font-family="JetBrains Mono">DNS + connections</text>
+
+<!-- Git -->
+<rect x="760" y="30" width="130" height="64" rx="8" fill="#161B22" stroke="#21262D" stroke-width="1.5"/>
+<text x="825" y="54" text-anchor="middle" fill="#8B949E" font-size="9" font-family="JetBrains Mono" letter-spacing="1">CODE</text>
+<text x="825" y="70" text-anchor="middle" fill="#E6EDF3" font-size="12" font-family="DM Sans" font-weight="600">Git Scanner</text>
+<text x="825" y="84" text-anchor="middle" fill="#8B949E" font-size="9" font-family="JetBrains Mono">GitLeaks / Trufflehog</text>
+
+<!-- Arrows to OCSF -->
+<line x1="75"  y1="94" x2="200" y2="158" stroke="#30363D" stroke-width="1.5" marker-end="url(#arr)"/>
+<line x1="225" y1="94" x2="310" y2="158" stroke="#30363D" stroke-width="1.5" marker-end="url(#arr)"/>
+<line x1="375" y1="94" x2="380" y2="158" stroke="#30363D" stroke-width="1.5" marker-end="url(#arr)"/>
+<line x1="525" y1="94" x2="450" y2="158" stroke="#30363D" stroke-width="1.5" marker-end="url(#arr)"/>
+<line x1="675" y1="94" x2="550" y2="158" stroke="#30363D" stroke-width="1.5" marker-end="url(#arr)"/>
+
+<!-- ROW 2: OCSF NORMALISER -->
+<rect x="130" y="158" width="540" height="50" rx="8" fill="#161B22" stroke="#1F6FEB" stroke-width="1.5" stroke-dasharray="5,3"/>
+<text x="400" y="180" text-anchor="middle" fill="#1F6FEB" font-size="9" font-family="JetBrains Mono" letter-spacing="1.5">OCSF NORMALISER</text>
+<text x="400" y="196" text-anchor="middle" fill="#8B949E" font-size="10" font-family="DM Sans">3 format parsers → flat universal JSON schema · class_uid 4001</text>
+
+<!-- Arrow to S3 -->
+<line x1="400" y1="208" x2="400" y2="238" stroke="#1F6FEB" stroke-width="1.5" marker-end="url(#arr-b)"/>
+
+<!-- ROW 3: S3 BUCKET -->
+<rect x="60" y="238" width="680" height="56" rx="8" fill="#161B22" stroke="#D29922" stroke-width="1.5" stroke-dasharray="5,3"/>
+<text x="400" y="260" text-anchor="middle" fill="#D29922" font-size="9" font-family="JetBrains Mono" letter-spacing="1.5">S3 BUCKET — SINGLE SOURCE OF TRUTH</text>
+<text x="400" y="278" text-anchor="middle" fill="#8B949E" font-size="10" font-family="DM Sans">config/ · ocsf/ · findings/ · summary/ · cursor/ · dedup/ · identity/ · reports/</text>
+
+<!-- Scanner reads S3 -->
+<line x1="300" y1="294" x2="220" y2="340" stroke="#3FB950" stroke-width="1.5" marker-end="url(#arr-g)"/>
+<!-- Metrics Dash reads S3 -->
+<line x1="500" y1="294" x2="580" y2="340" stroke="#1F6FEB" stroke-width="1.5" marker-end="url(#arr-b)"/>
+<!-- User Interface reads S3 -->
+<line x1="650" y1="294" x2="810" y2="340" stroke="#BC8CFF" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr)"/>
+
+<!-- ROW 4: SCANNER + METRICS DASH + USER INTERFACE -->
+<!-- Scanner -->
+<rect x="60" y="340" width="320" height="70" rx="8" fill="#161B22" stroke="#3FB950" stroke-width="1.5"/>
+<text x="220" y="360" text-anchor="middle" fill="#8B949E" font-size="9" font-family="JetBrains Mono" letter-spacing="1">FARGATE SERVICE 1</text>
+<text x="220" y="376" text-anchor="middle" fill="#E6EDF3" font-size="12" font-family="DM Sans" font-weight="600">PatronAI</text>
+<text x="220" y="391" text-anchor="middle" fill="#8B949E" font-size="10" font-family="DM Sans">Ingest · Match · Alert · Summarize · Report</text>
+<text x="220" y="403" text-anchor="middle" fill="#3FB950" font-size="9" font-family="JetBrains Mono">+ PatronAI User Interface</text>
+
+<!-- PatronAI Metrics Dash -->
+<rect x="400" y="340" width="230" height="70" rx="8" fill="#161B22" stroke="#1F6FEB" stroke-width="1.5"/>
+<text x="515" y="360" text-anchor="middle" fill="#8B949E" font-size="9" font-family="JetBrains Mono" letter-spacing="1">FARGATE SERVICE 2</text>
+<text x="515" y="376" text-anchor="middle" fill="#E6EDF3" font-size="12" font-family="DM Sans" font-weight="600">PatronAI Metrics Dash</text>
+<text x="515" y="391" text-anchor="middle" fill="#58A6FF" font-size="10" font-family="DM Sans">Exec + Manager Dashboards</text>
+<text x="515" y="403" text-anchor="middle" fill="#8B949E" font-size="9" font-family="JetBrains Mono">Pre-built · Auto-scales 1-5</text>
+
+<!-- PatronAI User Interface read label -->
+<rect x="650" y="340" width="190" height="70" rx="8" fill="#161B22" stroke="#BC8CFF" stroke-width="1.5" stroke-dasharray="5,3"/>
+<text x="745" y="360" text-anchor="middle" fill="#8B949E" font-size="9" font-family="JetBrains Mono" letter-spacing="1">SETTINGS ONLY</text>
+<text x="745" y="376" text-anchor="middle" fill="#E6EDF3" font-size="12" font-family="DM Sans" font-weight="600">PatronAI User Interface</text>
+<text x="745" y="391" text-anchor="middle" fill="#8B949E" font-size="10" font-family="DM Sans">SecOps config panel</text>
+<text x="745" y="403" text-anchor="middle" fill="#BC8CFF" font-size="9" font-family="JetBrains Mono">Saves settings to tenant storage</text>
+
+<!-- Scanner → alerts -->
+<line x1="220" y1="410" x2="110" y2="448" stroke="#F85149" stroke-width="1.5" marker-end="url(#arr-r)"/>
+<line x1="250" y1="410" x2="270" y2="448" stroke="#F85149" stroke-width="1.5" marker-end="url(#arr-r)"/>
+<!-- Metrics Dash → LogAnalyzer -->
+<line x1="515" y1="410" x2="515" y2="448" stroke="#D29922" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr)"/>
+
+<!-- ROW 5: OUTPUTS -->
+<rect x="10" y="448" width="140" height="28" rx="5" fill="#161B22" stroke="#F85149" stroke-width="1"/>
+<text x="80" y="466" text-anchor="middle" fill="#F85149" font-size="10" font-family="JetBrains Mono">SNS Alert</text>
+
+<rect x="160" y="448" width="160" height="28" rx="5" fill="#161B22" stroke="#F85149" stroke-width="1"/>
+<text x="240" y="466" text-anchor="middle" fill="#F85149" font-size="10" font-family="JetBrains Mono">Trinity Incident</text>
+
+<rect x="390" y="448" width="260" height="28" rx="5" fill="#161B22" stroke="#D29922" stroke-width="1" stroke-dasharray="4,3"/>
+<text x="520" y="466" text-anchor="middle" fill="#D29922" font-size="10" font-family="JetBrains Mono">LogAnalyzer (on-demand referral)</text>
+
+<rect x="660" y="448" width="150" height="28" rx="5" fill="#161B22" stroke="#3FB950" stroke-width="1"/>
+<text x="735" y="466" text-anchor="middle" fill="#3FB950" font-size="10" font-family="JetBrains Mono">PDF Report</text>
+
+<rect x="820" y="448" width="120" height="28" rx="5" fill="#161B22" stroke="#BC8CFF" stroke-width="1"/>
+<text x="880" y="466" text-anchor="middle" fill="#BC8CFF" font-size="10" font-family="JetBrains Mono">AIRTaaS</text>
+</svg>
+  </div>
+
+  <div class="grid-3" style="margin-top:16px;">
+    <div class="card blue">
+      <div class="card-label">Detection time</div>
+      <div class="card-title">Under 5 minutes</div>
+      <div class="card-body">From first network call to alert in SNS and Trinity. Scan cycle default 300 seconds.</div>
+    </div>
+    <div class="card green">
+      <div class="card-label">Memory footprint</div>
+      <div class="card-title">Under 200MB</div>
+      <div class="card-body">Polars lazy evaluation and S3 Select push-down. Never loads full log files into memory.</div>
+    </div>
+    <div class="card orange">
+      <div class="card-label">S3 at 10K devices</div>
+      <div class="card-title">~75MB hot storage</div>
+      <div class="card-body">With the network sensor domain filter enabled. 30-day hot then archive lifecycle rule applied.</div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ══ WHO SEES WHAT ══ -->
+<section class="section" id="roles">
+  <div class="section-label">Section 2</div>
+  <h2 class="section-title">Who Sees What</h2>
+  <p class="section-desc">Five personas. Two dashboards. One settings panel. The Platform Admin configures once; SecOps operates; End Users do nothing.</p>
+
+  <!-- Row 1: Platform builder + Operators -->
+  <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin:6px 0 10px;">Builders &amp; Operators</div>
+  <div class="grid-3">
+
+    <!-- Platform Admin (Company AWS account holder) -->
+    <div class="role-card">
+      <div class="role-header">
+        <div class="role-badge" style="background:rgba(188,140,255,0.12);color:#BC8CFF;border:1px solid rgba(188,140,255,0.25);">Company Platform</div>
+        <div class="role-name">Platform Admin</div>
+        <div class="role-desc">Owns the Company's PatronAI deployment — AWS IAM, Marketplace subscription, rule updates, agent rollout</div>
+      </div>
+      <div class="role-body">
+        <div class="access-item"><span class="icon access-yes">✓</span> AWS account IAM and Marketplace subscription</div>
+        <div class="access-item"><span class="icon access-yes">✓</span> Approves and deploys PatronAI rule updates</div>
+        <div class="access-item"><span class="icon access-yes">✓</span> Manages agent rollout and MDM integration</div>
+        <div class="access-item"><span class="icon access-yes">✓</span> Infrastructure-as-code apply in the tenant account</div>
+        <div class="access-item"><span class="icon access-yes">✓</span> Budget, tagging, cost allocation</div>
+        <div class="access-item"><span class="icon access-yes">✓</span> PatronAI User Interface — full admin access</div>
+        <div class="access-item"><span class="icon access-yes">✓</span> Read-only view of all dashboards (governance)</div>
+        <div class="access-item"><span class="icon access-no">✗</span> Daily alert triage (delegated to SecOps Manager)</div>
+        <div class="access-item"><span class="icon access-no">✗</span> Per-alert investigation (delegated to SecOps Manager)</div>
+        <div style="margin-top:12px;background:#010409;border-radius:6px;padding:10px 12px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#8B949E;">
+          Works in: <span style="color:#BC8CFF">Company AWS account</span><br>
+          Role: <span style="color:#BC8CFF">platform-admin</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Manager -->
+    <div class="role-card">
+      <div class="role-header">
+        <div class="role-badge" style="background:rgba(248,81,73,0.12);color:#F85149;border:1px solid rgba(248,81,73,0.25);">SecOps / Manager</div>
+        <div class="role-name">SecOps Manager</div>
+        <div class="role-desc">Security operations — alert triage, dashboard review, user escalation</div>
+      </div>
+      <div class="role-body">
+        <div class="access-item"><span class="icon access-yes">✓</span> PatronAI Metrics Dash — Manager view</div>
+        <div class="access-item"><span class="icon access-yes">✓</span> Asset Inventory — all devices, MAC, geo</div>
+        <div class="access-item"><span class="icon access-yes">✓</span> Risk Alerts — open alerts, bulk actions</div>
+        <div class="access-item"><span class="icon access-yes">✓</span> Log View — raw OCSF, filters, export CSV</div>
+        <div class="access-item"><span class="icon access-yes">✓</span> Pipeline Health — scan lag, SNS log</div>
+        <div class="access-item"><span class="icon access-yes">✓</span> PatronAI User Interface — full admin access</div>
+        <div class="access-item"><span class="icon access-yes">✓</span> Backfill + Force Rescan + Refresh Now</div>
+        <div class="access-item"><span class="icon access-yes">✓</span> Provider list editor</div>
+        <div class="access-item"><span class="icon access-yes">✓</span> LogAnalyzer referral button</div>
+        <div style="margin-top:12px;background:#010409;border-radius:6px;padding:10px 12px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#8B949E;">
+          Access via: <span style="color:#58A6FF">PatronAI Metrics Dash</span> + <span style="color:#BC8CFF">PatronAI User Interface</span><br>
+          Role: <span style="color:#F85149">admin</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Platform Owner -->
+    <div class="role-card">
+      <div class="role-header">
+        <div class="role-badge" style="background:rgba(63,185,80,0.12);color:#3FB950;border:1px solid rgba(63,185,80,0.25);">Support Team</div>
+        <div class="role-name">Support Team</div>
+        <div class="role-desc">Full platform access, deployment, configuration, red team</div>
+      </div>
+      <div class="role-body">
+        <div class="access-item"><span class="icon access-yes">✓</span> All of the above</div>
+        <div class="access-item"><span class="icon access-yes">✓</span> Platform infrastructure stand-up &amp; upgrades</div>
+        <div class="access-item"><span class="icon access-yes">✓</span> Backend log and storage access for troubleshooting</div>
+        <div class="access-item"><span class="icon access-yes">✓</span> Provider denylist maintenance</div>
+        <div class="access-item"><span class="icon access-yes">✓</span> AIRTaaS red team coordination</div>
+        <div class="access-item"><span class="icon access-yes">✓</span> Trinity incident console integration</div>
+        <div style="margin-top:12px;background:#010409;border-radius:6px;padding:10px 12px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#8B949E;">
+          Access via: All channels<br>
+          Role: <span style="color:#3FB950">platform-owner</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Row 2: Consumers & Targets -->
+  <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin:24px 0 10px;">Consumers &amp; Detection Targets</div>
+  <div class="grid-2">
+
+    <!-- Exec -->
+    <div class="role-card">
+      <div class="role-header">
+        <div class="role-badge" style="background:rgba(31,111,235,0.15);color:#58A6FF;border:1px solid rgba(31,111,235,0.25);">CISO / VP Security</div>
+        <div class="role-name">Security Executive</div>
+        <div class="role-desc">CISO / VP Security — AI governance, risk reporting, board-level visibility</div>
+      </div>
+      <div class="role-body">
+        <div class="access-item"><span class="icon access-yes">✓</span> PatronAI Metrics Dash — Exec view</div>
+        <div class="access-item"><span class="icon access-yes">✓</span> AI Landscape — world map, bubble chart, topology</div>
+        <div class="access-item"><span class="icon access-yes">✓</span> Risk Heatmap — dept × severity, top offenders</div>
+        <div class="access-item"><span class="icon access-yes">✓</span> Data Exposure — Sankey, incident timeline</div>
+        <div class="access-item"><span class="icon access-yes">✓</span> Refresh Now button</div>
+        <div class="access-item"><span class="icon access-yes">✓</span> PDF report download</div>
+        <div class="access-item"><span class="icon access-no">✗</span> Scanner settings form</div>
+        <div class="access-item"><span class="icon access-no">✗</span> Backfill / Force Rescan</div>
+        <div class="access-item"><span class="icon access-no">✗</span> Provider list editor</div>
+        <div style="margin-top:12px;background:#010409;border-radius:6px;padding:10px 12px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#8B949E;">
+          Access via: <span style="color:#58A6FF">PatronAI Metrics Dash</span><br>
+          Role: <span style="color:#3FB950">viewer</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Marketing / Ops End User -->
+    <div class="role-card">
+      <div class="role-header">
+        <div class="role-badge" style="background:rgba(210,153,34,0.12);color:#D29922;border:1px solid rgba(210,153,34,0.25);">End User · Detection Target</div>
+        <div class="role-name">Marketing / Ops User</div>
+        <div class="role-desc">Runs n8n, Flowise, sim.ai, Lovable on a managed laptop. The agent watches; the user does nothing.</div>
+      </div>
+      <div class="role-body">
+        <div class="access-item"><span class="icon access-yes">✓</span> Clicks <em>Allow</em> once at MDM enrollment</div>
+        <div class="access-item"><span class="icon access-yes">✓</span> Continues normal work — no UI, no menu bar nag</div>
+        <div class="access-item"><span class="icon access-no">✗</span> No dashboard access</div>
+        <div class="access-item"><span class="icon access-no">✗</span> No Terminal, no <code style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#D29922">sudo</code>, no settings</div>
+        <div class="access-item"><span class="icon access-no">✗</span> Not notified when their device is flagged</div>
+        <div class="access-item"><span class="icon access-no">✗</span> Cannot disable the agent (root-owned config)</div>
+        <div style="margin-top:12px;background:#010409;border-radius:6px;padding:10px 12px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#8B949E;">
+          Touches: <span style="color:#D29922">one Allow prompt, then nothing</span><br>
+          Role: <span style="color:#D29922">none — passive subject</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Access matrix table -->
+  <div class="tbl-wrap" style="margin-top:20px;">
+    <table class="tbl">
+      <thead><tr><th>Feature</th><th>Sec Exec</th><th>SecOps Mgr</th><th>Support Team</th></tr></thead>
+      <tbody>
+        <tr><td>PatronAI Metrics Dash — Exec</td><td style="color:var(--green)">✓</td><td style="color:var(--green)">✓</td><td style="color:var(--green)">✓</td></tr>
+        <tr><td>PatronAI Metrics Dash — Manager</td><td style="color:var(--border2)">—</td><td style="color:var(--green)">✓</td><td style="color:var(--green)">✓</td></tr>
+        <tr><td>PatronAI User Interface</td><td style="color:var(--border2)">—</td><td style="color:var(--green)">✓ admin</td><td style="color:var(--green)">✓ admin</td></tr>
+        <tr><td>PDF Report Download</td><td style="color:var(--green)">✓</td><td style="color:var(--green)">✓</td><td style="color:var(--green)">✓</td></tr>
+        <tr><td>Refresh Now</td><td style="color:var(--green)">✓</td><td style="color:var(--green)">✓</td><td style="color:var(--green)">✓</td></tr>
+        <tr><td>Backfill / Force Rescan</td><td style="color:var(--border2)">—</td><td style="color:var(--green)">✓</td><td style="color:var(--green)">✓</td></tr>
+        <tr><td>Provider list editor</td><td style="color:var(--border2)">—</td><td style="color:var(--green)">✓</td><td style="color:var(--green)">✓</td></tr>
+        <tr><td>LogAnalyzer referral</td><td style="color:var(--green)">✓</td><td style="color:var(--green)">✓</td><td style="color:var(--green)">✓</td></tr>
+        <tr><td>Raw OCSF log export</td><td style="color:var(--border2)">—</td><td style="color:var(--green)">✓</td><td style="color:var(--green)">✓</td></tr>
+        <tr><td>S3 direct access</td><td style="color:var(--border2)">—</td><td style="color:var(--border2)">—</td><td style="color:var(--green)">✓</td></tr>
+        <tr><td>Provider denylist maintenance</td><td style="color:var(--border2)">—</td><td style="color:var(--border2)">—</td><td style="color:var(--green)">✓</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ══ WORK SPLIT (RACI) ══ -->
+<section class="section" id="raci">
+  <div class="section-label">Section 3</div>
+  <h2 class="section-title">How Work Splits Across Personas</h2>
+  <p class="section-desc">Who actually does what across the platform lifecycle. Read top-to-bottom: from build, through ship, through daily operation. Buyers ask "what's our cost of ownership?" — the right column answers it.</p>
+
+  <div class="tbl-wrap">
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th style="width:24%;">Activity</th>
+          <th style="text-align:center;color:#BC8CFF;">Platform Admin<br><span style="font-size:9px;letter-spacing:0.06em;color:var(--muted);">tenant admin</span></th>
+          <th style="text-align:center;color:#3FB950;">Support<br><span style="font-size:9px;letter-spacing:0.06em;color:var(--muted);">platform owner</span></th>
+          <th style="text-align:center;color:#F85149;">SecOps Manager<br><span style="font-size:9px;letter-spacing:0.06em;color:var(--muted);">manager view</span></th>
+          <th style="text-align:center;color:#58A6FF;">Security Executive<br><span style="font-size:9px;letter-spacing:0.06em;color:var(--muted);">exec / CISO view</span></th>
+          <th style="text-align:center;color:#D29922;">End User<br><span style="font-size:9px;letter-spacing:0.06em;color:var(--muted);">Marketing / Ops</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Detection engineering &amp; new tool support</td>
+          <td style="text-align:center;color:var(--green);font-weight:600;">Owns</td>
+          <td style="text-align:center;color:var(--muted);">Helps</td>
+          <td style="text-align:center;color:var(--border2);">—</td>
+          <td style="text-align:center;color:var(--border2);">—</td>
+          <td style="text-align:center;color:var(--border2);">—</td>
+        </tr>
+        <tr>
+          <td>Weekly denylist updates pushed to S3</td>
+          <td style="text-align:center;color:var(--green);font-weight:600;">Owns</td>
+          <td style="text-align:center;color:var(--border2);">—</td>
+          <td style="text-align:center;color:var(--blue-lt);">Informed</td>
+          <td style="text-align:center;color:var(--border2);">—</td>
+          <td style="text-align:center;color:var(--border2);">—</td>
+        </tr>
+        <tr>
+          <td>Sign &amp; notarise agent DMG / EXE / deb</td>
+          <td style="text-align:center;color:var(--green);font-weight:600;">Owns</td>
+          <td style="text-align:center;color:var(--border2);">—</td>
+          <td style="text-align:center;color:var(--border2);">—</td>
+          <td style="text-align:center;color:var(--border2);">—</td>
+          <td style="text-align:center;color:var(--border2);">—</td>
+        </tr>
+        <tr>
+          <td>Platform stand-up in the customer's cloud account</td>
+          <td style="text-align:center;color:var(--border2);">—</td>
+          <td style="text-align:center;color:var(--green);font-weight:600;">Owns</td>
+          <td style="text-align:center;color:var(--blue-lt);">Informed</td>
+          <td style="text-align:center;color:var(--border2);">—</td>
+          <td style="text-align:center;color:var(--border2);">—</td>
+        </tr>
+        <tr>
+          <td>Agent packaging &amp; fleet-wide rollout to managed devices</td>
+          <td style="text-align:center;color:var(--muted);">Helps</td>
+          <td style="text-align:center;color:var(--muted);">Helps</td>
+          <td style="text-align:center;color:var(--green);font-weight:600;">Owns</td>
+          <td style="text-align:center;color:var(--blue-lt);">Informed</td>
+          <td style="text-align:center;color:var(--border2);">—</td>
+        </tr>
+        <tr>
+          <td>One-time MDM "Allow" click on the device</td>
+          <td style="text-align:center;color:var(--border2);">—</td>
+          <td style="text-align:center;color:var(--border2);">—</td>
+          <td style="text-align:center;color:var(--border2);">—</td>
+          <td style="text-align:center;color:var(--border2);">—</td>
+          <td style="text-align:center;color:var(--green);font-weight:600;">Owns</td>
+        </tr>
+        <tr>
+          <td>Daily monitoring of Manager dashboard</td>
+          <td style="text-align:center;color:var(--border2);">—</td>
+          <td style="text-align:center;color:var(--muted);">Helps</td>
+          <td style="text-align:center;color:var(--green);font-weight:600;">Owns</td>
+          <td style="text-align:center;color:var(--blue-lt);">Informed</td>
+          <td style="text-align:center;color:var(--border2);">—</td>
+        </tr>
+        <tr>
+          <td>Alert investigation &amp; user escalation</td>
+          <td style="text-align:center;color:var(--border2);">—</td>
+          <td style="text-align:center;color:var(--muted);">Helps</td>
+          <td style="text-align:center;color:var(--green);font-weight:600;">Owns</td>
+          <td style="text-align:center;color:var(--blue-lt);">Informed</td>
+          <td style="text-align:center;color:var(--border2);">—</td>
+        </tr>
+        <tr>
+          <td>Weekly Exec dashboard review</td>
+          <td style="text-align:center;color:var(--border2);">—</td>
+          <td style="text-align:center;color:var(--border2);">—</td>
+          <td style="text-align:center;color:var(--blue-lt);">Informed</td>
+          <td style="text-align:center;color:var(--green);font-weight:600;">Owns</td>
+          <td style="text-align:center;color:var(--border2);">—</td>
+        </tr>
+        <tr>
+          <td>Quarterly board reporting</td>
+          <td style="text-align:center;color:var(--border2);">—</td>
+          <td style="text-align:center;color:var(--border2);">—</td>
+          <td style="text-align:center;color:var(--muted);">Helps</td>
+          <td style="text-align:center;color:var(--green);font-weight:600;">Owns</td>
+          <td style="text-align:center;color:var(--border2);">—</td>
+        </tr>
+        <tr>
+          <td>Red-team validation (AIRTaaS partner)</td>
+          <td style="text-align:center;color:var(--muted);">Helps</td>
+          <td style="text-align:center;color:var(--green);font-weight:600;">Owns</td>
+          <td style="text-align:center;color:var(--blue-lt);">Informed</td>
+          <td style="text-align:center;color:var(--blue-lt);">Informed</td>
+          <td style="text-align:center;color:var(--border2);">—</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="grid-2" style="margin-top:20px;">
+    <div class="card blue">
+      <div class="card-label">Why this matters</div>
+      <div class="card-title">Total cost of ownership for the customer is near-zero</div>
+      <div class="card-body">After the one-time install, the SecOps Manager spends ~10 min/day on alerts; the Security Executive spends ~5 min/week on the dashboard; End Users do nothing. PatronAI's rules engine absorbs the detection engineering — new AI tools (Google Opal, sim.ai, the next thing) get added to the central denylist and pushed to every deployed agent within 6 hours via the Marketplace rules channel.</div>
+    </div>
+    <div class="card purple">
+      <div class="card-label">How rules updates flow</div>
+      <div class="card-title">DMG ships once. Rules update silently every 6 hours.</div>
+      <div class="card-body">The agent binary is signed and changes only quarterly. Detection rules (the provider denylist and the AI image catalogue) arrive via the PatronAI Marketplace rules channel, sync into your tenant storage, and are cryptographically signed so the agent trusts only authentic updates. No redeployment. No Company action. No user disruption.</div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ══ CONFIGURE ══ -->
+<section class="section" id="configure">
+  <div class="section-label">Section 4</div>
+  <h2 class="section-title">What You Can Configure</h2>
+  <p class="section-desc">Everything below lives in the PatronAI User Interface. No config files. No restarts. Changes go live within one scan cycle.</p>
+
+  <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>Setting</th><th>Who owns it</th><th>Default</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td>Tenant storage location</td><td><span class="badge badge-req">Platform Admin</span></td><td>—</td><td>Cloud account and region where your PatronAI data lives. Set once at onboarding.</td></tr>
+        <tr><td>Cloud provider</td><td><span class="badge badge-opt">Platform Admin</span></td><td>AWS</td><td>AWS · GCP · Azure. Determines which telemetry adapter PatronAI uses.</td></tr>
+        <tr><td>Team sign-in list</td><td><span class="badge badge-req">Platform Admin</span></td><td>—</td><td>Who can sign in and see the dashboards. Edited via the Users screen.</td></tr>
+        <tr><td>Admin users</td><td><span class="badge badge-req">Platform Admin</span></td><td>—</td><td>Subset of the team who can change settings and approve endpoints.</td></tr>
+        <tr><td>Alert email channel</td><td><span class="badge badge-opt">SecOps Manager</span></td><td>—</td><td>Where alerts land. Toggle distribution lists or send to an on-call rotation.</td></tr>
+        <tr><td>Trinity incident routing</td><td><span class="badge badge-opt">SecOps Manager</span></td><td>off</td><td>When on, every high-severity alert also opens a Trinity incident automatically.</td></tr>
+        <tr><td>Scan interval</td><td><span class="badge badge-opt">SecOps Manager</span></td><td>5 minutes</td><td>How often PatronAI checks for new AI traffic. Minimum one minute.</td></tr>
+        <tr><td>Alert dedup window</td><td><span class="badge badge-opt">SecOps Manager</span></td><td>60 minutes</td><td>Prevents the same user + provider pair from alerting more than once per window.</td></tr>
+        <tr><td>Endpoint protection enabled</td><td><span class="badge badge-opt">SecOps Manager</span></td><td>off</td><td>Confirms CrowdStrike (or equivalent) is live. Removes the "endpoint gap" banner.</td></tr>
+        <tr><td>Admin password</td><td><span class="badge badge-req">Platform Admin</span></td><td>change-me</td><td>Admin password for the Metrics Dash. Must be changed before first use.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div style="margin-top:20px;">
+    <div class="section-label">Settings tabs in the PatronAI User Interface</div>
+    <div class="grid-3" style="margin-top:10px;">
+      <div class="card">
+        <div class="card-label">Scanning</div>
+        <div class="card-body">Scan interval · Dedup window · Max files per cycle · Lookback window</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Alerting</div>
+        <div class="card-body">Email channel · Trinity webhook · LogAnalyzer webhook · Dedup window</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Identity</div>
+        <div class="card-body">Priority order · SSO directory · LDAP source · Endpoint protection toggle</div>
+      </div>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin-top:10px;">Every change is versioned. Active within one scan cycle. No downtime, no restart.</p>
+  </div>
+
+  <div style="margin-top:20px;">
+    <div class="section-label">Two provider lists drive every decision</div>
+    <div class="grid-2" style="margin-top:10px;">
+      <div class="card orange">
+        <div class="card-label">Denylist</div>
+        <div class="card-title">All known AI providers — blocked by default</div>
+        <div class="card-body">70+ AI providers. Maintained by PatronAI and pushed to every tenant through the Marketplace rules channel. You cannot edit this — you inherit improvements automatically.</div>
+      </div>
+      <div class="card green">
+        <div class="card-label">Allow list</div>
+        <div class="card-title">Your approved AI endpoints</div>
+        <div class="card-body">Ships empty. You (SecOps Manager or Platform Admin) add your internal gateways, Trinity proxy, or sanctioned SaaS endpoints. Edited inline in the User Interface — no file upload.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ══ START UP ══ -->
+<section class="section" id="startup">
+  <div class="section-label">Section 5</div>
+  <h2 class="section-title">Your First Day on PatronAI</h2>
+  <p class="section-desc">What you see when PatronAI is live in your company. The Platform Admin and Support Team handle the behind-the-scenes plumbing — you arrive at a working platform.</p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <div class="step-title">You receive a welcome email</div>
+        <div class="step-body">Your Platform Admin invites you into PatronAI. The email contains your sign-in link and role (Security Executive, SecOps Manager, or Support). Click the link to set your password.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <div class="step-title">You confirm your alert email</div>
+        <div class="step-body">A separate one-time message asks you to confirm delivery of PatronAI alerts to your inbox. One click. After this, new-AI detections arrive directly in your email as they happen.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <div class="step-title">You sign in to PatronAI Metrics Dash</div>
+        <div class="step-body">Your landing page depends on your role. A Security Executive lands on the Exec view — world map, risk heatmap, data-exposure timeline. A SecOps Manager lands on the Manager view — asset inventory, open alerts, pipeline health. Everything is populated with your own environment's data — no empty starter state.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <div class="step-title">You open the PatronAI User Interface</div>
+        <div class="step-body">SecOps Managers and the Platform Admin have a second tab — the User Interface — for day-to-day controls. Review the provider denylist, approve internal AI endpoints, trigger a rescan, or export OCSF logs. No commands. No config files. Everything is a button or a form.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-content">
+        <div class="step-title">Alerts begin arriving</div>
+        <div class="step-body">Within the first scan cycle (default five minutes), PatronAI begins surfacing unauthorised AI tool usage across your network and source code. Alerts appear in three places at once: the Metrics Dash, your email inbox, and — if wired — your Trinity incident console. You triage from whichever surface you prefer.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Day-to-day actions -->
+  <div style="margin-top:24px;">
+    <div class="section-label">Day-to-day actions — all from the UI</div>
+    <div class="tbl-wrap" style="margin-top:10px;">
+      <table class="tbl">
+        <thead><tr><th>What you want to do</th><th>Where you do it</th></tr></thead>
+        <tbody>
+          <tr><td>See today's alerts at a glance</td><td>PatronAI Metrics Dash → Manager view → Risk Alerts</td></tr>
+          <tr><td>Force a rescan now instead of waiting</td><td>PatronAI User Interface → Force Rescan</td></tr>
+          <tr><td>Refresh executive summary on demand</td><td>PatronAI User Interface → Refresh Now</td></tr>
+          <tr><td>Approve an internal AI endpoint</td><td>PatronAI User Interface → Authorized list → Add row</td></tr>
+          <tr><td>Export raw OCSF logs for your SIEM</td><td>PatronAI Metrics Dash → Log View → Export CSV</td></tr>
+          <tr><td>Download the board-level PDF report</td><td>PatronAI Metrics Dash → Exec view → Download Report</td></tr>
+          <tr><td>Invite or remove a teammate</td><td>PatronAI User Interface → Users → Invite / Remove</td></tr>
+          <tr><td>See when the last scan ran</td><td>PatronAI Metrics Dash → Pipeline Health tile</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ══ CHECKLIST ══ -->
+<section class="section" id="checklist">
+  <div class="section-label">Section 6</div>
+  <h2 class="section-title">Before You See Alerts — a Readiness Checklist</h2>
+  <p class="section-desc">Not a deployment checklist — a readiness one. If all six items below are green, your PatronAI tenant is healthy and ready for you to work in.</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-label">Your tenant is live</div>
+      <ul class="checklist">
+        <li><div class="check"></div><span class="who who-cust">You</span>Welcome email received and sign-in works</li>
+        <li><div class="check"></div><span class="who who-cust">You</span>Alert email address confirmed</li>
+        <li><div class="check"></div><span class="who who-cust">You</span>Metrics Dash opens to your role view</li>
+        <li><div class="check"></div><span class="who who-cust">You</span>User Interface opens and saves edits</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-label">Your environment is flowing</div>
+      <ul class="checklist">
+        <li><div class="check"></div><span class="who who-support">Support</span>Platform deployed in your AWS account</li>
+        <li><div class="check"></div><span class="who who-support">Support</span>Network telemetry enabled across your VPCs</li>
+        <li><div class="check"></div><span class="who who-support">Support</span>Identity list uploaded (who owns which device)</li>
+        <li><div class="check"></div><span class="who who-support">Support</span>Provider denylist synced from Marketplace</li>
+        <li><div class="check"></div><span class="who who-cust">You</span>Approved internal AI endpoints added to allow list</li>
+        <li><div class="check"></div><span class="who who-cust">You</span>Pilot device group identified for initial rollout</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card green" style="margin-top:16px;">
+    <div class="card-label">How to tell PatronAI is working — without logging into anything technical</div>
+    <div class="card-body">
+      Open the Metrics Dash. The Pipeline Health tile should show a recent scan timestamp (within the last five minutes) and a green status. The Asset Inventory tile should show a non-zero device count. The Risk Alerts tile should either show today's alerts or an explicit "No new alerts in the last 24 hours" message — never a blank or "no data" state. If any of those three tiles look empty or stale, contact your Support Team.
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ══ KNOWN GAPS ══ -->
+<section class="section" id="gaps">
+  <div class="section-label">Section 7</div>
+  <h2 class="section-title">Known Gaps — Documented and Accepted</h2>
+  <p class="section-desc">Four scenarios no network scanner can detect. Disclosed for honest governance reporting.</p>
+
+  <div class="grid-2">
+    <div class="card red">
+      <div class="card-label">Gap 1</div>
+      <div class="card-title">Fully offline local inference</div>
+      <div class="card-body">Model downloaded, data copied via USB, zero network call made. No outbound traffic to intercept. CrowdStrike process monitoring partially mitigates when enabled.</div>
+    </div>
+    <div class="card orange">
+      <div class="card-label">Gap 2</div>
+      <div class="card-title">Personal cloud accounts</div>
+      <div class="card-body">Personal AWS or GCP account with personal credit card. No corporate IAM footprint. DNS and CrowdStrike network monitoring partially mitigates.</div>
+    </div>
+    <div class="card orange">
+      <div class="card-label">Gap 3</div>
+      <div class="card-title">Web UI manual copy-paste</div>
+      <div class="card-body">Developer manually copies data into a ChatGPT browser tab. No AI API call made from the corporate network. Browser DLP and clipboard monitoring partially mitigates.</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Gap 4 — Accepted risk</div>
+      <div class="card-title">Personal laptop outside VPN</div>
+      <div class="card-body">Unmanaged device on a home or public network. Out of corporate perimeter entirely. Accepted company risk. Out of scope for this platform.</div>
+    </div>
+  </div>
+
+  <div class="card green" style="margin-top:16px;">
+    <div class="card-label">What closes these gaps</div>
+    <div class="card-body">
+      Git scanner (GitLeaks / Trufflehog) in CI/CD catches hardcoded keys at commit time. &nbsp;·&nbsp;
+      Parameter Store enforcement detects personal key usage on authorised domains. &nbsp;·&nbsp;
+      CrowdStrike (when enabled) provides process-level visibility for gaps 1 and 2. &nbsp;·&nbsp;
+      AIRTaaS red team exercises quarterly to test detection coverage.
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ──────────── Phase 1A + 1B operator additions (2026-04-26) ──────────── -->
+<section>
+  <h2>Phase 1A + 1B — operator additions <span style="font-size:13px;color:#6c757d">(2026-04-26)</span></h2>
+
+  <h3 style="margin-top:24px">RBAC — managing users from the dashboard</h3>
+  <div class="card">
+    <div class="card-label">First-run migration</div>
+    <div class="card-body">
+      The first time the dashboard reads `s3://patronai/users/users.json` and finds it absent, it writes a one-time bootstrap from <code>ALLOWED_EMAILS</code> + <code>ADMIN_EMAILS</code> env vars. Anyone in <code>ADMIN_EMAILS</code> becomes role=manager + is_admin=true. Anyone else in <code>ALLOWED_EMAILS</code> becomes role=support. <b>Existing access is preserved without redeploy.</b>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-label">Adding / editing users</div>
+    <div class="card-body">
+      Settings → Users tab. Three role pills: <b>exec</b> (purple) / <b>manager</b> (blue) / <b>support</b> (green). Admin checkbox is orthogonal — admins see all views + Settings regardless of base role. Edits go directly to S3; no redeploy needed.
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-label">Role visibility matrix</div>
+    <div class="card-body">
+      <code>exec</code> sees Exec only. <code>manager</code> sees Manager + Provider Lists. <code>support</code> sees Support + Manager (read-only) + Provider Lists. <code>admin</code> (any base role + checkbox) sees all of the above + Settings; lands on their base role's view by default.
+    </div>
+  </div>
+
+  <h3 style="margin-top:24px">AI Inventory — the new Manager tab</h3>
+  <div class="card">
+    <div class="card-label">What it shows</div>
+    <div class="card-body">
+      Five new finding categories, deduped to ONE row per (owner, device, category, provider) with LATEST observation:
+      <b>MCP servers</b> (Claude Desktop / Cursor / Continue / Cline configs), <b>Workflows</b> (n8n / Flowise / langflow), <b>Scheduled agents</b> (cron / launchd), <b>Tool registrations</b> (`@tool` decorators in repos), <b>Vector DBs</b> (Chroma / FAISS / LanceDB / Qdrant / Milvus).
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-label">AI Asset Map — click any owner email</div>
+    <div class="card-body">
+      Opens a per-user page with a Plotly Treemap (User → Repo → Category → Asset) plus a nested expander tree below. URL pattern: <code>?view=asset_map&amp;email=alice@x.com</code>. Click "← back to AI Inventory" to return.
+    </div>
+  </div>
+  <div class="card red">
+    <div class="card-label">MCP config-change alerts</div>
+    <div class="card-body">
+      Server-side hash-flip detection — when the SHA-256 of a user's MCP config differs from the last-known value, the pipeline emits a derived <b>MCP_CONFIG_CHANGED</b> HIGH-severity event. <b>First sighting is silent</b> (no last hash to compare); flips on subsequent scans fire the alert.
+    </div>
+  </div>
+
+  <h3 style="margin-top:24px">Time format — every timestamp now</h3>
+  <div class="card">
+    <div class="card-label">DD-MMM-YY HH:MM:SS TZ</div>
+    <div class="card-body">
+      <code>26-APR-26 14:30:45 IST</code> — rendered in the <b>viewer's local browser timezone</b> (auto-detected via Streamlit 1.32+'s `st.context.timezone`). Hover over any timestamp to see the raw UTC ISO for audit copy-paste. Single helper at <code>dashboard/ui/time_fmt.py</code>; consumed by every grid + chart axis.
+    </div>
+  </div>
+
+  <h3 style="margin-top:24px">Per-grid global search</h3>
+  <div class="card">
+    <div class="card-label">Search any column</div>
+    <div class="card-body">
+      Substring match across all string columns; case-insensitive; live result-count caption. Wired into Risks, Inventory, Logs, AI Inventory, Signals, Rules. Single helper at <code>dashboard/ui/filtered_table.py</code>.
+    </div>
+  </div>
+
+  <h3 style="margin-top:24px">Open-source posture</h3>
+  <div class="card green">
+    <div class="card-label">No SES dependency</div>
+    <div class="card-body">
+      The deferred SES email fix is superseded by an <b>optional V1.1 SMTP module</b> using AWS Secrets Manager for per-user credentials. Plan parked in memory; build follows V1 verification. Replaces the hardcoded SES sender path entirely.
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-label">Re-install required for Phase 1A</div>
+    <div class="card-body">
+      Existing fleet keeps working but won't see the new finding categories until re-installed. The new fragments are baked into <code>setup_agent.sh.template</code> at install time. Coordinate fleet refresh via Settings → Deploy Agents → Re-issue per recipient.
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<footer>
+  <img src="ghost-ai-scanner/assets/branding/patronai-icon.png" alt="" width="18" height="18" style="vertical-align:middle;border-radius:4px;margin-right:8px;opacity:0.85;">
+  PatronAI &nbsp;·&nbsp; v1.1.0 &nbsp;·&nbsp; 2026-04-19<br>
+  TrinityOps.ai &nbsp;·&nbsp; AIRTaaS &nbsp;·&nbsp; CONFIDENTIAL — Authorised distribution only
+</footer>
+
+</div>
+</body>
+</html>

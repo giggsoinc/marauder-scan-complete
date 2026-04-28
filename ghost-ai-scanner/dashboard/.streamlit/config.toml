@@ -1,0 +1,24 @@
+# =============================================================
+# FILE: dashboard/.streamlit/config.toml
+# VERSION: 1.0.0
+# UPDATED: 2026-04-27
+# OWNER: Giggso Inc (Ravi Venugopal)
+# PURPOSE: Streamlit base theme — light. Color tokens mirror those
+#          in dashboard/ui/theme.py so native Streamlit chrome
+#          (radios, dropdowns, file uploaders) matches our custom
+#          CSS. Anything not covered here is overridden by
+#          dashboard/ui/styles.py at render time.
+# =============================================================
+
+[theme]
+base                = "light"
+primaryColor        = "#0969DA"
+backgroundColor     = "#F8F9FA"
+secondaryBackgroundColor = "#FFFFFF"
+textColor           = "#1F2328"
+font                = "sans serif"
+
+[server]
+headless            = true
+enableCORS          = false
+enableXsrfProtection = false

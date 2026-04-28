@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<!-- saved from url=(0096)file:///Users/giggso/AntiGravity_Projects/marauder-scan-complete/ghost-ai-scanner/UserGuide.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PatronAI — Deployment Guide</title>
+<style>
+  :root {
+    --bg:        #0D1117;
+    --surface:   #161B22;
+    --border:    #30363D;
+    --text:      #E6EDF3;
+    --muted:     #8B949E;
+    --blue:      #58A6FF;
+    --green:     #3FB950;
+    --orange:    #F0883E;
+    --red:       #F85149;
+    --yellow:    #D29922;
+    --purple:    #A371F7;
+    --code-bg:   #010409;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+
+  /* ── Header ── */
+  .header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 24px;
+    margin-bottom: 40px;
+  }
+  .logo {
+    font-family: "JetBrains Mono", "Courier New", monospace;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: .08em;
+  }
+  .logo span { color: var(--blue); }
+  .tagline { color: var(--muted); font-size: 12px; margin-top: 4px; letter-spacing: .04em; }
+  .version-badge {
+    display: inline-block;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 10px;
+    font-family: monospace;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 8px;
+  }
+
+  /* ── Phase headers ── */
+  .phase {
+    margin-top: 48px;
+    margin-bottom: 24px;
+  }
+  .phase-label {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .phase-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .phase-num {
+    background: var(--blue);
+    color: #0D1117;
+    font-family: monospace;
+    font-size: 13px;
+    font-weight: 700;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .phase-num.green  { background: var(--green); }
+  .phase-num.orange { background: var(--orange); }
+  .phase-num.purple { background: var(--purple); }
+  .phase-num.yellow { background: var(--yellow); }
+  .phase-num.red    { background: var(--red); }
+
+  /* ── Step cards ── */
+  .step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .step-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    gap: 12px;
+  }
+  .step-title {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .step-num {
+    font-family: monospace;
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 400;
+    width: 20px;
+    flex-shrink: 0;
+  }
+  .where-badge {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    padding: 3px 10px;
+    border-radius: 4px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .where-mac    { background: rgba(88,166,255,.15); color: var(--blue);   border: 1px solid rgba(88,166,255,.3); }
+  .where-ec2    { background: rgba(63,185,80,.15);  color: var(--green);  border: 1px solid rgba(63,185,80,.3); }
+  .where-browser{ background: rgba(163,113,247,.15);color: var(--purple); border: 1px solid rgba(163,113,247,.3); }
+  .where-once   { background: rgba(240,136,62,.15); color: var(--orange); border: 1px solid rgba(240,136,62,.3); }
+
+  .step-body { padding: 14px 18px; }
+  .step-desc {
+    color: var(--muted);
+    font-size: 13px;
+    margin-bottom: 12px;
+    line-height: 1.5;
+  }
+  .step-desc strong { color: var(--text); }
+
+  /* ── Code blocks ── */
+  .code-wrap {
+    position: relative;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin-top: 8px;
+  }
+  .code-wrap pre {
+    font-family: "JetBrains Mono", "Courier New", monospace;
+    font-size: 12.5px;
+    line-height: 1.7;
+    padding: 14px 50px 14px 16px;
+    overflow-x: auto;
+    white-space: pre;
+    color: #c9d1d9;
+  }
+  .copy-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: #21262D;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .copy-btn:hover { background: #30363D; color: var(--text); }
+  .copy-btn.copied { color: var(--green); border-color: var(--green); }
+
+  /* ── Inline code ── */
+  code {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    background: rgba(110,118,129,.15);
+    border: 1px solid rgba(110,118,129,.25);
+    border-radius: 3px;
+    padding: 1px 5px;
+    color: #c9d1d9;
+  }
+
+  /* ── Info / warning boxes ── */
+  .callout {
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin-top: 10px;
+    font-size: 13px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .callout-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .callout.info    { background: rgba(88,166,255,.08);  border: 1px solid rgba(88,166,255,.2);  color: #9ecbff; }
+  .callout.warn    { background: rgba(210,153,34,.08);  border: 1px solid rgba(210,153,34,.2);  color: #e3b341; }
+  .callout.success { background: rgba(63,185,80,.08);   border: 1px solid rgba(63,185,80,.2);   color: #56d364; }
+  .callout.danger  { background: rgba(248,81,73,.08);   border: 1px solid rgba(248,81,73,.2);   color: #ff7b72; }
+
+  /* ── Prereq grid ── */
+  .prereq-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 12px;
+  }
+  .prereq-item {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+  .prereq-item .label { color: var(--muted); font-size: 11px; font-family: monospace; letter-spacing: .04em; margin-bottom: 2px; }
+  .prereq-item .value { color: var(--text); font-weight: 600; }
+
+  /* ── URL table ── */
+  .url-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 13px;
+  }
+  .url-table th {
+    text-align: left;
+    font-family: monospace;
+    font-size: 10px;
+    letter-spacing: .06em;
+    color: var(--muted);
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .url-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(48,54,61,.5);
+    vertical-align: top;
+  }
+  .url-table tr:last-child td { border-bottom: none; }
+  .url-table td:first-child { font-family: monospace; color: var(--blue); font-size: 12px; }
+  .url-table td:nth-child(2) { color: var(--muted); }
+
+  /* ── Prompt expects ── */
+  .prompts { margin-top: 10px; }
+  .prompt-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(48,54,61,.4);
+    font-size: 13px;
+  }
+  .prompt-row:last-child { border-bottom: none; }
+  .prompt-key { color: var(--muted); font-family: monospace; font-size: 11px; min-width: 180px; flex-shrink: 0; }
+  .prompt-val { color: var(--text); }
+  .prompt-opt { color: var(--yellow); font-size: 11px; font-family: monospace; }
+
+  /* ── TOC ── */
+  .toc {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 40px;
+  }
+  .toc-title {
+    font-family: monospace;
+    font-size: 10px;
+    letter-spacing: .1em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .toc a {
+    display: block;
+    color: var(--blue);
+    text-decoration: none;
+    font-size: 13px;
+    padding: 3px 0;
+  }
+  .toc a:hover { text-decoration: underline; }
+  .toc-sub { padding-left: 16px; color: var(--muted) !important; }
+
+  /* ── Divider ── */
+  hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+
+  /* ── Footer ── */
+  .footer {
+    margin-top: 60px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    font-family: monospace;
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+  }
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<div class="header">
+  <div class="logo">PATRON<span>AI</span></div>
+  <div class="tagline">ENTERPRISE AI GOVERNANCE &amp; SECURITY · GIGGSO INC</div>
+  <div class="version-badge">Deployment Guide · v1.0 · 2026-04-20</div>
+</div>
+
+<!-- ── TOC ── -->
+<div class="toc">
+  <div class="toc-title">Contents</div>
+  <a href="file:///Users/giggso/AntiGravity_Projects/marauder-scan-complete/ghost-ai-scanner/UserGuide.html#prereqs">0 · Before you start</a>
+  <a href="file:///Users/giggso/AntiGravity_Projects/marauder-scan-complete/ghost-ai-scanner/UserGuide.html#phase1">1 · Deploy code to EC2 <span style="color:var(--muted)">(your Mac)</span></a>
+  <a href="file:///Users/giggso/AntiGravity_Projects/marauder-scan-complete/ghost-ai-scanner/UserGuide.html#phase2">2 · Provision AWS infrastructure <span style="color:var(--muted)">(your Mac)</span></a>
+  <a href="file:///Users/giggso/AntiGravity_Projects/marauder-scan-complete/ghost-ai-scanner/UserGuide.html#phase3">3 · Start the platform <span style="color:var(--muted)">(EC2)</span></a>
+  <a href="file:///Users/giggso/AntiGravity_Projects/marauder-scan-complete/ghost-ai-scanner/UserGuide.html#phase4">4 · First-boot tasks <span style="color:var(--muted)">(EC2)</span></a>
+  <a href="file:///Users/giggso/AntiGravity_Projects/marauder-scan-complete/ghost-ai-scanner/UserGuide.html#phase5">5 · Configure the UI <span style="color:var(--muted)">(browser)</span></a>
+  <a href="file:///Users/giggso/AntiGravity_Projects/marauder-scan-complete/ghost-ai-scanner/UserGuide.html#phase6">6 · Deploy hook agents to developers <span style="color:var(--muted)">(browser + EC2)</span></a>
+  <a href="file:///Users/giggso/AntiGravity_Projects/marauder-scan-complete/ghost-ai-scanner/UserGuide.html#teardown">Teardown</a>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- PHASE 0 — PREREQUISITES                     -->
+<!-- ════════════════════════════════════════════ -->
+<div class="phase" id="prereqs">
+  <div class="phase-label">Before you start</div>
+  <div class="phase-title">
+    <div class="phase-num" style="background:var(--muted);color:#0D1117;">0</div>
+    What you need on your Mac
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <div class="step-title"><span class="step-num">0.1</span>Required tools and accounts</div>
+    <span class="where-badge where-mac">YOUR MAC</span>
+  </div>
+  <div class="step-body">
+    <div class="prereq-grid">
+      <div class="prereq-item"><div class="label">AWS CLI v2</div><div class="value">aws --version</div></div>
+      <div class="prereq-item"><div class="label">Admin AWS credentials</div><div class="value">~/.aws/credentials or env vars</div></div>
+      <div class="prereq-item"><div class="label">SSH key pair (.pem)</div><div class="value">For EC2 access</div></div>
+      <div class="prereq-item"><div class="label">rsync</div><div class="value">Pre-installed on macOS</div></div>
+    </div>
+    <div class="callout info" style="margin-top:14px;">
+      <span class="callout-icon">ℹ</span>
+      <span>All scripts run from <code>marauder-scan-complete/</code> — the folder containing both <code>ghost-ai-scanner/</code> and <code>prereqs.sh</code>. Open one terminal there and keep it open.</span>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- PHASE 1 — DEPLOY CODE TO EC2                -->
+<!-- ════════════════════════════════════════════ -->
+<div class="phase" id="phase1">
+  <div class="phase-label">Phase 1 · ~5 minutes</div>
+  <div class="phase-title">
+    <div class="phase-num">1</div>
+    Deploy code to EC2
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <div class="step-title"><span class="step-num">1.1</span>Run the EC2 deploy script</div>
+    <span class="where-badge where-mac">YOUR MAC</span>
+  </div>
+  <div class="step-body">
+    <div class="step-desc">
+      Creates an EC2 instance (or uses an existing one), attaches an IAM instance profile, and rsyncs the entire codebase. <strong>Follow the prompts — just press Enter to accept defaults.</strong>
+    </div>
+    <div class="code-wrap">
+      <pre>cd marauder-scan-complete
+bash deploy_to_ec2.sh</pre>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <div class="prompts" style="margin-top:14px;">
+      <div style="font-family:monospace;font-size:10px;letter-spacing:.06em;color:var(--muted);margin-bottom:6px;">WHAT IT WILL ASK YOU</div>
+      <div class="prompt-row"><span class="prompt-key">AWS Access Key ID</span><span class="prompt-val">Your admin AWS key</span></div>
+      <div class="prompt-row"><span class="prompt-key">AWS Secret Access Key</span><span class="prompt-val">Your admin AWS secret</span></div>
+      <div class="prompt-row"><span class="prompt-key">AWS Region</span><span class="prompt-val">e.g. <code>us-east-1</code></span></div>
+      <div class="prompt-row"><span class="prompt-key">Use existing EC2?</span><span class="prompt-val">Pick from list or create new</span></div>
+      <div class="prompt-row"><span class="prompt-key">SSH key (.pem) path</span><span class="prompt-val">Full path to your .pem file</span></div>
+      <div class="prompt-row"><span class="prompt-key">SSH username</span><span class="prompt-val"><code>ec2-user</code> (Amazon Linux) or <code>ubuntu</code></span></div>
+    </div>
+    <div class="callout success" style="margin-top:14px;">
+      <span class="callout-icon">✓</span>
+      <span>When it finishes it prints the EC2 IP. Note it down — you need it in every step below.</span>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- PHASE 2 — PROVISION AWS INFRA               -->
+<!-- ════════════════════════════════════════════ -->
+<div class="phase" id="phase2">
+  <div class="phase-label">Phase 2 · ~10 minutes</div>
+  <div class="phase-title">
+    <div class="phase-num green">2</div>
+    Provision AWS infrastructure
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <div class="step-title"><span class="step-num">2.1</span>Run the prerequisites script</div>
+    <span class="where-badge where-mac">YOUR MAC</span>
+  </div>
+  <div class="step-body">
+    <div class="step-desc">
+      Creates S3 bucket, IAM user, SNS alert topic, VPC Flow Logs. Generates <code>.env</code> and all config files. Optionally SCPs everything to EC2 in one shot.
+    </div>
+    <div class="code-wrap">
+      <pre>bash prereqs.sh</pre>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <div class="prompts" style="margin-top:14px;">
+      <div style="font-family:monospace;font-size:10px;letter-spacing:.06em;color:var(--muted);margin-bottom:6px;">WHAT IT WILL ASK YOU — FILL IN YOUR VALUES</div>
+      <div class="prompt-row"><span class="prompt-key">AWS Region</span><span class="prompt-val">e.g. <code>us-east-1</code></span></div>
+      <div class="prompt-row"><span class="prompt-key">Company name</span><span class="prompt-val">Display name, e.g. <code>Acme Corp</code></span></div>
+      <div class="prompt-row"><span class="prompt-key">Company slug</span><span class="prompt-val">Lowercase, e.g. <code>acme</code></span></div>
+      <div class="prompt-row"><span class="prompt-key">Allowed emails</span><span class="prompt-val">Comma-separated — who can log in to the UI</span></div>
+      <div class="prompt-row"><span class="prompt-key">Admin emails</span><span class="prompt-val">Who gets the Settings tab (your email)</span></div>
+      <div class="prompt-row"><span class="prompt-key">Alert email</span><span class="prompt-val">Where SNS alert emails go</span></div>
+      <div class="prompt-row"><span class="prompt-key">Trinity webhook</span><span class="prompt-val"><span class="prompt-opt">OPTIONAL</span> — press Enter to skip</span></div>
+      <div class="prompt-row"><span class="prompt-key">LogAnalyzer webhook</span><span class="prompt-val"><span class="prompt-opt">OPTIONAL</span> — press Enter to skip</span></div>
+      <div class="prompt-row"><span class="prompt-key">Scan interval secs</span><span class="prompt-val">Press Enter for default <code>300</code></span></div>
+      <div class="prompt-row"><span class="prompt-key">Grafana admin password</span><span class="prompt-val">Set a strong password now</span></div>
+      <div class="prompt-row"><span class="prompt-key">S3 bucket</span><span class="prompt-val">Pick from list or create <code>marauder-scan-acme</code></span></div>
+      <div class="prompt-row"><span class="prompt-key">IAM user</span><span class="prompt-val">Press Enter — creates <code>marauder-scan</code> with scoped policy</span></div>
+      <div class="prompt-row"><span class="prompt-key">SNS topic</span><span class="prompt-val">Press Enter — creates <code>patronai-alerts-acme</code></span></div>
+      <div class="prompt-row"><span class="prompt-key">VPC Flow Logs</span><span class="prompt-val">Pick your VPC number(s) to enable</span></div>
+      <div class="prompt-row"><span class="prompt-key">Seed config to S3</span><span class="prompt-val">Press Enter — seeds provider lists to bucket</span></div>
+      <div class="prompt-row"><span class="prompt-key">SCP files to EC2?</span><span class="prompt-val">Choose <code>1</code> — enter EC2 IP + .pem path to push automatically</span></div>
+    </div>
+    <div class="callout warn" style="margin-top:14px;">
+      <span class="callout-icon">⚠</span>
+      <span><strong>Confirm the SNS subscription email</strong> when it arrives in your inbox. Alerts won't fire until you click Confirm.</span>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- PHASE 3 — START THE PLATFORM                -->
+<!-- ════════════════════════════════════════════ -->
+<div class="phase" id="phase3">
+  <div class="phase-label">Phase 3 · ~3 minutes</div>
+  <div class="phase-title">
+    <div class="phase-num orange">3</div>
+    Start the platform
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <div class="step-title"><span class="step-num">3.1</span>SSH into EC2</div>
+    <span class="where-badge where-mac">YOUR MAC</span>
+  </div>
+  <div class="step-body">
+    <div class="step-desc">Replace <code>&lt;ec2-ip&gt;</code> with the IP from Step 1.1 and <code>&lt;key.pem&gt;</code> with your key file path.</div>
+    <div class="code-wrap">
+      <pre>ssh -i &lt;key.pem&gt; ec2-user@&lt;ec2-ip&gt;</pre>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <div class="step-title"><span class="step-num">3.2</span>Start all containers</div>
+    <span class="where-badge where-ec2">EC2</span>
+  </div>
+  <div class="step-body">
+    <div class="step-desc">Starts three containers: <code>scanner</code> (PatronAI + Streamlit UI), <code>grafana</code>, and <code>nginx</code> (reverse proxy on port 80).</div>
+    <div class="code-wrap">
+      <pre>cd marauder-scan
+docker-compose up -d</pre>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <div class="callout info" style="margin-top:12px;">
+      <span class="callout-icon">ℹ</span>
+      <span>First run builds the Docker images — takes ~2 minutes. Subsequent starts are instant.</span>
+    </div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <div class="step-title"><span class="step-num">3.3</span>Verify all three containers are running</div>
+    <span class="where-badge where-ec2">EC2</span>
+  </div>
+  <div class="step-body">
+    <div class="code-wrap">
+      <pre>docker-compose ps</pre>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <div class="callout success" style="margin-top:12px;">
+      <span class="callout-icon">✓</span>
+      <span>All three should show <strong>Up</strong> or <strong>healthy</strong>: <code>marauder-scan</code>, <code>marauder-scan-grafana</code>, <code>marauder-scan-nginx</code>.</span>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- PHASE 4 — FIRST-BOOT TASKS                  -->
+<!-- ════════════════════════════════════════════ -->
+<div class="phase" id="phase4">
+  <div class="phase-label">Phase 4 · Run once after first boot</div>
+  <div class="phase-title">
+    <div class="phase-num purple">4</div>
+    First-boot tasks
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <div class="step-title"><span class="step-num">4.1</span>Populate ENI metadata cache</div>
+    <span class="where-badge where-ec2">EC2 · run once</span>
+  </div>
+  <div class="step-body">
+    <div class="step-desc">
+      Classifies every network interface in your VPC so the scanner can filter out AWS-internal traffic (NAT gateways, EFS, load balancers). Auto-refreshes every 6 hours after this.
+    </div>
+    <div class="code-wrap">
+      <pre>docker exec marauder-scan python3 scripts/refresh_eni_cache.py</pre>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <div class="step-title"><span class="step-num">4.2</span>Initialise hook agent delivery</div>
+    <span class="where-badge where-ec2">EC2 · run once</span>
+  </div>
+  <div class="step-body">
+    <div class="step-desc">
+      Creates the <code>config/HOOK_AGENTS/catalog.json</code> index in S3 and validates SES + S3 write permissions. Safe to re-run.
+    </div>
+    <div class="code-wrap">
+      <pre>docker exec marauder-scan bash scripts/setup_hook_agents.sh</pre>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- PHASE 5 — CONFIGURE THE UI                  -->
+<!-- ════════════════════════════════════════════ -->
+<div class="phase" id="phase5">
+  <div class="phase-label">Phase 5 · In your browser</div>
+  <div class="phase-title">
+    <div class="phase-num yellow">5</div>
+    Configure the UI
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <div class="step-title"><span class="step-num">5.1</span>Open the PatronAI dashboard</div>
+    <span class="where-badge where-browser">BROWSER</span>
+  </div>
+  <div class="step-body">
+    <div class="step-desc">Replace <code>&lt;ec2-ip&gt;</code> with your EC2 public IP.</div>
+    <div class="code-wrap">
+      <pre>http://&lt;ec2-ip&gt;/</pre>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <div class="prompts" style="margin-top:12px;">
+      <div class="prompt-row"><span class="prompt-key">Login prompt</span><span class="prompt-val">Enter any email from your <code>ALLOWED_EMAILS</code> list</span></div>
+      <div class="prompt-row"><span class="prompt-key">Admin view</span><span class="prompt-val">You'll see Settings in the sidebar if your email is in <code>ADMIN_EMAILS</code></span></div>
+    </div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <div class="step-title"><span class="step-num">5.2</span>Set the Grafana URL (fixes "Open dashboard" link)</div>
+    <span class="where-badge where-browser">BROWSER · Settings → Alerting</span>
+  </div>
+  <div class="step-body">
+    <div class="step-desc">
+      The sidebar link <strong>Open dashboard</strong> needs to know your EC2's public address. Set it once here — no server restart needed.
+    </div>
+    <ol style="color:var(--muted);font-size:13px;line-height:2;padding-left:20px;">
+      <li>Click <strong style="color:var(--text);">⚙ Settings</strong> in the sidebar</li>
+      <li>Click the <strong style="color:var(--text);">Alerting</strong> tab</li>
+      <li>Find the <strong style="color:var(--text);">Grafana URL</strong> field and paste:</li>
+    </ol>
+    <div class="code-wrap" style="margin-top:10px;">
+      <pre>http://&lt;ec2-ip&gt;/grafana</pre>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <ol style="color:var(--muted);font-size:13px;line-height:2;padding-left:20px;margin-top:10px;" start="4">
+      <li>Click <strong style="color:var(--text);">Save — Alerting</strong></li>
+      <li>The sidebar link now opens the correct Grafana dashboard</li>
+    </ol>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <div class="step-title"><span class="step-num">5.3</span>Open Grafana (first login)</div>
+    <span class="where-badge where-browser">BROWSER</span>
+  </div>
+  <div class="step-body">
+    <div class="code-wrap">
+      <pre>http://&lt;ec2-ip&gt;/grafana/</pre>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <div class="prompts" style="margin-top:12px;">
+      <div class="prompt-row"><span class="prompt-key">Username</span><span class="prompt-val"><code>admin</code></span></div>
+      <div class="prompt-row"><span class="prompt-key">Password</span><span class="prompt-val">The Grafana password you set in Step 2.1</span></div>
+    </div>
+    <div class="callout info" style="margin-top:12px;">
+      <span class="callout-icon">ℹ</span>
+      <span>The two PatronAI dashboards (<strong>Exec governance</strong> and <strong>Manager / IT-admin</strong>) are pre-provisioned and appear immediately under Dashboards.</span>
+    </div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <div class="step-title"><span class="step-num">5.4</span>All platform URLs at a glance</div>
+    <span class="where-badge where-browser">BROWSER</span>
+  </div>
+  <div class="step-body">
+    <table class="url-table">
+      <tbody><tr><th>URL</th><th>What it is</th><th>Login</th></tr>
+      <tr><td>http://&lt;ec2-ip&gt;/</td><td>PatronAI Streamlit UI — all role views</td><td>Your allowed email</td></tr>
+      <tr><td>http://&lt;ec2-ip&gt;/grafana/</td><td>Grafana — Exec + Manager dashboards</td><td>admin / your Grafana password</td></tr>
+      <tr><td>http://&lt;ec2-ip&gt;/grafana/d/marauder-overview</td><td>Exec governance dashboard direct link</td><td>Same as Grafana</td></tr>
+    </tbody></table>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- PHASE 6 — DEPLOY HOOK AGENTS                -->
+<!-- ════════════════════════════════════════════ -->
+<div class="phase" id="phase6">
+  <div class="phase-label">Phase 6 · Per developer</div>
+  <div class="phase-title">
+    <div class="phase-num red">6</div>
+    Deploy hook agents to developers
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <div class="step-title"><span class="step-num">6.1</span>Generate and send an installer (Admin)</div>
+    <span class="where-badge where-browser">BROWSER · Settings → Deploy Agents</span>
+  </div>
+  <div class="step-body">
+    <ol style="color:var(--muted);font-size:13px;line-height:2.2;padding-left:20px;">
+      <li>Go to <strong style="color:var(--text);">Settings → Deploy Agents</strong> tab</li>
+      <li>Fill in the developer's <strong style="color:var(--text);">Name</strong>, <strong style="color:var(--text);">Email</strong>, and <strong style="color:var(--text);">Platform</strong> (Mac / Linux / Windows)</li>
+      <li>Click <strong style="color:var(--text);">Generate &amp; Send</strong></li>
+      <li>Developer receives an email with a <strong style="color:var(--text);">48-hour download link</strong> and a <strong style="color:var(--text);">6-digit OTP</strong></li>
+      <li>Status column shows <strong style="color:var(--text);">PENDING → INSTALLED</strong> once they run it</li>
+    </ol>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <div class="step-title"><span class="step-num">6.2</span>Developer installs on Mac or Linux</div>
+    <span class="where-badge where-once">DEVELOPER MACHINE</span>
+  </div>
+  <div class="step-body">
+    <div class="step-desc">Developer pastes the link from the email:</div>
+    <div class="code-wrap">
+      <pre>curl -fsSL "&lt;link-from-email&gt;" | bash</pre>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <div class="step-desc" style="margin-top:10px;">Then enters their 6-digit OTP when prompted. That's it — hook is installed, heartbeat starts.</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <div class="step-title"><span class="step-num">6.3</span>Developer installs on Windows</div>
+    <span class="where-badge where-once">DEVELOPER MACHINE · PowerShell (Admin)</span>
+  </div>
+  <div class="step-body">
+    <div class="code-wrap">
+      <pre>Invoke-Expression (Invoke-WebRequest -Uri "&lt;link-from-email&gt;").Content</pre>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <div class="step-title"><span class="step-num">6.4</span>Build macOS DMG (optional — run on your Mac, not EC2)</div>
+    <span class="where-badge where-mac">YOUR MAC</span>
+  </div>
+  <div class="step-body">
+    <div class="step-desc">Replace <code>&lt;token&gt;</code> with the token from the Deploy Agents table and <code>&lt;bucket&gt;</code> with your S3 bucket name.</div>
+    <div class="code-wrap">
+      <pre># Download the rendered installer
+aws s3 cp s3://&lt;bucket&gt;/config/HOOK_AGENTS/&lt;token&gt;/setup_agent.sh /tmp/setup_agent.sh
+
+# Build DMG (requires macOS)
+bash ghost-ai-scanner/build/build_dmg.sh \
+  --input /tmp/setup_agent.sh \
+  --name "Alice" \
+  --token &lt;token&gt; \
+  --output /tmp/PatronAI-Agent-Alice.dmg
+
+# Upload back to S3
+aws s3 cp /tmp/PatronAI-Agent-Alice.dmg \
+  s3://&lt;bucket&gt;/config/HOOK_AGENTS/&lt;token&gt;/PatronAI-Agent-Alice.dmg</pre>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- USEFUL COMMANDS                             -->
+<!-- ════════════════════════════════════════════ -->
+<hr>
+
+<div class="phase" style="margin-top:0;">
+  <div class="phase-label">Reference</div>
+  <div class="phase-title" style="font-size:17px;">Useful day-to-day commands</div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <div class="step-title"><span class="step-num">—</span>Check container logs</div>
+    <span class="where-badge where-ec2">EC2</span>
+  </div>
+  <div class="step-body">
+    <div class="code-wrap">
+      <pre>docker logs marauder-scan --tail 50 -f</pre>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <div class="step-title"><span class="step-num">—</span>Restart the scanner only</div>
+    <span class="where-badge where-ec2">EC2</span>
+  </div>
+  <div class="step-body">
+    <div class="code-wrap">
+      <pre>docker-compose restart scanner</pre>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <div class="step-title"><span class="step-num">—</span>Redeploy after a code change</div>
+    <span class="where-badge where-ec2">EC2</span>
+  </div>
+  <div class="step-body">
+    <div class="code-wrap">
+      <pre>docker-compose down
+docker-compose up -d --build</pre>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <div class="step-title"><span class="step-num">—</span>Run regression tests (unit only, no LocalStack)</div>
+    <span class="where-badge where-ec2">EC2</span>
+  </div>
+  <div class="step-body">
+    <div class="code-wrap">
+      <pre>docker exec marauder-scan bash scripts/run_regression.sh --unit-only</pre>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <div class="step-title"><span class="step-num">—</span>Push code update from Mac to EC2</div>
+    <span class="where-badge where-mac">YOUR MAC</span>
+  </div>
+  <div class="step-body">
+    <div class="step-desc">Replace values with your EC2 details. Syncs only changed files.</div>
+    <div class="code-wrap">
+      <pre>rsync -avz --exclude='.env' --exclude='__pycache__' \
+  -e "ssh -i &lt;key.pem&gt;" \
+  ghost-ai-scanner/ \
+  ec2-user@&lt;ec2-ip&gt;:marauder-scan/</pre>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- TEARDOWN                                    -->
+<!-- ════════════════════════════════════════════ -->
+<hr>
+<div class="phase" id="phase-1a-1b-deploy-notes" style="margin-top:0;">
+  <div class="phase-label">Phase 1A + 1B notes</div>
+  <div class="phase-title" style="font-size:17px;">What changes on first deploy after 2026-04-26</div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <div class="step-title"><span class="step-num">+</span>Bucket name is <code>patronai</code> (not <code>rvdts-fin-processor</code>)</div>
+  </div>
+  <div class="step-body">
+    <p>Earlier internal docs referenced <code>rvdts-fin-processor</code> — that's the finance-side bucket. Marauder Scan uses <code>s3://patronai/</code> exclusively. Set <code>MARAUDER_SCAN_BUCKET=patronai</code> in your environment file.</p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <div class="step-title"><span class="step-num">+</span>RBAC migration runs automatically on first dashboard load</div>
+  </div>
+  <div class="step-body">
+    <p>The first request to the dashboard checks <code>s3://patronai/users/users.json</code>. If absent, it bootstraps from your existing <code>ALLOWED_EMAILS</code> + <code>ADMIN_EMAILS</code> env vars one-time. Anyone in <code>ADMIN_EMAILS</code> becomes <code>role=manager + is_admin=true</code>. Anyone else gets <code>role=support</code>.</p>
+    <p><strong>No env-var changes required</strong>. Existing access is preserved exactly. After the migration, edits go through the dashboard's Users settings tab — no redeploy needed for access changes.</p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <div class="step-title"><span class="step-num">+</span><code>SUPPORT_EMAILS</code> env var is deprecated</div>
+  </div>
+  <div class="step-body">
+    <p>Phase 1B's RBAC supersedes the per-role env var. Users get <code>role=support</code> via the Users tab going forward. The <code>SUPPORT_EMAILS</code> var is still read for backward compatibility but no longer needed.</p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <div class="step-title"><span class="step-num">+</span>Re-install agents to pick up Phase 1A finding categories</div>
+  </div>
+  <div class="step-body">
+    <p>The new MCP / Agent / Tools / Vector-DB scanners are baked into <code>setup_agent.sh.template</code> at install time. Existing fleet keeps working but won't see new categories until re-installed. Coordinate via Settings → Deploy Agents → Re-issue per recipient.</p>
+    <p>First scan after re-install runs in <b>baseline mode</b> (wider walk); subsequent 30-min scans run lighter via the <code>first_run.flag</code> mechanism.</p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <div class="step-title"><span class="step-num">+</span>S3 IAM scope additions</div>
+  </div>
+  <div class="step-body">
+    <p>The EC2 instance role's S3 policy needs read+write on these new prefixes:</p>
+    <pre>s3://patronai/users/*           # RBAC source of truth
+s3://patronai/mcp_hashes/*      # MCP config-change registry
+s3://patronai/findings/*        # already exists; new categories land here</pre>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <div class="step-title"><span class="step-num">+</span>Email module deferred — V1.1 plan in memory</div>
+  </div>
+  <div class="step-body">
+    <p>SMTP via AWS Secrets Manager is documented but NOT shipped in V1. Existing SES setup (if any) keeps working untouched. Phase 1B intentionally ships without an email layer; the V1.1 build will replace SES with per-user SMTP credentials stored in Secrets Manager.</p>
+  </div>
+</div>
+
+<hr>
+<div class="phase" id="teardown" style="margin-top:0;">
+  <div class="phase-label">Teardown</div>
+  <div class="phase-title" style="font-size:17px;">Remove all AWS resources</div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <div class="step-title"><span class="step-num">—</span>Full teardown (EC2 + S3 + SNS + IAM + Flow Logs)</div>
+    <span class="where-badge where-mac">YOUR MAC</span>
+  </div>
+  <div class="step-body">
+    <div class="callout danger" style="margin-bottom:12px;">
+      <span class="callout-icon">⚠</span>
+      <span><strong>This deletes everything.</strong> You will be asked to type a confirmation phrase before anything is removed.</span>
+    </div>
+    <div class="code-wrap">
+      <pre>bash teardown.sh</pre>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <div class="step-desc" style="margin-top:10px;">Type <code>TEARDOWN marauder-scan-&lt;company&gt;</code> when prompted. A timestamped removal report is written to <code>ghost-ai-scanner/reports/</code>.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- FOOTER                                      -->
+<!-- ════════════════════════════════════════════ -->
+<div class="footer">
+  <span>PatronAI · Giggso Inc · Ravi Venugopal</span>
+  <span>Partners: TrinityOps.ai · AIRTaaS</span>
+</div>
+
+<script>
+function copyCode(btn) {
+  const pre = btn.previousElementSibling;
+  const text = pre.innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = 'Copy';
+      btn.classList.remove('copied');
+    }, 2000);
+  }).catch(() => {
+    // Fallback for non-secure contexts
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+</script>
+
+
+
+</body></html>

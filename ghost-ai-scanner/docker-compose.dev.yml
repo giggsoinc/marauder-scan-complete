@@ -1,0 +1,147 @@
+# =============================================================
+# FILE: docker-compose.dev.yml
+# VERSION: 1.0.0
+# UPDATED: 2026-04-18
+# OWNER: Giggso Inc
+# PURPOSE: Development / offline demo compose.
+#          Adds LocalStack to fake S3 and SNS — no real AWS needed.
+#          Use this for demos without internet or local testing.
+# USAGE: docker-compose -f docker-compose.dev.yml up -d
+# =============================================================
+
+version: "3.9"
+
+services:
+
+  # ── LocalStack — fake AWS ───────────────────────────────────
+  localstack:
+    image: localstack/localstack:3.4
+    container_name: marauder-scan-localstack
+    restart: unless-stopped
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=s3,sns,ec2,iam,cloudtrail
+      - DEFAULT_REGION=us-east-1
+      - DEBUG=0
+      - DATA_DIR=/var/lib/localstack/data
+      - PERSISTENCE=1
+    volumes:
+      - localstack-data:/var/lib/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - marauder-scan
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  # ── LocalStack seed — creates bucket and uploads config ──────
+  localstack-seed:
+    image: amazon/aws-cli:2.15.0
+    container_name: marauder-scan-localstack-seed
+    depends_on:
+      localstack:
+        condition: service_healthy
+    networks:
+      - marauder-scan
+    environment:
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_DEFAULT_REGION=us-east-1
+      - AWS_ENDPOINT_URL=http://localstack:4566
+    volumes:
+      - ./config:/config:ro
+    command: |
+      sh -c "
+        echo 'Seeding LocalStack...' &&
+        aws s3 mb s3://marauder-scan-demo --endpoint-url http://localstack:4566 &&
+        aws s3 cp /config/settings.json s3://marauder-scan-demo/config/settings.json --endpoint-url http://localstack:4566 &&
+        aws s3 cp /config/authorized.csv s3://marauder-scan-demo/config/authorized.csv --endpoint-url http://localstack:4566 &&
+        aws s3 cp /config/unauthorized.csv s3://marauder-scan-demo/config/unauthorized.csv --endpoint-url http://localstack:4566 &&
+        aws sns create-topic --name marauder-scan-alerts --endpoint-url http://localstack:4566 &&
+        echo 'LocalStack seeded successfully'
+      "
+
+  # ── Scanner — points at LocalStack ──────────────────────────
+  scanner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: marauder-scan
+    restart: unless-stopped
+    depends_on:
+      localstack-seed:
+        condition: service_completed_successfully
+    environment:
+      - MARAUDER_SCAN_BUCKET=marauder-scan-demo
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_ENDPOINT_URL=http://localstack:4566
+      - COMPANY_NAME=Acme Corp (Demo)
+      - COMPANY_SLUG=demo
+      - ALLOWED_EMAILS=demo@giggso.com
+      - ADMIN_EMAILS=demo@giggso.com
+      - ALERT_SNS_ARN=arn:aws:sns:us-east-1:000000000000:marauder-scan-alerts
+      - SCAN_INTERVAL_SECS=60
+      - DEDUP_WINDOW_MINUTES=5
+      - CROWDSTRIKE_ENABLED=false
+      - CLOUD_PROVIDER=aws
+      - STREAMLIT_PORT=8501
+      - GRAFANA_URL=http://grafana:3000
+    ports:
+      - "8501:8501"
+    networks:
+      - marauder-scan
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "2"
+
+  # ── Grafana — same as production ─────────────────────────────
+  grafana:
+    build:
+      context: .
+      dockerfile: Dockerfile.grafana
+    container_name: marauder-scan-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=demo
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+    ports:
+      - "3000:3000"
+    networks:
+      - marauder-scan
+    volumes:
+      - grafana-data-dev:/var/lib/grafana
+
+  # ── Nginx ────────────────────────────────────────────────────
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: marauder-scan-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - marauder-scan
+    depends_on:
+      - scanner
+      - grafana
+
+networks:
+  marauder-scan:
+    driver: bridge
+
+volumes:
+  localstack-data:
+    driver: local
+  grafana-data-dev:
+    driver: local

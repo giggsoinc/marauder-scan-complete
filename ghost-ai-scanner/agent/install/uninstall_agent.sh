@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+# =============================================================
+# PatronAI — Agent Uninstaller (Mac / Linux)
+# Removes all hooks, schedulers, and agent files.
+# Safe to run multiple times. No sudo required.
+# USAGE: bash uninstall_agent.sh
+# =============================================================
+
+_info() { echo "[patronai] $*"; }
+_ok()   { echo "[patronai] ✓ $*"; }
+
+echo ""
+echo "PatronAI Agent Uninstaller"
+echo "=========================="
+echo "This will remove the PatronAI agent from this machine."
+echo "Your code and git repos are not affected."
+echo ""
+read -rp "Continue? [y/N] " CONFIRM
+[[ "$CONFIRM" =~ ^[Yy]$ ]] || { echo "Aborted."; exit 0; }
+echo ""
+
+AGENT_DIR="$HOME/.patronai"
+
+# ── 1. Stop and remove launchd jobs (Mac) ────────────────────
+if [ "$(uname -s)" = "Darwin" ]; then
+  for LABEL in com.patronai.heartbeat com.patronai.scan; do
+    PLIST="$HOME/Library/LaunchAgents/${LABEL}.plist"
+    if [ -f "$PLIST" ]; then
+      launchctl unload "$PLIST" 2>/dev/null || true
+      rm -f "$PLIST"
+      _ok "Removed launchd job: $LABEL"
+    fi
+  done
+fi
+
+# ── 2. Remove crontab entries (Linux) ────────────────────────
+if [ "$(uname -s)" != "Darwin" ]; then
+  if crontab -l 2>/dev/null | grep -q patronai; then
+    crontab -l 2>/dev/null | grep -v patronai | crontab -
+    _ok "Removed crontab entries"
+  fi
+fi
+
+# ── 3. Remove git pre-commit hooks ───────────────────────────
+HOOK_SCRIPT="$AGENT_DIR/pre_commit_hook.sh"
+REMOVED=0
+while IFS= read -r -d '' GIT_DIR; do
+  HOOK_PATH="$GIT_DIR/hooks/pre-commit"
+  # Only remove if it's a symlink pointing to our hook script
+  if [ -L "$HOOK_PATH" ] && [ "$(readlink "$HOOK_PATH")" = "$HOOK_SCRIPT" ]; then
+    rm "$HOOK_PATH"
+    # Restore backup if one was made at install time
+    if [ -f "${HOOK_PATH}.backup" ]; then
+      mv "${HOOK_PATH}.backup" "$HOOK_PATH"
+      _ok "Restored original hook in: $(dirname "$GIT_DIR")"
+    else
+      _ok "Removed hook from: $(dirname "$GIT_DIR")"
+    fi
+    REMOVED=$((REMOVED + 1))
+  fi
+done < <(find "$HOME" -maxdepth 6 -name ".git" -type d -print0 2>/dev/null)
+_info "Hooks removed from $REMOVED repositories."
+
+# ── 4. Unwire git template dir if it points at us (Step 0.1) ──
+TPL=$(git config --global --get init.templateDir 2>/dev/null || echo "")
+if [ "$TPL" = "$AGENT_DIR/git-template" ]; then
+  git config --global --unset init.templateDir 2>/dev/null || true
+  _ok "Cleared init.templateDir (was $TPL)"
+elif [ -n "$TPL" ]; then
+  EXP="${TPL/#~/$HOME}"
+  if [ -L "$EXP/hooks/pre-commit" ] && \
+     [ "$(readlink "$EXP/hooks/pre-commit" 2>/dev/null)" = "$AGENT_DIR/pre_commit_hook.sh" ]; then
+    rm -f "$EXP/hooks/pre-commit"
+    _ok "Removed PatronAI hook from external templateDir ($TPL)"
+  fi
+fi
+
+# ── 5. Remove agent directory ─────────────────────────────────
+if [ -d "$AGENT_DIR" ]; then
+  rm -rf "$AGENT_DIR"
+  _ok "Removed $AGENT_DIR"
+fi
+
+echo ""
+_info "Uninstall complete. No agent files remain on this machine."
+_info "To remove the package from the PatronAI server:"
+_info "  Settings → Deploy Agents → Delete button on your row."

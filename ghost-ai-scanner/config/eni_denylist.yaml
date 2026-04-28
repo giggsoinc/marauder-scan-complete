@@ -1,0 +1,59 @@
+# =============================================================
+# FILE: config/eni_denylist.yaml
+# VERSION: 1.0.0
+# UPDATED: 2026-04-19
+# OWNER: Giggso Inc
+# PURPOSE: Defines the 5 classes of AWS-managed ENIs that must be
+#          filtered before VPC Flow Log normalisation. Each class
+#          will never produce AI signals. Filtering here saves S3
+#          cost and scanner CPU on every scan cycle.
+# LOADED BY: src/normalizer/eni_filter.py — load_eni_patterns()
+# AUDIT LOG:
+#   v1.0.0  2026-04-19  Initial — 5 ENI denylist rules
+# =============================================================
+
+rules:
+
+  efs:
+    # EFS mount targets are AWS-managed storage endpoints.
+    # All flow log rows are NODATA (no real traffic crosses them at
+    # the network layer visible to flow logs). Confirmed on
+    # eni-01e3b69272285a061 (EFS mount target for
+    # fs-0aa9f0a411ce090be, RequesterManaged=True).
+    # Match on description prefix OR AWS EFS service requester ID.
+    description_prefix: "EFS mount target"
+    requester_id: "641247547298"
+    reason: "efs"
+
+  nat:
+    # NAT Gateway ENIs aggregate ALL outbound traffic from private
+    # subnets. They appear as the source in flow logs, masking the
+    # real originating EC2. PatronAI matches on destination domain —
+    # NAT ENIs produce no useful signal and add noise.
+    interface_type: "nat_gateway"
+    reason: "nat"
+
+  vpce:
+    # VPC Endpoint ENIs carry AWS PrivateLink traffic that stays
+    # within the AWS backbone (S3, ECR, SSM etc). These destinations
+    # are never AI providers. Filtering here removes ~15-25% of
+    # typical enterprise VPC flow volume.
+    interface_type: "vpc_endpoint"
+    reason: "vpce"
+
+  elb:
+    # Load Balancer ENIs handle inbound traffic distribution.
+    # The actual client is the originating device — the ELB ENI
+    # is the forwarder. PatronAI needs the originating src_ip,
+    # not the load balancer hop.
+    description_prefix: "ELB "
+    reason: "elb"
+
+  lambda:
+    # Lambda VPC ENIs are created by AWS when a Lambda function is
+    # attached to a VPC. When the function is idle they emit
+    # continuous NODATA flows. Active invocations are short-lived
+    # and their traffic is not AI provider traffic (Lambda functions
+    # are server-side code, not client AI calls).
+    description_prefix: "AWS Lambda VPC ENI"
+    reason: "lambda"

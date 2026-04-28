@@ -1,0 +1,12 @@
+apiVersion: 1
+
+providers:
+  - name: PatronAI Dashboards
+    orgId: 1
+    type: file
+    disableDeletion: true
+    updateIntervalSeconds: 30
+    allowUiUpdates: false
+    options:
+      path: /etc/grafana/provisioning/dashboards
+      foldersFromFilesStructure: false

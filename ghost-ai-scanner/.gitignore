@@ -1,0 +1,28 @@
+# =============================================================
+# .gitignore — ghost-ai-scanner
+# =============================================================
+
+# ── Credentials and generated configs — NEVER commit ─────────
+.env
+packetbeat.yml
+agent/config.json
+grafana/datasources/s3.json
+
+# ── Python ───────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.eggs/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ── Generated reports (keep sample, ignore real ones) ────────
+reports/regression-*.html
+
+# ── Logs ─────────────────────────────────────────────────────
+*.log
+
+# ── macOS ────────────────────────────────────────────────────
+.DS_Store

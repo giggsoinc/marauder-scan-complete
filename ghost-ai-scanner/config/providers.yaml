@@ -1,0 +1,255 @@
+# =============================================================
+# FILE: config/providers.yaml
+# PURPOSE: Master list of authorized and unauthorized AI providers
+# VERSION: 1.0.0
+# UPDATED: 2026-04-17
+# OWNER: Giggso Security Team
+# NOTE: Reload happens automatically on each scan cycle.
+#       No container restart needed after editing this file.
+# =============================================================
+
+# -------------------------------------------------------------
+# AUTHORIZED
+# Traffic to these domains is suppressed — no alert fired.
+# Add your internal proxies and approved tools here.
+# -------------------------------------------------------------
+authorized:
+  - name: "Trinity Proxy (Approved Claude gateway)"
+    domains:
+      - "trinity.*.internal"
+      - "api-proxy.*.internal"
+    notes: "All Claude traffic must route through Trinity. Direct Anthropic calls are unauthorized."
+
+  - name: "Internal AI Gateway"
+    domains:
+      - "ai-gateway.*.internal"
+      - "llm.*.internal"
+    notes: "Any internally hosted approved AI gateway. Update domain to match your environment."
+
+# -------------------------------------------------------------
+# UNAUTHORIZED
+# Traffic to any of these triggers an immediate alert.
+# Grouped by category for readability and reporting.
+# Each entry: name, domains (glob patterns), ports, severity.
+# -------------------------------------------------------------
+unauthorized:
+
+  # -- Major LLM APIs ------------------------------------------
+  - category: "Major LLM APIs"
+    providers:
+
+      - name: "OpenAI"
+        domains:
+          - "api.openai.com"
+          - "chat.openai.com"
+          - "*.openai.com"
+        ports: [443]
+        severity: "HIGH"
+
+      - name: "Anthropic Direct"
+        domains:
+          - "api.anthropic.com"
+          - "claude.ai"
+        ports: [443]
+        severity: "HIGH"
+        notes: "Direct calls bypass Trinity. Unauthorized even though Claude is the approved model."
+
+      - name: "Google Gemini"
+        domains:
+          - "generativelanguage.googleapis.com"
+          - "gemini.google.com"
+          - "aistudio.google.com"
+        ports: [443]
+        severity: "HIGH"
+
+      - name: "xAI Grok"
+        domains:
+          - "api.x.ai"
+          - "grok.x.ai"
+        ports: [443]
+        severity: "HIGH"
+
+      - name: "Groq"
+        domains:
+          - "api.groq.com"
+        ports: [443]
+        severity: "HIGH"
+
+      - name: "Mistral AI"
+        domains:
+          - "api.mistral.ai"
+        ports: [443]
+        severity: "HIGH"
+
+      - name: "Cohere"
+        domains:
+          - "api.cohere.com"
+          - "api.cohere.ai"
+        ports: [443]
+        severity: "HIGH"
+
+      - name: "Perplexity"
+        domains:
+          - "api.perplexity.ai"
+          - "perplexity.ai"
+        ports: [443]
+        severity: "HIGH"
+
+  # -- Open Source Model Hubs ----------------------------------
+  - category: "Open Source Model Hubs"
+    providers:
+
+      - name: "HuggingFace"
+        domains:
+          - "huggingface.co"
+          - "api-inference.huggingface.co"
+          - "cdn-lfs.huggingface.co"
+        ports: [443, 80]
+        severity: "HIGH"
+        notes: "Covers both API inference and model download endpoints."
+
+      - name: "Ollama Registry"
+        domains:
+          - "ollama.ai"
+          - "registry.ollama.ai"
+        ports: [443]
+        severity: "MEDIUM"
+
+      - name: "Ollama Local Server"
+        domains: []
+        ports: [11434]
+        severity: "MEDIUM"
+        notes: "Default local server port. Flag any internal traffic on this port."
+
+      - name: "LM Studio Local Server"
+        domains: []
+        ports: [1234]
+        severity: "MEDIUM"
+        notes: "Default LM Studio local inference port."
+
+      - name: "LocalAI"
+        domains: []
+        ports: [8080, 8081]
+        severity: "MEDIUM"
+
+      - name: "Replicate"
+        domains:
+          - "api.replicate.com"
+          - "replicate.delivery"
+        ports: [443]
+        severity: "HIGH"
+
+  # -- Cloud AI Platforms --------------------------------------
+  - category: "Cloud AI Platforms"
+    providers:
+
+      - name: "AWS Bedrock Direct"
+        domains:
+          - "bedrock.*.amazonaws.com"
+          - "bedrock-runtime.*.amazonaws.com"
+        ports: [443]
+        severity: "CRITICAL"
+        notes: "Bedrock calls not tagged with approved project ID bypass all controls."
+
+      - name: "Azure OpenAI"
+        domains:
+          - "*.openai.azure.com"
+          - "cognitiveservices.azure.com"
+        ports: [443]
+        severity: "HIGH"
+
+      - name: "Google Vertex AI"
+        domains:
+          - "aiplatform.googleapis.com"
+          - "*.aiplatform.googleapis.com"
+        ports: [443]
+        severity: "HIGH"
+
+      - name: "Together AI"
+        domains:
+          - "api.together.xyz"
+          - "together.ai"
+        ports: [443]
+        severity: "HIGH"
+
+      - name: "Fireworks AI"
+        domains:
+          - "api.fireworks.ai"
+        ports: [443]
+        severity: "HIGH"
+
+      - name: "DeepInfra"
+        domains:
+          - "api.deepinfra.com"
+        ports: [443]
+        severity: "HIGH"
+
+  # -- AI Deployment Platforms (Ghost app hosting) -------------
+  - category: "AI Deployment Platforms"
+    providers:
+
+      - name: "Railway"
+        domains:
+          - "railway.app"
+          - "*.railway.app"
+          - "*.up.railway.app"
+        ports: [443]
+        severity: "HIGH"
+
+      - name: "Render"
+        domains:
+          - "*.render.com"
+          - "*.onrender.com"
+        ports: [443]
+        severity: "HIGH"
+
+      - name: "Fly.io"
+        domains:
+          - "*.fly.io"
+          - "*.fly.dev"
+        ports: [443]
+        severity: "HIGH"
+
+      - name: "Vercel AI SDK"
+        domains:
+          - "sdk.vercel.ai"
+          - "*.vercel.app"
+        ports: [443]
+        severity: "HIGH"
+
+      - name: "Modal"
+        domains:
+          - "*.modal.run"
+          - "modal.com"
+        ports: [443]
+        severity: "HIGH"
+
+  # -- AI Tools and Vector Databases ---------------------------
+  - category: "AI Tools and Vector Databases"
+    providers:
+
+      - name: "LangChain Hub"
+        domains:
+          - "smith.langchain.com"
+          - "api.hub.langchain.com"
+        ports: [443]
+        severity: "MEDIUM"
+
+      - name: "Pinecone"
+        domains:
+          - "*.pinecone.io"
+          - "api.pinecone.io"
+        ports: [443]
+        severity: "MEDIUM"
+
+      - name: "Weaviate Cloud"
+        domains:
+          - "*.weaviate.network"
+        ports: [443]
+        severity: "MEDIUM"
+
+      - name: "LlamaIndex Cloud"
+        domains:
+          - "api.llamaindex.ai"
+        ports: [443]
+        severity: "MEDIUM"

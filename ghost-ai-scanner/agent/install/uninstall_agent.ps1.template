@@ -1,0 +1,73 @@
+# =============================================================
+# PatronAI — Agent Uninstaller (Windows / PowerShell)
+# Recipient:  {{RECIPIENT_NAME}} <{{RECIPIENT_EMAIL}}>
+# Company:    {{COMPANY}}
+# Token:      {{TOKEN}}
+# Generated:  {{EXPIRES_AT}}
+# =============================================================
+# Run with: powershell -ExecutionPolicy Bypass -File uninstall_agent.ps1
+# No admin rights required.
+# =============================================================
+
+$ErrorActionPreference = "Continue"
+$AgentDir = "$env:USERPROFILE\.patronai"
+$Token    = "{{TOKEN}}"
+
+function _info { param($msg) Write-Host "[patronai] $msg" }
+function _ok   { param($msg) Write-Host "[patronai] + $msg" -ForegroundColor Green }
+
+Write-Host ""
+Write-Host "PatronAI Agent Uninstaller"
+Write-Host "=========================="
+Write-Host "Recipient : {{RECIPIENT_NAME}} <{{RECIPIENT_EMAIL}}>"
+Write-Host "Company   : {{COMPANY}}"
+Write-Host "Token     : $Token"
+Write-Host ""
+Write-Host "This will remove the PatronAI agent from this machine."
+Write-Host "Your code and git repos are not affected."
+Write-Host ""
+$confirm = Read-Host "Continue? [y/N]"
+if ($confirm -notmatch "^[Yy]$") { Write-Host "Aborted."; exit 0 }
+Write-Host ""
+
+# ── 1. Unregister scheduled tasks ────────────────────────────
+foreach ($task in @("PatronAI-Heartbeat", "PatronAI-Scan")) {
+    if (Get-ScheduledTask -TaskName $task -ErrorAction SilentlyContinue) {
+        Unregister-ScheduledTask -TaskName $task -Confirm:$false
+        _ok "Removed scheduled task: $task"
+    }
+}
+
+# ── 2. Remove git pre-commit hooks ───────────────────────────
+$removed = 0
+Get-ChildItem -Path $env:USERPROFILE -Recurse -Depth 6 `
+    -Filter ".git" -Directory -ErrorAction SilentlyContinue | ForEach-Object {
+    $hook = Join-Path $_.FullName "hooks\pre-commit"
+    if (Test-Path $hook) {
+        $content = Get-Content $hook -Raw -ErrorAction SilentlyContinue
+        if ($content -match "patronai") {
+            Remove-Item $hook -Force
+            $backup = "${hook}.backup"
+            if (Test-Path $backup) { Move-Item $backup $hook }
+            $removed++
+        }
+    }
+}
+_info "Hooks removed from $removed repositories."
+
+# ── 3. Unwire git template dir ────────────────────────────────
+$tmplDir = git config --global init.templateDir 2>$null
+if ($tmplDir -match "\.patronai") {
+    git config --global --unset init.templateDir
+    _ok "Cleared git init.templateDir"
+}
+
+# ── 4. Remove agent directory ─────────────────────────────────
+if (Test-Path $AgentDir) {
+    Remove-Item -Recurse -Force $AgentDir
+    _ok "Removed $AgentDir"
+}
+
+Write-Host ""
+_info "Uninstall complete. No agent files remain on this machine."
+_info "Your IT administrator will confirm server-side deregistration."

@@ -1,0 +1,22 @@
+# =============================================================
+# FILE: config/authorized_code.csv
+# PROJECT: PatronAI — Marauder Scan code layer
+# VERSION: 1.0.0
+# UPDATED: 2026-04-18
+# OWNER: Giggso Inc
+# PURPOSE: Customer-approved AI frameworks, MCP servers and tools.
+#          Checked FIRST before unauthorized list.
+#          Match = SUPPRESS — no alert fired.
+#          Edit via Streamlit :8501 or direct S3 upload.
+#          Reloaded every scan cycle — no restart needed.
+# FORMAT: name, type, pattern, dept_scope, notes
+#         dept_scope: empty = company-wide, else comma-separated dept names
+# =============================================================
+name,type,pattern,dept_scope,notes
+# ── EXAMPLES — uncomment and edit to activate ──
+# GitHub Copilot,tool,copilot,,Approved company-wide via IT
+# LangChain,framework,langchain,Engineering,Approved for Engineering only
+# LlamaIndex,framework,llama_index,Research,Approved for Research team
+# Internal MCP Gateway,mcp,mcp.internal.company.com,,Approved internal MCP server
+# OpenAI Direct API,api,openai,Engineering,Approved via Parameter Store key only
+# Trinity AI Proxy,proxy,trinity-ai-proxy,,Approved company-wide — routes via approved gateway

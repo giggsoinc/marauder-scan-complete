@@ -1,0 +1,118 @@
+# =============================================================
+# FILE: dashboard/ui/ai_inventory_mindmap.py
+# PROJECT: PatronAI — Mega-PR
+# VERSION: 1.0.0
+# UPDATED: 2026-04-28
+# OWNER: Giggso Inc (Ravi Venugopal)
+# PURPOSE: Mind-map network/graph for Manager → AI INVENTORY tab.
+#          Hierarchy: AI Assets (root) → Owner → Category → Provider.
+#          Custom radial tree layout — root at centre, branches radiate.
+#          Node click → drill filter on the table below.
+# DEPENDS: plotly, ai_inventory_mindmap_data, theme
+# AUDIT LOG:
+#   v1.0.0  2026-04-28  Initial. Replaces ai_inventory_treemap.py.
+# =============================================================
+
+import plotly.graph_objects as go
+import streamlit as st
+
+from .manager_tab_ai_inventory_data import phase_1a_only, dedup_latest
+from .ai_inventory_mindmap_data     import build_graph, _radial_pos, ROOT
+from .drill_panel                   import set_drill
+from .theme                         import SEV
+
+_PANEL   = "mindmap"
+_SEV_COL = {k: v[0] for k, v in SEV.items()}   # fg colour per severity
+_SIZE    = {0: 28, 1: 20, 2: 14, 3: 9}
+_BASE_COL = {0: "#0969DA", 1: "#1F2328"}
+
+
+def render_mindmap(events: list) -> None:
+    """Render an interactive mind-map above the AI inventory table.
+    Clicking an owner, category, or provider node sets a drill filter."""
+    base = dedup_latest(phase_1a_only(events))
+    if not base:
+        st.caption("No Phase 1A findings yet — mind map appears after next scan.")
+        return
+
+    ocp, edges, meta, node_labels = build_graph(base)
+    pos = _radial_pos(ocp)
+
+    # ── Edge trace ────────────────────────────────────────────
+    ex, ey = [], []
+    for a, b in edges:
+        if a in pos and b in pos:
+            ex += [pos[a][0], pos[b][0], None]
+            ey += [pos[a][1], pos[b][1], None]
+
+    edge_trace = go.Scatter(
+        x=ex, y=ey, mode="lines",
+        line=dict(width=1, color="#D0D7DE"),
+        hoverinfo="none",
+    )
+
+    # ── Node trace ────────────────────────────────────────────
+    nx_list, ny_list, ncolors, nsizes, ntext = [], [], [], [], []
+    for n in node_labels:
+        if n not in pos:
+            continue
+        m   = meta.get(n, {"level": 0, "severity": "CLEAN"})
+        lv  = m["level"]
+        sev = m.get("severity", "CLEAN")
+        nx_list.append(pos[n][0])
+        ny_list.append(pos[n][1])
+        ncolors.append(_BASE_COL.get(lv, _SEV_COL.get(sev, "#57606A")))
+        nsizes.append(_SIZE.get(lv, 9))
+        ntext.append(n.split("\n")[0])     # first line = display label
+
+    node_trace = go.Scatter(
+        x=nx_list, y=ny_list,
+        mode="markers+text",
+        marker=dict(size=nsizes, color=ncolors,
+                    line=dict(width=1.5, color="#FFFFFF")),
+        text=ntext, textposition="top center",
+        textfont=dict(size=9, color="#1F2328"),
+        customdata=node_labels,
+        hovertemplate="<b>%{text}</b><extra></extra>",
+    )
+
+    fig = go.Figure(data=[edge_trace, node_trace])
+    fig.update_layout(
+        showlegend=False, hovermode="closest",
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+        margin=dict(l=0, r=0, t=10, b=0), height=480,
+        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+        font=dict(family="JetBrains Mono", size=10, color="#1F2328"),
+    )
+
+    st.markdown('<div class="card-title">AI ASSET MIND MAP · click a node to drill</div>',
+                unsafe_allow_html=True)
+    sel = st.plotly_chart(fig, use_container_width=True,
+                          on_select="rerun", selection_mode="points",
+                          key="ai_mindmap")
+    try:
+        pts = (sel.selection.points if sel else []) or []
+    except Exception:
+        pts = []
+    if not pts:
+        return
+
+    idx  = pts[0].get("point_index", -1)
+    if not (0 <= idx < len(node_labels)):
+        return
+    name = node_labels[idx]
+    m    = meta.get(name, {})
+    lv   = m.get("level", 0)
+
+    if lv == 1:
+        set_drill(_PANEL, f"Owner: {m.get('raw_owner', name)}",
+                  "owner", m.get("raw_owner", name))
+    elif lv == 2:
+        set_drill(_PANEL, f"Category: {m.get('raw_cat', name)}",
+                  "category", m.get("raw_cat", name))
+    elif lv == 3:
+        raw = name.split("\n")[0]
+        set_drill(_PANEL, f"Provider: {raw}", "provider", raw)
+    if lv in (1, 2, 3):
+        st.rerun()

@@ -1,0 +1,34 @@
+Function,Ask,Outcome,Status
+Architecture & Design,Clarify S3 path identity model — how it knows whose log / which group,"Documented hive-style partitioning: ocsf/agent/heartbeat/group=.../user=.../device=...; DMG tamper-resistance via signed binary + MDM enrollment.json (root:wheel 0600)",Done
+Architecture & Design,Confirm bucket-as-tenant (no company_id prefix needed),"Bucket name (e.g. marauder-scan-giggso) IS the tenant identifier; dropped company_id from path",Done
+Architecture & Design,Validate desktop agent necessity vs VPC Flow Logs,"Confirmed VPC Flow Logs cover ENIs only (EFS / NAT / endpoints / Lambda) — desktops are invisible without an agent",Done
+Architecture & Design,Address port-mapping evasion (docker run -p 9876:3000),"Designed multi-signal layered detection: image digest > image name > outbound DNS > process hash > .app bundle > filesystem > LaunchAgent > entrypoint > TLS SNI > port",Done (design)
+Detection Rules,Audit unauthorized.csv for n8n / sim.ai / Google Opal,"n8n cloud domains absent; sim.ai, Google Opal, Langflow, Dify, Lovable, v0.dev, Replit Agent, Coze all missing",Done (audit)
+Detection Rules,Audit unauthorized_code.csv for same,"n8n line 42 (MEDIUM), Flowise line 43; sim.ai, Google Opal, Langflow, Dify code patterns missing",Done (audit)
+Operator Guide — Personas,Add 5-persona model + RACI to operator guide,"Added Section 2 (Who Sees What) and Section 3 (Work Split / RACI) covering Platform Admin, Support Team, SecOps Manager, Security Executive, End User",Done
+Operator Guide — Personas,Add 'Work Split' nav link,Added to top nav,Done
+Operator Guide — Naming,MARAUDER SCAN CODE -> PatronAI,Replaced in hero + throughout,Done
+Operator Guide — Naming,Giggso -> Company (AWS Marketplace context),Replaced in TCO + Rules-push cards + footer,Done
+Operator Guide — Naming,Platform-Builder -> Platform Admin,Full card rewrite + RACI + access matrix + headers,Done
+Operator Guide — Naming,IT Manager -> SecOps Manager,Card rewrite + matrix + RACI + SVG label,Done
+Operator Guide — Naming,Executive -> Security Executive (CISO / VP Sec),Card rewrite + matrix + RACI + headers,Done
+Operator Guide — Naming,Keep Support Team — refine access items,Reworded items to be plain-language scope (not jargon),Done
+Operator Guide — Components,Grafana + port -> PatronAI Metrics Dash (no port),"Replaced across SVG, role cards, access matrix, RACI, env-var table, URL block, log-tail table, checklist; container renamed patronai-metrics-dash; env var GF_SECURITY_ADMIN_PASSWORD -> METRICS_DASH_ADMIN_PASSWORD",Done
+Operator Guide — Components,Streamlit + port -> PatronAI User Interface (no port),Same coverage; settings tabs section reworded; health-check URL updated,Done
+Operator Guide — Voice,Remove all human names (Steve / Pam / Ravi),"Removed from SVG, role cards, RACI headers + rows, URL comments; replaced with role-only labels",Done
+Operator Guide — Voice,Remove 'Deploy Packetbeat to managed devices' step,Step 6 of Section 5 deleted entirely,Done
+Operator Guide — Voice,No technical messages — read as USER seeing it,"Section 4 env-var table -> plain settings table; Section 5 rewritten as user-experience narrative (welcome email -> sign-in -> Metrics Dash -> User Interface -> alerts arriving); Section 6 checklist rewritten as user-visible readiness signals; Go/No-Go bash block replaced with plain-English health card",Done
+Operator Guide — Voice,Detechnicalise SVG diagram labels,"'Packetbeat + Agent' -> 'Network sensor + Agent'; 'EC2 / ECS + VPC Flow Logs' -> 'Cloud Workloads + Network flow logs'; 'Write settings.json -> S3' -> 'Saves settings to tenant storage'",Done
+Operator Guide — Voice,Detechnicalise Support Team role card,"Dropped 'EC2 SSH access', 'Docker container logs', 'Terraform apply'; reworded as 'Platform infrastructure stand-up', 'Backend log and storage access', 'Provider denylist maintenance'",Done
+Operator Guide — Voice,Detechnicalise RACI rows,"'Customer EC2 / S3 stand-up & Terraform' -> 'Platform stand-up in the customer's cloud account'; 'MDM packaging & mass deployment (Jamf / Intune / Ansible)' -> 'Agent packaging & fleet-wide rollout to managed devices'",Done
+Pending — Claude Code Runs,Run 1: VPC Flow Log noise filter (cloud layer fix),Prompt drafted; awaiting Ravi go-ahead,Pending
+Pending — Claude Code Runs,Run 2: CSV expansion (n8n cloud / sim.ai / Google Opal / Langflow / Dify / Lovable / v0.dev / Replit / Coze),Prompt drafted; pending HIGH-for-local-UIs and drop-port-3000 confirmations,Pending
+Pending — Claude Code Runs,"Run 3: Multi-signal detection (4 YAML files + multi_signal_matcher.py + heartbeat_schema.py)",Prompt drafted,Pending
+Pending — Claude Code Runs,"Run 4: 6 macOS files (patronai_agent.py, plist, .app bundle, build-dmg.sh, jamf.sh, debugger_jamf.sh)",Files specified,Pending
+Future Platforms,Windows agent (Intune-based deployment),Noted for future prompt; multi-signal detection design carries over,Not started
+Future Platforms,Linux agent (Ansible-based deployment),Noted for future prompt,Not started
+Future Platforms,Android agent,Noted for future,Not started
+Future Platforms,iPhone agent,Noted for future,Not started
+Open Decisions,Path structure: ocsf/agent/heartbeat/group=.../user=.../device=.../YYYY/MM/DD/{epoch}-heartbeat.json,Proposed; awaiting yes/no,Pending decision
+Open Decisions,Email hashing default-on (togglable via settings),Proposed; awaiting yes/no,Pending decision
+Open Decisions,No enrollment service for v1 (MDM-distributed enrollment.json only),Proposed; awaiting yes/no,Pending decision

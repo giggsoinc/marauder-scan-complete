@@ -1,0 +1,359 @@
+# =============================================================
+# PatronAI — Agent Installer (Windows PowerShell)
+# Generated for: {{RECIPIENT_NAME}} <{{RECIPIENT_EMAIL}}>
+# Token: {{TOKEN}}
+# Expires: {{EXPIRES_AT}}
+#
+# USAGE: powershell -ExecutionPolicy Bypass -File setup_agent.ps1
+# REQUIRES: PowerShell 5.1+, Python 3 (with bcrypt installed)
+# =============================================================
+$ErrorActionPreference = "Stop"
+
+$MetaUrl           = "{{META_URL}}"
+$StatusPutUrl      = "{{STATUS_PUT_URL}}"
+$HeartbeatPutUrl   = "{{HEARTBEAT_PUT_URL}}"
+$ScanPutUrl        = "{{SCAN_PUT_URL}}"
+$AuthorizedGetUrl  = "{{AUTHORIZED_GET_URL}}"
+$UrlsRefreshUrl    = "{{URLS_REFRESH_URL}}"
+$AuthorizedDomains = "{{AUTHORIZED_DOMAINS}}"
+$Bucket            = "{{BUCKET}}"
+$Region            = "{{REGION}}"
+$Company           = "{{COMPANY}}"
+$Token             = "{{TOKEN}}"
+$RecipientName     = "{{RECIPIENT_NAME}}"
+$RecipientEmail    = "{{RECIPIENT_EMAIL}}"
+
+$AgentDir   = Join-Path $env:USERPROFILE ".patronai"
+$ConfigPath = Join-Path $AgentDir "config.json"
+
+function Write-Info($msg) { Write-Host "[patronai] $msg" }
+function Write-Fail($msg) { Write-Host "ERROR: $msg" -ForegroundColor Red; exit 1 }
+
+# ── Validate python3 / bcrypt ─────────────────────────────────
+try { python --version *>$null } catch { Write-Fail "Python 3 is required. Install from python.org" }
+$bcryptOk = python -c "import bcrypt; print('ok')" 2>$null
+if ($bcryptOk -ne "ok") {
+    Write-Info "Installing bcrypt..."
+    pip install --quiet "bcrypt>=4.0.0" | Out-Null
+}
+
+# ── Prompt for OTP ───────────────────────────────────────────
+Write-Host ""
+Write-Host "PatronAI Agent Installer"
+Write-Host "========================"
+Write-Host "Recipient : $RecipientName"
+Write-Host "Company   : $Company"
+Write-Host ""
+$OtpInput = Read-Host "Enter your 6-digit installation OTP"
+
+if ($OtpInput -notmatch '^\d{6}$') {
+    Write-Fail "OTP must be exactly 6 digits."
+}
+
+# ── Download and validate meta ────────────────────────────────
+Write-Info "Validating OTP..."
+$TmpMeta = Join-Path $env:TEMP "patronai-meta-$Token.json"
+try {
+    Invoke-WebRequest -Uri $MetaUrl -OutFile $TmpMeta -TimeoutSec 30
+} catch {
+    Write-Fail "Cannot reach installation server. URL may have expired."
+}
+
+$OtpHash = python -c "import json; print(json.load(open(r'$TmpMeta'))['otp_hash'])"
+$Expires  = python -c "import json; print(json.load(open(r'$TmpMeta'))['expires_at'])"
+
+$Expired = python -c @"
+from datetime import datetime, timezone
+e = datetime.fromisoformat('$Expires')
+print('yes' if datetime.now(timezone.utc) > e else 'no')
+"@
+if ($Expired -eq "yes") { Write-Fail "Installation package has expired. Request a new one." }
+
+$Valid = python -c @"
+import bcrypt
+try:
+    ok = bcrypt.checkpw(b'$OtpInput', b'$OtpHash')
+    print('yes' if ok else 'no')
+except Exception:
+    print('no')
+"@
+if ($Valid -ne "yes") { Write-Fail "Invalid OTP. Please check your email and try again." }
+Write-Info "OTP validated."
+
+# ── Install agent files (identity baked at install) ──────────
+New-Item -ItemType Directory -Force -Path $AgentDir | Out-Null
+
+# Compute MAC + device_uuid once, then persist alongside token/email.
+$DeviceUuid  = [guid]::NewGuid().ToString()
+$MacPrimary  = (Get-NetAdapter | Where-Object Status -eq "Up" | Select-Object -First 1 -ExpandProperty MacAddress) -replace "-", ":"
+if (-not $MacPrimary) { $MacPrimary = "00:00:00:00:00:00" }
+
+$Config = @{
+    bucket      = $Bucket
+    region      = $Region
+    company     = $Company
+    token       = $Token
+    email       = $RecipientEmail
+    device_uuid = $DeviceUuid
+    mac_primary = $MacPrimary.ToLower()
+    agent_dir   = $AgentDir
+} | ConvertTo-Json
+$Config | Set-Content -Path $ConfigPath -Encoding UTF8
+
+# Persist presigned URLs + URL-refresh endpoint + authorised list fallback.
+$HeartbeatPutUrl   | Set-Content -Path (Join-Path $AgentDir "heartbeat_url.txt")      -Encoding UTF8
+$ScanPutUrl        | Set-Content -Path (Join-Path $AgentDir "scan_url.txt")            -Encoding UTF8
+$AuthorizedGetUrl  | Set-Content -Path (Join-Path $AgentDir "authorized_url.txt")      -Encoding UTF8
+$UrlsRefreshUrl    | Set-Content -Path (Join-Path $AgentDir "urls_refresh_url.txt")    -Encoding UTF8
+
+# Local action log (one JSON-line per PUT). Replaces silent failure.
+New-Item -ItemType File -Force -Path (Join-Path $AgentDir "agent.log") | Out-Null
+$AuthorizedDomains | Set-Content -Path (Join-Path $AgentDir "authorized_domains.txt")  -Encoding UTF8
+
+# Phase 1A — first-run flag. scan_first_run.py.frag reads it (IS_FIRST_RUN);
+# the footer clears it after a successful payload print so subsequent scans
+# run in lighter recurring mode.
+New-Item -ItemType File -Force -Path (Join-Path $AgentDir "first_run.flag") | Out-Null
+
+# ── Write pre-commit hook script ──────────────────────────────
+$HookScript = Join-Path $AgentDir "pre_commit_hook.ps1"
+@'
+# PatronAI pre-commit hook — PowerShell
+$ConfigPath = Join-Path $env:USERPROFILE ".patronai\config.json"
+if (-not (Test-Path $ConfigPath)) { exit 0 }
+$Cfg    = Get-Content $ConfigPath | ConvertFrom-Json
+$Bucket = $Cfg.bucket; $Region = $Cfg.region; $Company = $Cfg.company
+if (-not $Bucket) { exit 0 }
+$Diff = git diff --cached --unified=3 2>$null
+if (-not $Diff) { exit 0 }
+$Signals = "langchain|llama_index|autogen|crewai|openai\.agents|MCPServer|api\.openai\.com|sk-proj-|sk-ant-"
+if (-not ($Diff -match $Signals)) { exit 0 }
+$DeviceId  = $env:COMPUTERNAME
+$Timestamp = (Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ")
+$Repo      = Split-Path -Leaf (git rev-parse --show-toplevel 2>$null)
+$Branch    = git rev-parse --abbrev-ref HEAD 2>$null
+$Snippet   = $Diff.Substring(0, [Math]::Min($Diff.Length, 5120))
+$Payload   = @{event_type="GIT_DIFF_SIGNAL";source="patronai_git_hook_ps";
+               device_id=$DeviceId;company=$Company;repo=$Repo;branch=$Branch;
+               timestamp=$Timestamp;diff_snippet=$Snippet} | ConvertTo-Json -Compress
+$Key = "ocsf/agent/git-diffs/$DeviceId-$Timestamp.json"
+aws s3 cp - "s3://$Bucket/$Key" --region $Region --content-type "application/json" --quiet 2>$null
+exit 0
+'@ | Set-Content -Path $HookScript -Encoding UTF8
+
+# Install hook into git repos found under user profile
+$InstallCount = 0
+$HookBody = "#!/bin/sh`npowershell -ExecutionPolicy Bypass -File `"$HookScript`""
+Get-ChildItem -Path $env:USERPROFILE -Recurse -Depth 4 -Filter ".git" -Directory -ErrorAction SilentlyContinue | ForEach-Object {
+    $HooksDir = Join-Path $_.FullName "hooks"
+    if (-not (Test-Path $HooksDir)) { New-Item -ItemType Directory -Path $HooksDir | Out-Null }
+    $HookPath = Join-Path $HooksDir "pre-commit"
+    if (Test-Path $HookPath) { Copy-Item $HookPath "$HookPath.pre-patronai-backup" -Force }
+    $HookBody | Set-Content -Path $HookPath -Encoding UTF8
+    $InstallCount++
+}
+
+# Step 0.1 — git template dir (auto-install on every future init/clone).
+# Honours an existing init.templateDir if one is already set (additive).
+$TemplateDir   = Join-Path $AgentDir "git-template"
+$TemplateHooks = Join-Path $TemplateDir "hooks"
+$ExistingTpl   = (& git config --global --get init.templateDir 2>$null)
+if ($ExistingTpl -and $ExistingTpl -ne $TemplateDir) {
+    $Expanded = $ExistingTpl -replace '^~', $env:USERPROFILE
+    $TgtHooks = Join-Path $Expanded "hooks"
+    New-Item -ItemType Directory -Force -Path $TgtHooks | Out-Null
+    $HookBody | Set-Content -Path (Join-Path $TgtHooks "pre-commit") -Encoding UTF8
+    Write-Info "init.templateDir preserved ($ExistingTpl); hook copied alongside."
+} else {
+    New-Item -ItemType Directory -Force -Path $TemplateHooks | Out-Null
+    $HookBody | Set-Content -Path (Join-Path $TemplateHooks "pre-commit") -Encoding UTF8
+    & git config --global init.templateDir $TemplateDir | Out-Null
+    Write-Info "init.templateDir set — every new git init/clone gets the hook."
+}
+
+# ── Write endpoint scan script ────────────────────────────────
+# Runs every 30 min. Multi-surface: packages, processes, browsers,
+# IDE plugins, containers (image+logs), shell history. Scan logic
+# lives in agent/install/scan_*.py.frag — same Python is inlined
+# into the bash and PowerShell installers via {{INLINE_SCAN_PYTHON}}.
+$ScanScript = Join-Path $AgentDir "scan.ps1"
+@'
+$AgentDir    = Join-Path $env:USERPROFILE ".patronai"
+$ConfigPath  = Join-Path $AgentDir "config.json"
+$ScanUrlFile = Join-Path $AgentDir "scan_url.txt"
+if (-not (Test-Path $ConfigPath))  { exit 0 }
+if (-not (Test-Path $ScanUrlFile)) { exit 0 }
+$ScanUrl = (Get-Content $ScanUrlFile).Trim()
+if (-not $ScanUrl) { exit 0 }
+$Cfg     = Get-Content $ConfigPath | ConvertFrom-Json
+
+# Refresh live authorised list (presigned GET; admin-editable without reinstall).
+$AuthUrlFile = Join-Path $AgentDir "authorized_url.txt"
+if (Test-Path $AuthUrlFile) {
+    $AuthGetUrl = (Get-Content $AuthUrlFile).Trim()
+    if ($AuthGetUrl) {
+        try {
+            $Live = Invoke-WebRequest -Uri $AuthGetUrl -TimeoutSec 10 -UseBasicParsing
+            if ($Live.Content) {
+                $Live.Content | Set-Content -Path (Join-Path $AgentDir "authorized_domains.txt") -Encoding UTF8
+            }
+        } catch { <# fallback to local file #> }
+    }
+}
+
+# Pass token + company into the embedded Python via env so $TOKEN/$COMPANY
+# placeholders in scan_header.py.frag bind to the live values.
+$env:PATRONAI_TOKEN   = $Cfg.token
+$env:PATRONAI_COMPANY = $Cfg.company
+$Result = python -c @"
+{{INLINE_SCAN_PYTHON}}
+"@
+
+if ($Result) {
+    try {
+        Invoke-WebRequest -Uri $ScanUrl -Method Put -Body $Result `
+            -ContentType "application/json" -TimeoutSec 30 | Out-Null
+    } catch { <# non-fatal #> }
+}
+'@ | Set-Content -Path $ScanScript -Encoding UTF8
+
+# ── Report install status ─────────────────────────────────────
+$StatusPayload = @{
+    token        = $Token
+    status       = "installed"
+    device_id    = $env:COMPUTERNAME
+    installed_at = (Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ")
+} | ConvertTo-Json -Compress
+
+try {
+    Invoke-WebRequest -Uri $StatusPutUrl -Method Put -Body $StatusPayload `
+        -ContentType "application/json" -TimeoutSec 15 | Out-Null
+} catch { <# non-fatal #> }
+
+# ── Write heartbeat script (URL refresh + identity + structured log) ──
+$HeartbeatScript = Join-Path $AgentDir "heartbeat.ps1"
+@'
+$AgentDir    = Join-Path $env:USERPROFILE ".patronai"
+$ConfigPath  = Join-Path $AgentDir "config.json"
+$UrlFile     = Join-Path $AgentDir "heartbeat_url.txt"
+$RefreshFile = Join-Path $AgentDir "urls_refresh_url.txt"
+$Log         = Join-Path $AgentDir "agent.log"
+if (-not (Test-Path $ConfigPath)) { exit 0 }
+$Cfg = Get-Content $ConfigPath | ConvertFrom-Json
+
+# 1. Refresh URLs from urls.json (best-effort).
+if (Test-Path $RefreshFile) {
+    $RefreshUrl = (Get-Content $RefreshFile).Trim()
+    if ($RefreshUrl) {
+        try {
+            $Bundle = (Invoke-WebRequest -Uri $RefreshUrl -TimeoutSec 10 -UseBasicParsing).Content | ConvertFrom-Json
+            if ($Bundle.heartbeat_put_url)  { $Bundle.heartbeat_put_url  | Set-Content -Path $UrlFile -Encoding UTF8 }
+            if ($Bundle.scan_put_url)       { $Bundle.scan_put_url       | Set-Content -Path (Join-Path $AgentDir "scan_url.txt") -Encoding UTF8 }
+            if ($Bundle.authorized_get_url) { $Bundle.authorized_get_url | Set-Content -Path (Join-Path $AgentDir "authorized_url.txt") -Encoding UTF8 }
+        } catch { <# best-effort #> }
+    }
+}
+
+# 2. Build identity-rich payload.
+if (-not (Test-Path $UrlFile)) { exit 0 }
+$HbUrl = (Get-Content $UrlFile).Trim()
+if (-not $HbUrl) { exit 0 }
+try {
+    $Ips = @(Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+             Where-Object { $_.IPAddress -notlike "127.*" -and $_.IPAddress -notlike "169.254.*" } |
+             Select-Object -ExpandProperty IPAddress -Unique)
+} catch { $Ips = @() }
+$Payload = @{
+    event_type   = "HEARTBEAT"
+    status       = "installed"
+    device_id    = $env:COMPUTERNAME
+    device_uuid  = $Cfg.device_uuid
+    mac_primary  = $Cfg.mac_primary
+    ip_set       = $Ips
+    email        = $Cfg.email
+    token        = $Cfg.token
+    company      = $Cfg.company
+    os_name      = "Windows"
+    os_version   = (Get-CimInstance Win32_OperatingSystem).Version
+    agent_version= "2.0.0"
+    timestamp    = (Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ")
+} | ConvertTo-Json -Compress
+
+# 3. PUT, capture HTTP status, append structured log line.
+$HttpStatus = 0
+try {
+    $Resp = Invoke-WebRequest -Uri $HbUrl -Method Put -Body $Payload `
+        -ContentType "application/json" -TimeoutSec 30 -UseBasicParsing
+    $HttpStatus = [int]$Resp.StatusCode
+} catch {
+    if ($_.Exception.Response) { $HttpStatus = [int]$_.Exception.Response.StatusCode }
+}
+$Ts = (Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ")
+"{`"ts`":`"$Ts`",`"type`":`"heartbeat`",`"http_status`":$HttpStatus}" | Add-Content -Path $Log
+
+# Step 0.1 — hook coverage backstop. Walk every .git under USERPROFILE and
+# ensure our pre-commit shim is in place. Cheap; runs every 5 min.
+$HookScript = Join-Path $AgentDir "pre_commit_hook.ps1"
+if (Test-Path $HookScript) {
+    $Shim  = "#!/bin/sh`npowershell -ExecutionPolicy Bypass -File `"$HookScript`""
+    $Added = 0
+    Get-ChildItem -Path $env:USERPROFILE -Recurse -Depth 4 -Filter ".git" -Directory -ErrorAction SilentlyContinue | ForEach-Object {
+        $HD = Join-Path $_.FullName "hooks"
+        if (-not (Test-Path $HD)) { New-Item -ItemType Directory -Path $HD | Out-Null }
+        $HP = Join-Path $HD "pre-commit"
+        $Want = ($Shim -replace "`r","")
+        if ((-not (Test-Path $HP)) -or ((Get-Content $HP -Raw -ErrorAction SilentlyContinue) -ne $Want)) {
+            if (Test-Path $HP) { Copy-Item $HP "$HP.pre-patronai-backup" -Force -ErrorAction SilentlyContinue }
+            $Shim | Set-Content -Path $HP -Encoding UTF8
+            $Added++
+        }
+    }
+    if ($Added -gt 0) {
+        "{`"ts`":`"$Ts`",`"type`":`"hook_backstop`",`"added`":$Added}" | Add-Content -Path $Log
+    }
+}
+'@ | Set-Content -Path $HeartbeatScript -Encoding UTF8
+
+# ── Register Task Scheduler tasks ────────────────────────────
+function Register-PatronAITask($TaskName, $ScriptPath, $IntervalMinutes, $Desc) {
+    $Action   = New-ScheduledTaskAction -Execute "powershell.exe" `
+        -Argument "-ExecutionPolicy Bypass -WindowStyle Hidden -File `"$ScriptPath`""
+    $Trigger  = New-ScheduledTaskTrigger -RepetitionInterval (New-TimeSpan -Minutes $IntervalMinutes) `
+        -Once -At (Get-Date)
+    $Settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit (New-TimeSpan -Minutes 2) `
+        -StartWhenAvailable -DontStopIfGoingOnBatteries -RunOnlyIfNetworkAvailable
+    try {
+        Unregister-ScheduledTask -TaskName $TaskName -Confirm:$false -ErrorAction SilentlyContinue
+        Register-ScheduledTask -TaskName $TaskName -Action $Action -Trigger $Trigger `
+            -Settings $Settings -Description $Desc -RunLevel Limited | Out-Null
+        Write-Info "$TaskName registered (every $IntervalMinutes min)."
+    } catch {
+        Write-Info "$TaskName registration failed: $_"
+    }
+}
+
+Register-PatronAITask "PatronAI-Heartbeat" $HeartbeatScript 5  "PatronAI liveness heartbeat"
+Register-PatronAITask "PatronAI-Scan"      $ScanScript      30 "PatronAI endpoint scan (packages/processes/browser)"
+
+# Run first scan immediately in background
+Start-Process powershell -ArgumentList "-ExecutionPolicy Bypass -WindowStyle Hidden -File `"$ScanScript`"" -WindowStyle Hidden
+
+Remove-Item -Path $TmpMeta -ErrorAction SilentlyContinue
+
+# ── Drop the recipient-side diagnose script ──────────────────
+$Diag = Join-Path $AgentDir "diagnose.ps1"
+@'
+{{INLINE_DIAGNOSE_PS1}}
+'@ | Set-Content -Path $Diag -Encoding UTF8
+
+Write-Host ""
+Write-Info "Installation complete."
+Write-Info "Pre-commit hook installed in $InstallCount existing repositories."
+Write-Info "New repos auto-instrumented via init.templateDir — no manual step needed."
+Write-Info "Endpoint scan every 30 min — packages, processes, browsers, IDE plugins, containers, shell history,"
+Write-Info "                              MCP servers, agent workflows, scheduled agents, tool registrations, vector DBs."
+Write-Info "First scan runs in baseline mode (wider walk); subsequent scans run lighter."
+Write-Info "Heartbeat every 5 min — refreshes presigned URLs AND auto-installs the pre-commit hook"
+Write-Info "                       in any new git repo cloned/init-ed since the last cycle."
+Write-Info "AI framework signals in git commits will be forwarded for analysis."
+Write-Info "If anything looks off later, run:  powershell -File ~/.patronai/diagnose.ps1"

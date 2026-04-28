@@ -1,0 +1,50 @@
+# =============================================================
+# FILE: Dockerfile.grafana
+# VERSION: 1.1.0
+# UPDATED: 2026-04-19
+# OWNER: Giggso Inc
+# PURPOSE: Grafana container with PatronAI dashboards and
+#          datasources provisioned on first boot.
+#          Pam and Steve dashboards baked in — zero config needed.
+# PORT: 3000 (Grafana)
+# =============================================================
+
+FROM grafana/grafana:10.4.2
+
+LABEL maintainer="Giggso Inc" \
+      version="1.0.0" \
+      description="PatronAI — Grafana Dashboards"
+
+# Grafana environment defaults
+# Override via docker-compose .env
+ENV GF_SERVER_HTTP_PORT=3000 \
+    GF_SERVER_ROOT_URL=http://localhost:3000 \
+    GF_AUTH_ANONYMOUS_ENABLED=false \
+    GF_AUTH_BASIC_ENABLED=true \
+    GF_SECURITY_ADMIN_USER=admin \
+    GF_SECURITY_ADMIN_PASSWORD=change-me \
+    GF_USERS_ALLOW_SIGN_UP=false \
+    GF_USERS_ALLOW_ORG_CREATE=false \
+    GF_ANALYTICS_REPORTING_ENABLED=false \
+    GF_ANALYTICS_CHECK_FOR_UPDATES=false \
+    GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/etc/grafana/provisioning/dashboards/marauder-overview.json \
+    GF_LOG_LEVEL=warn
+
+# Install JSON datasource plugin — reads S3 JSON files directly
+RUN grafana-cli plugins install marcusolsson-json-datasource
+
+# Provisioning — datasources and dashboards baked in
+COPY grafana/provisioning/ /etc/grafana/provisioning/
+COPY grafana/dashboards/   /etc/grafana/provisioning/dashboards/
+
+# Provisioning config
+RUN mkdir -p /etc/grafana/provisioning/datasources \
+             /etc/grafana/provisioning/dashboards
+
+# Dashboard provider config
+COPY --chown=grafana:grafana grafana/provisioning/ /etc/grafana/provisioning/
+
+EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=45s --retries=3 \
+    CMD wget -q --spider http://localhost:3000/api/health || exit 1

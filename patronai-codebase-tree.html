@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PatronAI — Codebase Tree</title>
+<link rel="icon" type="image/png" href="ghost-ai-scanner/assets/branding/patronai-icon.png">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#f0f2f5;font-family:'IBM Plex Mono',monospace;padding:32px 20px;}
+.page{background:#fff;max-width:1200px;margin:0 auto;border-radius:12px;
+  box-shadow:0 2px 16px rgba(0,0,0,0.1);padding:40px;}
+.hdr{display:flex;justify-content:space-between;align-items:flex-start;
+  margin-bottom:24px;flex-wrap:wrap;gap:12px;}
+h1{font-size:20px;font-weight:700;color:#1B2A4A;font-family:'IBM Plex Sans',sans-serif;}
+.sub{color:#6c757d;font-size:11px;letter-spacing:1px;text-transform:uppercase;
+  margin-top:4px;font-family:'IBM Plex Sans',sans-serif;}
+.ver{display:inline-block;background:#2E5D9E;color:#fff;font-size:10px;
+  padding:2px 8px;border-radius:4px;margin-top:6px;}
+.btn{background:#2E5D9E;color:#fff;border:none;padding:8px 20px;
+  border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;
+  font-family:'IBM Plex Sans',sans-serif;}
+.tree{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+.panel{background:#f8f9fa;border:1.5px solid #dee2e6;border-radius:10px;padding:20px;}
+.panel-title{font-size:11px;letter-spacing:2px;text-transform:uppercase;
+  color:#fff;background:#1B2A4A;padding:6px 12px;border-radius:6px;
+  margin-bottom:16px;display:inline-block;}
+.tree-line{display:flex;align-items:baseline;gap:0;margin:2px 0;line-height:1.6;}
+.indent-0{padding-left:0;}
+.indent-1{padding-left:20px;}
+.indent-2{padding-left:40px;}
+.indent-3{padding-left:60px;}
+.connector{color:#6c757d;font-size:13px;margin-right:4px;flex-shrink:0;}
+.dir{color:#2E5D9E;font-size:12px;font-weight:600;}
+.file{color:#1a1a2e;font-size:11px;}
+.file.done{color:#00884d;}
+.file.next{color:#d4680a;font-weight:600;}
+.file.customer{color:#c0392b;}
+.file.stub{color:#8a6d0b;}
+.badge{display:inline-block;font-size:9px;padding:1px 5px;border-radius:3px;
+  margin-left:6px;vertical-align:middle;}
+.badge-done{background:#e6f5ee;color:#00884d;border:1px solid #00884d;}
+.badge-next{background:#fff8f0;color:#d4680a;border:1px solid #d4680a;}
+.badge-cust{background:#fdecea;color:#c0392b;border:1px solid #c0392b;}
+.badge-stub{background:#fffbf0;color:#8a6d0b;border:1px solid #8a6d0b;}
+.comment{color:#6c757d;font-size:10px;margin-left:8px;}
+.legend-row{display:flex;gap:16px;flex-wrap:wrap;margin-top:16px;
+  padding:12px;background:#f8f9fa;border-radius:8px;border:1px solid #dee2e6;}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;
+  color:#6c757d;font-family:'IBM Plex Sans',sans-serif;}
+@media print{.btn{display:none;}body{background:#fff;padding:0;}.page{box-shadow:none;}}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="hdr">
+    <div>
+      <h1 style="display:flex;align-items:center;gap:12px;">
+        <img src="ghost-ai-scanner/assets/branding/patronai-icon.png" alt="" width="28" height="28" style="border-radius:6px;">
+        PatronAI — Codebase Tree
+      </h1>
+      <div class="sub">One repo · Multi-cloud · 36 files · CLOUD_PROVIDER flag switches everything</div>
+      <span class="ver">v2.0</span>
+    </div>
+    <button class="btn" onclick="window.print()">Export / Print</button>
+  </div>
+
+  <div class="tree">
+
+    <!-- LEFT COLUMN -->
+    <div>
+      <div class="panel">
+        <div class="panel-title">Core — Config and Source</div>
+
+        <div class="tree-line indent-0"><span class="dir">marauder-scan/</span></div>
+
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="dir">config/</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file done">authorized.csv</span><span class="badge badge-done">DONE</span><span class="comment">customer allow list</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file done">unauthorized.csv</span><span class="badge badge-done">DONE</span><span class="comment">70+ providers deny-all</span></div>
+        <div class="tree-line indent-2"><span class="connector">└──</span><span class="file next">settings.json</span><span class="badge badge-next">NEXT</span><span class="comment">scanner defaults · S3 persisted</span></div>
+
+        <div class="tree-line indent-1" style="margin-top:10px"><span class="connector">├──</span><span class="dir">src/</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file">store.py</span><span class="comment">S3 read/write all state · Polars</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file">normalizer.py</span><span class="comment">OCSF validator · 3 input parsers</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file">matcher.py</span><span class="comment">CSV engine · 4 outcomes</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file">identity_resolver.py</span><span class="comment">4-step chain + MAC address</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file">ingestor.py</span><span class="comment">S3 cursor · S3 Select · gzip</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file">alerter.py</span><span class="comment">SNS + webhook + LogAnalyzer referral</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file">summarizer.py</span><span class="comment">daily summary JSON to S3</span></div>
+        <div class="tree-line indent-2"><span class="connector">└──</span><span class="file">reporter.py</span><span class="comment">PDF via ReportLab</span></div>
+
+        <div class="tree-line indent-1" style="margin-top:10px"><span class="connector">├──</span><span class="dir">providers/</span><span class="comment">  ← cloud adapter layer</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file">base.py</span><span class="comment">abstract interfaces for all adapters</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="dir">aws/</span><span class="comment">  ← full implementation</span></div>
+        <div class="tree-line indent-3"><span class="connector">├──</span><span class="file">storage.py</span><span class="comment">S3 + S3 Select + Polars</span></div>
+        <div class="tree-line indent-3"><span class="connector">├──</span><span class="file">identity.py</span><span class="comment">EC2 tags + Identity Center + AD</span></div>
+        <div class="tree-line indent-3"><span class="connector">├──</span><span class="file">alerts.py</span><span class="comment">SNS publish</span></div>
+        <div class="tree-line indent-3"><span class="connector">└──</span><span class="file">logs.py</span><span class="comment">VPC Flow Logs + CloudTrail</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="dir">gcp/</span><span class="comment">  ← stub</span></div>
+        <div class="tree-line indent-3"><span class="connector">├──</span><span class="file stub">storage.py</span><span class="badge badge-stub">STUB</span><span class="comment">GCS implementation</span></div>
+        <div class="tree-line indent-3"><span class="connector">├──</span><span class="file stub">identity.py</span><span class="badge badge-stub">STUB</span><span class="comment">Cloud Identity</span></div>
+        <div class="tree-line indent-3"><span class="connector">└──</span><span class="file stub">alerts.py</span><span class="badge badge-stub">STUB</span><span class="comment">Pub/Sub</span></div>
+        <div class="tree-line indent-2"><span class="connector">└──</span><span class="dir">azure/</span><span class="comment">  ← stub</span></div>
+        <div class="tree-line indent-3"><span class="connector">├──</span><span class="file stub">storage.py</span><span class="badge badge-stub">STUB</span><span class="comment">Blob Storage</span></div>
+        <div class="tree-line indent-3"><span class="connector">├──</span><span class="file stub">identity.py</span><span class="badge badge-stub">STUB</span><span class="comment">Entra ID</span></div>
+        <div class="tree-line indent-3"><span class="connector">└──</span><span class="file stub">alerts.py</span><span class="badge badge-stub">STUB</span><span class="comment">Service Bus</span></div>
+
+        <div class="tree-line indent-1" style="margin-top:10px"><span class="connector">├──</span><span class="dir">dashboard/</span></div>
+        <div class="tree-line indent-2"><span class="connector">└──</span><span class="file">app.py</span><span class="comment">Streamlit settings UI · writes to S3</span></div>
+
+        <div class="tree-line indent-1" style="margin-top:10px"><span class="connector">├──</span><span class="file">main.py</span><span class="comment">entrypoint · starts threads · loads provider</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file">Dockerfile</span><span class="comment">scanner + Streamlit container</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file">Dockerfile.grafana</span><span class="comment">Grafana + provisioned dashboards</span></div>
+        <div class="tree-line indent-1"><span class="connector">└──</span><span class="file">requirements.txt</span><span class="comment">polars · boto3 · streamlit · reportlab</span></div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div style="display:flex;flex-direction:column;gap:24px;">
+
+      <div class="panel">
+        <div class="panel-title">Grafana — Pre-built Dashboards</div>
+        <div class="tree-line indent-0"><span class="dir">grafana/</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="dir">dashboards/</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file">pam.json</span><span class="comment">AI Landscape + Risk + Exposure · 3 drill downs</span></div>
+        <div class="tree-line indent-2"><span class="connector">└──</span><span class="file">steve.json</span><span class="comment">Inventory + Risks + Logs + Alerts · raw OCSF</span></div>
+        <div class="tree-line indent-1"><span class="connector">└──</span><span class="dir">datasources/</span></div>
+        <div class="tree-line indent-2"><span class="connector">└──</span><span class="file">s3.json</span><span class="comment">JSON datasource pointing at S3 bucket</span></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Edge Agent — Laptop and Endpoint</div>
+        <div class="tree-line indent-0"><span class="dir">agent/</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file">collector.py</span><span class="comment">thin Python agent · process + port + DNS</span></div>
+        <div class="tree-line indent-1"><span class="connector">└──</span><span class="dir">install/</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file">jamf.sh</span><span class="comment">macOS MDM package + launchd service</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file">intune.ps1</span><span class="comment">Windows MDM + Windows service</span></div>
+        <div class="tree-line indent-2"><span class="connector">└──</span><span class="file">ansible.yml</span><span class="comment">Linux deploy + systemd service</span></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Terraform — Infrastructure as Code</div>
+        <div class="tree-line indent-0"><span class="dir">terraform/</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="dir">aws/</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file">main.tf</span><span class="comment">provider config + backend</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file">s3.tf</span><span class="comment">bucket + versioning + lifecycle</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file">ecs.tf</span><span class="comment">2 services · scanner + Grafana · autoscale</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file">iam.tf</span><span class="comment">task roles + execution role</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file">alb.tf</span><span class="comment">internal ALB + path routing</span></div>
+        <div class="tree-line indent-2"><span class="connector">└──</span><span class="file">ecr.tf</span><span class="comment">2 repos: scanner + grafana</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="dir">gcp/</span></div>
+        <div class="tree-line indent-2"><span class="connector">└──</span><span class="file stub">main.tf · gcs.tf · cloudrun.tf</span><span class="badge badge-stub">STUB</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="dir">azure/</span></div>
+        <div class="tree-line indent-2"><span class="connector">└──</span><span class="file stub">main.tf · blob.tf · aci.tf</span><span class="badge badge-stub">STUB</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="dir">edge/</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file">kinesis.tf</span><span class="comment">Firehose → S3 for Packetbeat</span></div>
+        <div class="tree-line indent-2"><span class="connector">└──</span><span class="file">iam_edge.tf</span><span class="comment">IAM role for edge agents</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file">variables.tf</span><span class="comment">CLOUD_PROVIDER · vpc_id · company_name</span></div>
+        <div class="tree-line indent-1"><span class="connector">└──</span><span class="file">outputs.tf</span><span class="comment">Grafana URL · Streamlit URL · S3 bucket</span></div>
+
+        <div class="tree-line indent-0" style="margin-top:12px"><span class="dir">deploy/</span><span class="comment">  ← customer runs these</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file customer">customer_prereqs.tf</span><span class="badge badge-cust">CUSTOMER</span><span class="comment">S3 + IAM + SNS</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file customer">enable_flowlogs.sh</span><span class="badge badge-cust">CUSTOMER</span><span class="comment">VPC Flow Logs on all VPCs</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file customer">enable_firewall_logs.sh</span><span class="badge badge-cust">CUSTOMER</span><span class="comment">Network Firewall logs</span></div>
+        <div class="tree-line indent-1"><span class="connector">└──</span><span class="file customer">ocsf_transform.tf</span><span class="badge badge-cust">CUSTOMER</span><span class="comment">Firehose OCSF Lambda</span></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">S3 Bucket Structure — Runtime State</div>
+        <div class="tree-line indent-0"><span class="dir">s3://patronai/</span><span class="comment">  ← actual bucket name</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="dir">config/</span><span class="comment">authorized.csv · unauthorized.csv · settings.json</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="dir">ocsf/agent/heartbeats|scans/</span><span class="comment">agent uploads (Phase 1A)</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="dir">findings/YYYY/MM/DD/</span><span class="comment">critical|high|medium|unknown.jsonl</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="dir">summary/daily/</span><span class="comment">YYYY-MM-DD.json · pre-aggregated</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="dir">cursor/</span><span class="comment">state.json · v2 timestamp cursor (Step 0.5)</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="dir">dedup/</span><span class="comment">YYYY-MM-DD.json · 60 min window</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="dir">identity/</span><span class="comment">nac-mapping.csv</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="dir">users/users.json</span><span class="comment">RBAC: role + is_admin per email (Phase 1B)</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="dir">mcp_hashes/{device}/{host}.txt</span><span class="comment">MCP config-change registry (Phase 1A)</span></div>
+        <div class="tree-line indent-1"><span class="connector">└──</span><span class="dir">reports/</span><span class="comment">YYYY-MM-DD-report.pdf</span></div>
+      </div>
+
+      <div class="panel" style="margin-top:24px">
+        <div class="panel-title">Phase 1A + 1B additions (2026-04-26)</div>
+        <div class="tree-line indent-0"><span class="dir">agent/install/</span><span class="comment">  ← 7 new fragments + first_run.flag wiring</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file done">scan_redactor.py.frag</span><span class="badge badge-done">DONE</span><span class="comment">privacy gate — strips secrets + paths</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file done">scan_repo_discovery.py.frag</span><span class="badge badge-done">DONE</span><span class="comment">auto-walks $HOME for .git/ — no hardcoded paths</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file done">scan_first_run.py.frag</span><span class="badge badge-done">DONE</span><span class="comment">baseline-vs-recurring scan flag</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file done">scan_mcp_configs.py.frag</span><span class="badge badge-done">DONE</span><span class="comment">Claude / Cursor / Continue / Cline MCP servers</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file done">scan_agents_workflows.py.frag</span><span class="badge badge-done">DONE</span><span class="comment">n8n / Flowise / cron / launchd</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file done">scan_tools_code.py.frag</span><span class="badge badge-done">DONE</span><span class="comment">@tool / Tool() decorators in repos</span></div>
+        <div class="tree-line indent-1"><span class="connector">└──</span><span class="file done">scan_vector_dbs.py.frag</span><span class="badge badge-done">DONE</span><span class="comment">Chroma / FAISS / LanceDB / Qdrant / Milvus</span></div>
+
+        <div class="tree-line indent-0" style="margin-top:10px"><span class="dir">src/</span><span class="comment">  ← server-side Phase 1A + 1B</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file done">store/users_store.py</span><span class="badge badge-done">DONE</span><span class="comment">RBAC CRUD + first-run env-var migration</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file done">store/findings_query.py</span><span class="badge badge-done">DONE</span><span class="comment">read_by_email / read_by_repo / MCP hash registry</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file done">normalizer/agent_explode.py</span><span class="badge badge-done">DONE</span><span class="comment">explodes ENDPOINT_SCAN into per-finding events</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file done">normalizer/agent_explode_fields.py</span><span class="badge badge-done">DONE</span><span class="comment">Phase 1A field-promotion whitelist</span></div>
+        <div class="tree-line indent-1"><span class="connector">└──</span><span class="file done">ingestor/pipeline_mcp_change.py</span><span class="badge badge-done">DONE</span><span class="comment">hash-flip detection → MCP_CONFIG_CHANGED event</span></div>
+
+        <div class="tree-line indent-0" style="margin-top:10px"><span class="dir">dashboard/ui/</span><span class="comment">  ← new tab + page + helpers</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file done">manager_tab_ai_inventory.py</span><span class="badge badge-done">DONE</span><span class="comment">Manager view's 5th tab (Phase 1A)</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file done">manager_tab_ai_inventory_data.py</span><span class="badge badge-done">DONE</span><span class="comment">filter / dedup / KPI helpers</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file done">asset_map.py</span><span class="badge badge-done">DONE</span><span class="comment">per-user Plotly Treemap (Phase 1A)</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file done">asset_map_route.py</span><span class="badge badge-done">DONE</span><span class="comment">?view=asset_map query-param router</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file done">header.py</span><span class="badge badge-done">DONE</span><span class="comment">extracted from ghost_dashboard.py</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file done">time_fmt.py</span><span class="badge badge-done">DONE</span><span class="comment">DD-MMM-YY HH:MM:SS TZ helper (Phase 1B)</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file done">filtered_table.py</span><span class="badge badge-done">DONE</span><span class="comment">global search bar wrapper (Phase 1B)</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file done">tabs/users.py</span><span class="badge badge-done">DONE</span><span class="comment">interactive RBAC CRUD (Phase 1B)</span></div>
+        <div class="tree-line indent-1"><span class="connector">└──</span><span class="file done">tabs/users_widgets.py</span><span class="badge badge-done">DONE</span><span class="comment">role pills + edit form helpers</span></div>
+
+        <div class="tree-line indent-0" style="margin-top:10px"><span class="dir">scripts/</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file done">strip_cleanup_blocks.sh</span><span class="badge badge-done">DONE</span><span class="comment">pre-OSS razor — removes CLEANUP-PHASE-* sentinels</span></div>
+        <div class="tree-line indent-1"><span class="connector">└──</span><span class="file done">scan_fragment_loader.py</span><span class="badge badge-done">DONE</span><span class="comment">v2.0.0 — FRAGMENT_ORDER now 14 entries (was 8)</span></div>
+
+        <div class="tree-line indent-0" style="margin-top:10px"><span class="dir">tests/unit/</span><span class="comment">  ← 89 new tests (Phase 1A + 1B)</span></div>
+        <div class="tree-line indent-1"><span class="connector">└──</span><span class="comment">test_secret_redactor · test_mcp_config_scan · test_agents_workflows_scan · test_tools_code_scan · test_vector_dbs_scan · test_agent_explode_phase1a · test_pipeline_mcp_change · test_findings_query · test_ai_inventory_data · test_users_store · test_time_fmt · test_filtered_table</span></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="legend-row">
+    <div class="legend-item"><span class="badge badge-done">DONE</span>Built and delivered</div>
+    <div class="legend-item"><span class="badge badge-next">NEXT</span>Up next in build order</div>
+    <div class="legend-item"><span class="badge badge-stub">STUB</span>Documented interface, customer fills in for GCP/Azure</div>
+    <div class="legend-item"><span class="badge badge-cust">CUSTOMER</span>Customer runs once before Giggso deploys</div>
+    <div class="legend-item" style="margin-left:auto;"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6c3483;">CLOUD_PROVIDER=aws|gcp|azure</span> — one flag switches the providers/ adapter</div>
+  </div>
+</div>
+</body>
+</html>

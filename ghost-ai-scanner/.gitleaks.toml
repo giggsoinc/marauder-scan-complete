@@ -1,0 +1,257 @@
+# =============================================================
+# FILE: .gitleaks.toml
+# PROJECT: PatronAI — Marauder Scan code layer
+# VERSION: 1.0.0
+# UPDATED: 2026-04-18
+# OWNER: Giggso Inc
+# PURPOSE: Custom GitLeaks rules for detecting unauthorised AI
+#          framework usage, MCP servers and hardcoded keys in code.
+#          Used by CI/CD pipeline and pre-commit hook.
+#          Findings shipped to S3 ocsf/agent/git-diffs/ prefix.
+# =============================================================
+
+title = "Marauder Scan — AI Framework and Key Detection Rules"
+
+[extend]
+# Extend GitLeaks default rules — catches standard secrets too
+useDefault = true
+
+# ── MCP — MODEL CONTEXT PROTOCOL ─────────────────────────────
+
+[[rules]]
+id          = "mcp-server-class"
+description = "MCP server class instantiation detected"
+regex       = '''(MCPServer|mcp_server|McpServer)\s*[=(]'''
+severity    = "HIGH"
+tags        = ["marauder-scan", "mcp", "server"]
+
+[[rules]]
+id          = "mcp-stdio-server"
+description = "MCP stdio server pattern — local MCP transport"
+regex       = '''stdio_server|stdio\.server|StdioServer'''
+severity    = "HIGH"
+tags        = ["marauder-scan", "mcp", "local"]
+
+[[rules]]
+id          = "mcp-run-call"
+description = "MCP server start pattern"
+regex       = '''mcp\.run\(|mcp_server\.run\(|server\.run\('''
+severity    = "HIGH"
+tags        = ["marauder-scan", "mcp"]
+
+[[rules]]
+id          = "mcp-sdk-import"
+description = "Official MCP Python SDK import"
+regex       = '''from mcp import|import mcp|from modelcontextprotocol'''
+severity    = "HIGH"
+tags        = ["marauder-scan", "mcp"]
+
+[[rules]]
+id          = "mcp-tool-call"
+description = "MCP tool invocation pattern"
+regex       = '''use_mcp_tool|call_tool\(|mcp\.call_tool|invoke_tool\('''
+severity    = "HIGH"
+tags        = ["marauder-scan", "mcp", "tool-call"]
+
+[[rules]]
+id          = "mcp-tool-decorator"
+description = "MCP or OpenAI tool registration decorator"
+regex       = '''@function_tool|@mcp\.tool|@tool\s*\('''
+severity    = "MEDIUM"
+tags        = ["marauder-scan", "mcp", "tool"]
+
+# ── LLM APPLICATION FRAMEWORKS ───────────────────────────────
+
+[[rules]]
+id          = "langchain-import"
+description = "LangChain framework import"
+regex       = '''from langchain|import langchain|from langchain_'''
+severity    = "HIGH"
+tags        = ["marauder-scan", "framework", "langchain"]
+
+[[rules]]
+id          = "langgraph-import"
+description = "LangGraph stateful agent framework"
+regex       = '''from langgraph|import langgraph|StateGraph\(|CompiledGraph'''
+severity    = "HIGH"
+tags        = ["marauder-scan", "framework", "langgraph"]
+
+[[rules]]
+id          = "llamaindex-import"
+description = "LlamaIndex data framework"
+regex       = '''from llama_index|import llama_index|from llama-index|VectorStoreIndex|SimpleDirectoryReader'''
+severity    = "HIGH"
+tags        = ["marauder-scan", "framework", "llamaindex"]
+
+[[rules]]
+id          = "haystack-import"
+description = "Haystack NLP/LLM pipeline framework"
+regex       = '''from haystack|import haystack|Pipeline\(\).*haystack'''
+severity    = "HIGH"
+tags        = ["marauder-scan", "framework", "haystack"]
+
+# ── MULTI-AGENT FRAMEWORKS ────────────────────────────────────
+
+[[rules]]
+id          = "autogen-import"
+description = "AutoGen / AG2 multi-agent framework"
+regex       = '''import autogen|from autogen|import ag2|from ag2|AssistantAgent|UserProxyAgent|GroupChat'''
+severity    = "HIGH"
+tags        = ["marauder-scan", "framework", "autogen"]
+
+[[rules]]
+id          = "semantic-kernel"
+description = "Microsoft Semantic Kernel / Agent Framework"
+regex       = '''from semantic_kernel|import semantic_kernel|SemanticKernel|microsoft\.agents|Kernel\(\)'''
+severity    = "HIGH"
+tags        = ["marauder-scan", "framework", "semantic-kernel"]
+
+[[rules]]
+id          = "crewai-import"
+description = "CrewAI multi-agent framework"
+regex       = '''from crewai|import crewai|Crew\(|Agent\(role=|@task|CrewBase'''
+severity    = "HIGH"
+tags        = ["marauder-scan", "framework", "crewai"]
+
+[[rules]]
+id          = "openai-agents-sdk"
+description = "OpenAI Agents SDK"
+regex       = '''from agents import|from openai\.agents|Runner\.run|Agent\(instructions=|Handoff\('''
+severity    = "HIGH"
+tags        = ["marauder-scan", "framework", "openai-agents"]
+
+[[rules]]
+id          = "google-adk"
+description = "Google Agent Development Kit"
+regex       = '''from google\.adk|from google_adk|google\.adk\.|ADKAgent|VertexAIAgent'''
+severity    = "HIGH"
+tags        = ["marauder-scan", "framework", "google-adk"]
+
+[[rules]]
+id          = "pydantic-ai"
+description = "Pydantic AI framework"
+regex       = '''from pydantic_ai|import pydantic_ai|pydantic_ai\.Agent|@pydantic_ai'''
+severity    = "HIGH"
+tags        = ["marauder-scan", "framework", "pydantic-ai"]
+
+[[rules]]
+id          = "smolagents-import"
+description = "HuggingFace SmolaAgents"
+regex       = '''from smolagents|import smolagents|CodeAgent|ToolCallingAgent|HfApiModel'''
+severity    = "HIGH"
+tags        = ["marauder-scan", "framework", "smolagents"]
+
+[[rules]]
+id          = "metagpt-import"
+description = "MetaGPT software development agent"
+regex       = '''from metagpt|import metagpt|MetaGPT|SoftwareCompany'''
+severity    = "HIGH"
+tags        = ["marauder-scan", "framework", "metagpt"]
+
+[[rules]]
+id          = "fastagency-import"
+description = "FastAgency multi-agent framework"
+regex       = '''from fastagency|import fastagency|FastAgency|Workflow\('''
+severity    = "HIGH"
+tags        = ["marauder-scan", "framework", "fastagency"]
+
+[[rules]]
+id          = "mastra-import"
+description = "Mastra TypeScript agent framework"
+regex       = '''from @mastra|import.*mastra|createAgent.*mastra|Mastra\('''
+severity    = "HIGH"
+tags        = ["marauder-scan", "framework", "mastra"]
+
+# ── LOCAL INFERENCE ───────────────────────────────────────────
+
+[[rules]]
+id          = "ollama-import"
+description = "Ollama local model client"
+regex       = '''import ollama|from ollama|ollama\.chat|ollama\.generate'''
+severity    = "HIGH"
+tags        = ["marauder-scan", "local-inference", "ollama"]
+
+[[rules]]
+id          = "llama-cpp-python"
+description = "llama.cpp Python bindings — local inference"
+regex       = '''from llama_cpp|import llama_cpp|Llama\(model_path='''
+severity    = "HIGH"
+tags        = ["marauder-scan", "local-inference", "llama-cpp"]
+
+[[rules]]
+id          = "gpt4all-import"
+description = "GPT4All local model runner"
+regex       = '''from gpt4all|import gpt4all|GPT4All\('''
+severity    = "HIGH"
+tags        = ["marauder-scan", "local-inference", "gpt4all"]
+
+# ── HARDCODED AI ENDPOINTS ────────────────────────────────────
+
+[[rules]]
+id          = "hardcoded-openai-endpoint"
+description = "Hardcoded OpenAI API endpoint"
+regex       = '''https?://api\.openai\.com'''
+severity    = "CRITICAL"
+tags        = ["marauder-scan", "hardcoded-endpoint", "openai"]
+
+[[rules]]
+id          = "hardcoded-anthropic-endpoint"
+description = "Hardcoded Anthropic API endpoint"
+regex       = '''https?://api\.anthropic\.com'''
+severity    = "CRITICAL"
+tags        = ["marauder-scan", "hardcoded-endpoint", "anthropic"]
+
+[[rules]]
+id          = "hardcoded-ai-endpoints"
+description = "Hardcoded AI provider endpoints"
+regex       = '''https?://(api\.cohere\.ai|api\.mistral\.ai|api-inference\.huggingface\.co|api\.together\.xyz|api\.replicate\.com|api\.groq\.com|api\.perplexity\.ai|generativelanguage\.googleapis\.com)'''
+severity    = "CRITICAL"
+tags        = ["marauder-scan", "hardcoded-endpoint"]
+
+# ── API KEYS ──────────────────────────────────────────────────
+
+[[rules]]
+id          = "openai-key-new"
+description = "Hardcoded OpenAI project API key"
+regex       = '''sk-proj-[a-zA-Z0-9_\-]{50,}'''
+severity    = "CRITICAL"
+tags        = ["marauder-scan", "api-key", "openai"]
+
+[[rules]]
+id          = "anthropic-key"
+description = "Hardcoded Anthropic API key"
+regex       = '''sk-ant-[a-zA-Z0-9_\-]{80,}'''
+severity    = "CRITICAL"
+tags        = ["marauder-scan", "api-key", "anthropic"]
+
+[[rules]]
+id          = "huggingface-token"
+description = "Hardcoded HuggingFace token"
+regex       = '''hf_[a-zA-Z0-9]{34,}'''
+severity    = "CRITICAL"
+tags        = ["marauder-scan", "api-key", "huggingface"]
+
+[[rules]]
+id          = "cohere-key"
+description = "Hardcoded Cohere API key"
+regex       = '''[a-zA-Z0-9]{40}'''
+severity    = "MEDIUM"
+tags        = ["marauder-scan", "api-key", "cohere"]
+
+# ── ALLOWLIST ─────────────────────────────────────────────────
+[allowlist]
+description  = "Marauder Scan allowlist — test files and docs"
+regexTarget  = "match"
+regexes      = [
+    '''test_.*\.py''',
+    '''.*_test\.py''',
+    '''\.md$''',
+    '''requirements.*\.txt''',
+    '''unauthorized_code\.csv''',
+    '''authorized_code\.csv''',
+]
+paths = [
+    "tests/",
+    "docs/",
+    ".gitleaks.toml",
+]

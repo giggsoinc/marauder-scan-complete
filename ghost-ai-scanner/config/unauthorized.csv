@@ -1,0 +1,110 @@
+# FILE: config/unauthorized.csv
+# VERSION: 1.1.0
+# UPDATED: 2026-04-25
+# PURPOSE: Default deny-all AI provider list. Every known AI provider.
+# OWNER: Giggso maintains this file. Customer does not edit.
+# NOTE: One row per domain pattern. Empty domain = port-only match.
+#       Glob patterns supported e.g. *.openai.com
+#       Scanner reloads this file on every scan cycle.
+# AUDIT LOG:
+#   v1.0.0  2026-04-17  Initial.
+#   v1.1.0  2026-04-25  Group 2.A — Flowise, BuildShip, Lovable, Bolt, V0,
+#                       Stack-AI, NotebookLM, Manus, Pika, Suno, Cursor SaaS.
+name,category,domain,port,severity,notes
+OpenAI,Major LLM APIs,api.openai.com,443,HIGH,
+OpenAI,Major LLM APIs,chat.openai.com,443,HIGH,
+OpenAI,Major LLM APIs,*.openai.com,443,HIGH,
+Anthropic Direct,Major LLM APIs,api.anthropic.com,443,HIGH,Direct call bypasses Trinity
+Anthropic Direct,Major LLM APIs,claude.ai,443,HIGH,Direct call bypasses Trinity
+Google Gemini,Major LLM APIs,generativelanguage.googleapis.com,443,HIGH,
+Google Gemini,Major LLM APIs,gemini.google.com,443,HIGH,
+Google Gemini,Major LLM APIs,aistudio.google.com,443,HIGH,
+xAI Grok,Major LLM APIs,api.x.ai,443,HIGH,
+xAI Grok,Major LLM APIs,grok.x.ai,443,HIGH,
+Groq,Major LLM APIs,api.groq.com,443,HIGH,
+Mistral AI,Major LLM APIs,api.mistral.ai,443,HIGH,
+Cohere,Major LLM APIs,api.cohere.com,443,HIGH,
+Cohere,Major LLM APIs,api.cohere.ai,443,HIGH,
+Perplexity,Major LLM APIs,api.perplexity.ai,443,HIGH,
+Perplexity,Major LLM APIs,perplexity.ai,443,HIGH,
+AI21 Labs,Major LLM APIs,api.ai21.com,443,HIGH,
+AI21 Labs,Major LLM APIs,ai21.com,443,HIGH,
+HuggingFace,Open Source Model Hubs,huggingface.co,443,HIGH,
+HuggingFace,Open Source Model Hubs,api-inference.huggingface.co,443,HIGH,
+HuggingFace,Open Source Model Hubs,cdn-lfs.huggingface.co,443,HIGH,Model downloads
+Ollama Registry,Open Source Model Hubs,ollama.ai,443,MEDIUM,
+Ollama Registry,Open Source Model Hubs,registry.ollama.ai,443,MEDIUM,
+Ollama Local Server,Open Source Model Hubs,,11434,MEDIUM,Local inference port
+LM Studio Local Server,Open Source Model Hubs,,1234,MEDIUM,Local inference port
+LocalAI,Open Source Model Hubs,,8080,MEDIUM,Local inference port
+LocalAI,Open Source Model Hubs,,8081,MEDIUM,Local inference port
+GPT4All,Open Source Model Hubs,gpt4all.io,443,MEDIUM,
+GPT4All,Open Source Model Hubs,,4891,MEDIUM,Local inference port
+Replicate,Open Source Model Hubs,api.replicate.com,443,HIGH,
+Replicate,Open Source Model Hubs,replicate.delivery,443,HIGH,
+AWS Bedrock Direct,Cloud AI Platforms,bedrock.*.amazonaws.com,443,CRITICAL,Bypasses all controls
+AWS Bedrock Direct,Cloud AI Platforms,bedrock-runtime.*.amazonaws.com,443,CRITICAL,Bypasses all controls
+Azure OpenAI,Cloud AI Platforms,*.openai.azure.com,443,HIGH,
+Azure OpenAI,Cloud AI Platforms,cognitiveservices.azure.com,443,HIGH,
+Google Vertex AI,Cloud AI Platforms,aiplatform.googleapis.com,443,HIGH,
+Google Vertex AI,Cloud AI Platforms,*.aiplatform.googleapis.com,443,HIGH,
+Together AI,Cloud AI Platforms,api.together.xyz,443,HIGH,
+Together AI,Cloud AI Platforms,together.ai,443,HIGH,
+Fireworks AI,Cloud AI Platforms,api.fireworks.ai,443,HIGH,
+DeepInfra,Cloud AI Platforms,api.deepinfra.com,443,HIGH,
+Anyscale,Cloud AI Platforms,api.endpoints.anyscale.com,443,HIGH,
+Lepton AI,Cloud AI Platforms,api.lepton.ai,443,HIGH,
+Nvidia NIM,Cloud AI Platforms,integrate.api.nvidia.com,443,HIGH,
+Railway,AI Deployment Platforms,railway.app,443,HIGH,Ghost app hosting
+Railway,AI Deployment Platforms,*.railway.app,443,HIGH,Ghost app hosting
+Railway,AI Deployment Platforms,*.up.railway.app,443,HIGH,Ghost app hosting
+Render,AI Deployment Platforms,*.render.com,443,HIGH,Ghost app hosting
+Render,AI Deployment Platforms,*.onrender.com,443,HIGH,Ghost app hosting
+Fly.io,AI Deployment Platforms,*.fly.io,443,HIGH,Ghost app hosting
+Fly.io,AI Deployment Platforms,*.fly.dev,443,HIGH,Ghost app hosting
+Vercel AI,AI Deployment Platforms,sdk.vercel.ai,443,HIGH,
+Vercel AI,AI Deployment Platforms,*.vercel.app,443,HIGH,Ghost app hosting
+Modal,AI Deployment Platforms,*.modal.run,443,HIGH,Ghost app hosting
+Modal,AI Deployment Platforms,modal.com,443,HIGH,
+Beam Cloud,AI Deployment Platforms,api.beam.cloud,443,HIGH,
+Banana Dev,AI Deployment Platforms,api.banana.dev,443,HIGH,
+LangChain Hub,AI Tools and Vector DBs,smith.langchain.com,443,MEDIUM,
+LangChain Hub,AI Tools and Vector DBs,api.hub.langchain.com,443,MEDIUM,
+LlamaIndex Cloud,AI Tools and Vector DBs,api.llamaindex.ai,443,MEDIUM,
+Pinecone,AI Tools and Vector DBs,api.pinecone.io,443,MEDIUM,
+Pinecone,AI Tools and Vector DBs,*.pinecone.io,443,MEDIUM,
+Weaviate Cloud,AI Tools and Vector DBs,*.weaviate.network,443,MEDIUM,
+Chroma,AI Tools and Vector DBs,api.trychroma.com,443,MEDIUM,
+Chroma,AI Tools and Vector DBs,,8000,MEDIUM,Local Chroma server port
+Weights and Biases,AI Tools and Vector DBs,api.wandb.ai,443,MEDIUM,MLOps tracking
+Weights and Biases,AI Tools and Vector DBs,wandb.ai,443,MEDIUM,
+Comet ML,AI Tools and Vector DBs,api.comet.com,443,MEDIUM,MLOps tracking
+Scale AI,AI Tools and Vector DBs,api.scale.com,443,MEDIUM,Data labelling for AI
+n8n Cloud,AI Workflow Automation,app.n8n.cloud,443,HIGH,AI workflow automation platform
+n8n Cloud,AI Workflow Automation,api.n8n.cloud,443,HIGH,
+Langflow,AI Workflow Automation,api.langflow.org,443,HIGH,Open-source LangChain visual builder
+Langflow,AI Workflow Automation,*.langflow.org,443,HIGH,
+Dify,AI Workflow Automation,api.dify.ai,443,HIGH,Open-source LLM app platform
+Dify,AI Workflow Automation,cloud.dify.ai,443,HIGH,
+sim.ai,AI Coding Assistants,api.sim.ai,443,HIGH,AI simulation and coding assistant
+Google Opal,Frontier AI Models,opal.google.com,443,HIGH,Google AI workspace agent (Gemini-backed)
+Flowise,AI Workflow Automation,flowiseai.com,443,HIGH,Visual LLM flow builder
+Flowise,AI Workflow Automation,*.flowiseai.com,443,HIGH,
+Flowise,AI Workflow Automation,cloud.flowiseai.com,443,HIGH,
+BuildShip,AI Workflow Automation,buildship.com,443,HIGH,Low-code AI backend builder
+BuildShip,AI Workflow Automation,*.buildship.com,443,HIGH,
+Stack-AI,AI Workflow Automation,stack-ai.com,443,HIGH,Visual LLM stack builder
+Stack-AI,AI Workflow Automation,*.stack-ai.com,443,HIGH,
+Lovable,AI Coding Assistants,lovable.dev,443,HIGH,Browser-based AI app generator
+Lovable,AI Coding Assistants,*.lovable.dev,443,HIGH,
+Bolt.new,AI Coding Assistants,bolt.new,443,HIGH,StackBlitz AI app generator
+V0,AI Coding Assistants,v0.dev,443,HIGH,Vercel V0 component generator
+V0,AI Coding Assistants,v0.app,443,HIGH,
+Cursor SaaS,AI Coding Assistants,cursor.com,443,HIGH,Cursor AI editor SaaS
+Cursor SaaS,AI Coding Assistants,*.cursor.com,443,HIGH,
+NotebookLM,Frontier AI Models,notebooklm.google.com,443,HIGH,Google AI notebook (Gemini-backed)
+Manus,Frontier AI Models,manus.im,443,HIGH,Autonomous browsing AI agent
+Manus,Frontier AI Models,manus.ai,443,HIGH,
+Pika,Frontier AI Models,pika.art,443,HIGH,Generative video model
+Suno,Frontier AI Models,suno.com,443,HIGH,Generative music model
+Suno,Frontier AI Models,suno.ai,443,HIGH,

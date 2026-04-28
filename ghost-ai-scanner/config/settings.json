@@ -1,0 +1,155 @@
+{
+  "_comment": "PatronAI \u2014 Default Settings",
+  "_version": "1.0.0",
+  "_updated": "2026-04-18",
+  "_note": "This file lives in S3 at config/settings.json. Streamlit reads and writes it. Scanner pulls it on every cycle. Changes active within SCAN_INTERVAL_SECS. Do not edit manually in production \u2014 use the Streamlit settings UI at :8501.",
+  "company": {
+    "name": "company",
+    "slug": "company",
+    "contact_email": ""
+  },
+  "cloud": {
+    "provider": "aws",
+    "region": "us-east-1",
+    "_note_provider": "Options: aws | gcp | azure \u2014 drives which providers/ adapter loads"
+  },
+  "storage": {
+    "ocsf_bucket": "",
+    "ocsf_prefix": "ocsf/",
+    "findings_prefix": "findings/",
+    "summary_prefix": "summary/daily/",
+    "cursor_key": "cursor/state.json",
+    "dedup_prefix": "dedup/",
+    "identity_key": "identity/nac-mapping.csv",
+    "reports_prefix": "reports/",
+    "_note": "All paths relative to ocsf_bucket. Set bucket name before first run."
+  },
+  "scanner": {
+    "scan_interval_secs": 300,
+    "lookback_minutes": 60,
+    "max_files_per_cycle": 100,
+    "_note_interval": "300 = scan every 5 minutes. Minimum recommended: 60.",
+    "_note_lookback": "On first boot only. How far back to scan before cursor is set."
+  },
+  "matching": {
+    "authorized_csv_key": "config/authorized.csv",
+    "unauthorized_csv_key": "config/unauthorized.csv",
+    "reload_on_every_cycle": true,
+    "_note": "CSVs pulled from S3 on every scan cycle. Edit in S3 or via Streamlit UI."
+  },
+  "alerts": {
+    "sns_topic_arn": "",
+    "trinity_webhook_url": "",
+    "loganalyzer_webhook_url": "",
+    "dedup_window_minutes": 60,
+    "_note_dedup": "One alert per source IP per provider per dedup_window_minutes. Prevents alert floods.",
+    "_note_loganalyzer": "LogAnalyzer called on-demand from Grafana. Not from scanner. Leave blank if not using."
+  },
+  "identity": {
+    "priority": [
+      "ec2_tags",
+      "identity_center",
+      "active_directory",
+      "nac_csv"
+    ],
+    "cache_ttl_minutes": 15,
+    "ec2_tags": {
+      "enabled": true,
+      "owner_tag_key": "Owner",
+      "department_tag_key": "Department"
+    },
+    "identity_center": {
+      "enabled": false,
+      "store_id": "",
+      "_note": "Set store_id from AWS Identity Center console. Enable if SSO is configured."
+    },
+    "active_directory": {
+      "enabled": false,
+      "ldap_url": "",
+      "base_dn": "",
+      "_note": "Optional. Enable if Identity Center not available."
+    },
+    "nac_csv": {
+      "enabled": true,
+      "_note": "Fallback. Upload IP to MAC to user mapping CSV to identity/ prefix in S3."
+    }
+  },
+  "crowdstrike": {
+    "enabled": false,
+    "api_url": "",
+    "_note": "When false, Grafana dashboards show endpoint visibility banner. Network-layer detection still active."
+  },
+  "performance": {
+    "polars_lazy": true,
+    "s3_select_enabled": true,
+    "max_rows_dashboard": 500,
+    "summary_retention_days": 90,
+    "findings_retention_days": 30,
+    "archive_after_days": 30,
+    "_note_s3_select": "Push filtering to S3. Never load full files into memory. Keep enabled.",
+    "_note_polars": "Polars MIT license. Lazy evaluation. Memory stays under 200MB."
+  },
+  "reporting": {
+    "pdf_enabled": true,
+    "weekly_report_day": "monday",
+    "weekly_report_hour_utc": 6,
+    "report_recipients": [],
+    "_note": "PDF generated on-demand via Grafana button. Weekly scheduled report optional."
+  },
+  "dashboards": {
+    "grafana_port": 3000,
+    "streamlit_port": 8501,
+    "grafana_internal_url": "http://grafana.security.internal:3000",
+    "streamlit_internal_url": "http://settings.security.internal:8501",
+    "auto_refresh_seconds": 60,
+    "_note_dns": "Option B: two internal DNS entries. Update to match your environment."
+  },
+  "severity_colours": {
+    "CRITICAL": "#c0392b",
+    "HIGH": "#d4680a",
+    "MEDIUM": "#8a6d0b",
+    "LOW": "#6c757d",
+    "UNKNOWN": "#6c3483",
+    "CLEAN": "#00884d"
+  },
+  "_meta": {
+    "schema_version": "1.0.0",
+    "last_written_by": "defaults",
+    "last_written_at": "2026-04-18T00:00:00Z",
+    "_note": "last_written_by and last_written_at updated by Streamlit on every save.",
+    "marauder_scan_added": "2026-04-18"
+  },
+  "marauder_scan": {
+    "enabled": true,
+    "code_analyser": {
+      "enabled": true,
+      "llama_cli_path": "/usr/local/bin/llama-cli",
+      "model_path": "/models/gemma-4-e4b-q4_k_m.gguf",
+      "grammar_path": "/etc/llama/json.gbnf",
+      "max_tokens": 300,
+      "timeout_seconds": 30,
+      "threads": 2,
+      "_note": "Gemma 4 E4B Q4_K_M. Runs on EC2 only. Never on edge device."
+    },
+    "git_hook": {
+      "enabled": true,
+      "_note": "Pre-commit hook ships diffs to S3. Installed by MDM scripts."
+    },
+    "file_watcher": {
+      "enabled": true,
+      "watch_extensions": [
+        ".py",
+        ".js",
+        ".ts",
+        ".json",
+        ".yaml",
+        ".toml"
+      ],
+      "snippet_lines": 80,
+      "_note": "watchdog-based file system watcher on managed devices."
+    },
+    "authorized_code_key": "config/authorized_code.csv",
+    "unauthorized_code_key": "config/unauthorized_code.csv",
+    "_note": "Marauder Scan detects AI framework, MCP and agent usage in source code."
+  }
+}

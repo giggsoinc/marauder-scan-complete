@@ -1,0 +1,21 @@
+# =============================================================
+# FILE: config/authorized.csv
+# VERSION: 1.0.0
+# UPDATED: 2026-04-17
+# PURPOSE: Explicit allow list. Customer maintains this file.
+#          Giggso never edits it.
+#          Traffic matching any row here is suppressed silently.
+#          Checked BEFORE unauthorized.csv on every event.
+# OWNER: Customer IT / Security team
+# FORMAT: name, domain_pattern, notes
+#         Glob patterns supported e.g. *.company.internal
+#         Leave notes blank if not needed.
+# HOW TO ADD: Add one row per approved domain.
+#             Rebuild and push container OR mount as ECS volume.
+# =============================================================
+name,domain_pattern,notes
+# ---------------------------------------------------------------
+# EXAMPLE ROW -- replace with your real approved endpoints
+# Trinity Proxy,trinity.company.internal,Approved Claude gateway
+# Internal AI Gateway,ai-gateway.company.internal,Internal LLM proxy
+# ---------------------------------------------------------------

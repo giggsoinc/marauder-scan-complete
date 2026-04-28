@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PatronAI Agent — macOS User Guide</title>
+<link rel="icon" type="image/png" href="ghost-ai-scanner/assets/branding/patronai-icon.png">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  background: #0D1117;
+  color: #C9D1D9;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+body { max-width: 1180px; margin: 0 auto; padding: 48px 36px 80px; }
+
+/* Hero */
+.hero { border-bottom: 1px solid #21262D; padding-bottom: 32px; margin-bottom: 40px; }
+.hero img.logo { max-width: 260px; filter: drop-shadow(0 4px 20px rgba(31,111,235,0.25)); margin-bottom: 18px; }
+.hero .eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.18em; color: #58A6FF; text-transform: uppercase; margin-bottom: 10px; }
+.hero h1 { font-size: 30px; font-weight: 600; color: #E6EDF3; margin-bottom: 8px; letter-spacing: -0.01em; }
+.hero .sub { font-size: 15px; color: #8B949E; max-width: 780px; }
+
+/* Section */
+section { margin-bottom: 44px; }
+h2 { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #58A6FF; font-family: 'JetBrains Mono', monospace; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; }
+h2::before { content: ""; display: inline-block; width: 4px; height: 14px; background: #58A6FF; border-radius: 1px; }
+h3 { font-size: 17px; font-weight: 600; color: #E6EDF3; margin: 18px 0 10px; }
+p { margin-bottom: 12px; color: #C9D1D9; }
+p.intro { font-size: 15px; color: #C9D1D9; max-width: 880px; margin-bottom: 18px; }
+
+/* Cards / Panels */
+.card { background: #161B22; border: 1px solid #21262D; border-radius: 10px; padding: 22px 26px; margin-bottom: 14px; }
+.card.accent { border-left: 3px solid #58A6FF; }
+.card.warn   { border-left: 3px solid #D29922; }
+.card.good   { border-left: 3px solid #3FB950; }
+
+/* Key-value strip */
+.kv { display: grid; grid-template-columns: 180px 1fr; gap: 6px 20px; font-size: 13px; }
+.kv .k { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #8B949E; align-self: center; }
+.kv .v { color: #C9D1D9; }
+
+/* Tables */
+table { width: 100%; border-collapse: collapse; background: #161B22; border: 1px solid #21262D; border-radius: 10px; overflow: hidden; margin: 10px 0; }
+th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #21262D; font-size: 13px; vertical-align: top; }
+th { background: #0D1117; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; color: #58A6FF; text-transform: uppercase; font-weight: 600; }
+tr:last-child td { border-bottom: none; }
+td code, td .mono { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #E6EDF3; background: #0D1117; padding: 2px 6px; border-radius: 3px; }
+
+/* Diagrams */
+.diagram { background: #0D1117; border: 1px solid #21262D; border-radius: 10px; padding: 26px; margin: 14px 0; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+.diagram .title { font-size: 10px; color: #8B949E; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 16px; }
+
+.blk { background: #161B22; border: 1px solid #30363D; border-radius: 6px; padding: 10px 14px; color: #E6EDF3; font-size: 12px; display: inline-block; }
+.blk.hi   { border-color: #58A6FF; box-shadow: 0 0 0 1px #58A6FF33 inset; }
+.blk.aws  { border-color: #F0883E; color: #F0883E; }
+.blk.warn { border-color: #D29922; color: #D29922; }
+.blk.good { border-color: #3FB950; color: #3FB950; }
+.blk .sub { display: block; font-size: 10px; color: #8B949E; margin-top: 3px; letter-spacing: 0.04em; }
+
+.row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+.arrow { color: #58A6FF; font-weight: 700; font-size: 14px; }
+.arrow.down { display: block; margin: 6px 0 6px 22px; }
+
+.col { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 12px; }
+
+/* Code blocks */
+pre { background: #0D1117; border: 1px solid #21262D; border-radius: 8px; padding: 14px 18px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #E6EDF3; overflow-x: auto; line-height: 1.75; margin: 8px 0 14px; }
+pre .cm { color: #8B949E; }
+pre .k  { color: #FF7B72; }
+pre .s  { color: #A5D6FF; }
+
+/* Pill */
+.pill { display: inline-block; padding: 3px 10px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; }
+.pill-blue  { background: #1F6FEB22; color: #58A6FF; border: 1px solid #58A6FF44; }
+.pill-green { background: #3FB95022; color: #3FB950; border: 1px solid #3FB95044; }
+.pill-amber { background: #D2992222; color: #D29922; border: 1px solid #D2992244; }
+.pill-red   { background: #F8514922; color: #F85149; border: 1px solid #F8514944; }
+
+/* Callouts */
+.note { background: #1F6FEB11; border-left: 3px solid #58A6FF; padding: 12px 18px; border-radius: 4px; font-size: 13px; color: #C9D1D9; margin: 10px 0; }
+.warn-box { background: #D2992211; border-left: 3px solid #D29922; padding: 12px 18px; border-radius: 4px; font-size: 13px; color: #C9D1D9; margin: 10px 0; }
+
+ul.clean { list-style: none; padding: 0; margin: 8px 0 14px; }
+ul.clean li { padding: 6px 0 6px 22px; position: relative; font-size: 13px; color: #C9D1D9; }
+ul.clean li::before { content: "▸"; position: absolute; left: 4px; color: #58A6FF; font-size: 12px; }
+
+/* Two-up compare */
+.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.compare .card h3 { margin-top: 0; }
+
+/* Footer */
+footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid #21262D; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #484F58; letter-spacing: 0.08em; display: flex; align-items: center; gap: 10px; }
+footer img { width: 16px; height: 16px; border-radius: 3px; opacity: 0.85; }
+
+/* Signal cards grid */
+.signals { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; margin: 12px 0; }
+.signal { background: #161B22; border: 1px solid #21262D; border-radius: 8px; padding: 14px 16px; }
+.signal .label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #58A6FF; text-transform: uppercase; margin-bottom: 6px; }
+.signal .name { font-size: 14px; font-weight: 600; color: #E6EDF3; margin-bottom: 4px; }
+.signal .desc { font-size: 12px; color: #8B949E; line-height: 1.5; }
+
+@media (max-width: 780px) {
+  .compare { grid-template-columns: 1fr; }
+  .kv { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ========= HERO ========= -->
+<div class="hero">
+  <img class="logo" src="ghost-ai-scanner/assets/branding/patronai-logo.png" alt="PatronAI">
+  <div class="eyebrow">User Guide · macOS Edge Agent · v1.1</div>
+  <h1>PatronAI Agent for Mac</h1>
+  <p class="sub">A background monitor that runs on your Mac, detects unauthorised AI tool usage — n8n, Flowise, Langflow, sim.ai, Ollama, Cursor, LM Studio, MCP servers, git commits with AI code — and reports findings to your company's PatronAI bucket. No command line. No sudo. One-click install.</p>
+</div>
+
+<!-- ========= SECTION 1: WHAT IT DOES ========= -->
+<section>
+<h2>1. What the Agent Actually Does</h2>
+
+<p class="intro">Every 5 minutes the agent wakes up, looks at what's running on your Mac, compares against the company's approved AI tool list, and writes a small JSON status file to the company S3 bucket. That's it. No continuous network capture, no keylogging, no inference on your device.</p>
+
+<div class="diagram">
+<div class="title">Agent architecture · runs on your Mac</div>
+
+<div class="row">
+  <div class="blk hi" style="min-width:260px;">
+    PatronAI Agent.app
+    <span class="sub">Background login item · wakes every 5 min · CPU &lt; 1% average</span>
+  </div>
+</div>
+
+<div class="arrow down">↓ scans</div>
+
+<div class="col">
+  <div class="blk">Processes<span class="sub">n8n, flowise, ollama, langflow, lm studio, cursor</span></div>
+  <div class="blk">Listening ports<span class="sub">5678, 3000, 7860, 11434, 1234</span></div>
+  <div class="blk">Docker containers<span class="sub">dify, flowise, langflow images</span></div>
+  <div class="blk">MCP configs<span class="sub">Claude Desktop, Cursor MCP servers</span></div>
+  <div class="blk">API keys in files<span class="sub">~/.env, ~/.zshrc, project .env files</span></div>
+  <div class="blk">Git commits<span class="sub">only when you commit · async</span></div>
+</div>
+
+<div class="arrow down">↓ normalises to OCSF · uploads over HTTPS</div>
+
+<div class="row">
+  <div class="blk aws" style="min-width:320px;">
+    s3://marauder-scan-giggso/ocsf/agent/heartbeat/
+    <span class="sub">One JSON per device per cycle · ~2 KB each</span>
+  </div>
+</div>
+</div>
+
+<div class="note"><b>Why a heartbeat and not just git?</b> Marketing and ops teams run n8n, Flowise, sim.ai and Langflow as local services — they never touch git. Git hook alone would miss every one of them. The heartbeat catches local services, desktop apps and Docker workflows even when no code is ever committed.</div>
+
+</section>
+
+<!-- ========= SECTION 2: DISTRIBUTION MODES ========= -->
+<section>
+<h2>2. Two Ways to Get the Agent</h2>
+
+<div class="compare">
+
+<div class="card accent">
+<h3><span class="pill pill-green">PRODUCTION</span> Signed DMG via Jamf / Wiki</h3>
+<ul class="clean">
+  <li><b>What ships:</b> <span class="mono">PatronAI-Agent-1.1.dmg</span> (notarised, signed with Giggso Developer ID)</li>
+  <li><b>How user gets it:</b> pushed automatically by Jamf, or downloaded from the company wiki after SSO login</li>
+  <li><b>What user sees:</b> a normal Mac installer — no Terminal, no sudo</li>
+  <li><b>Credentials baked in:</b> the DMG carries a pre-provisioned scoped IAM role, one per customer, issued by Giggso</li>
+  <li><b>Script we write:</b> <span class="mono">agent/install/macos/build-dmg.sh</span> (builds the DMG) plus <span class="mono">jamf.sh</span> (Jamf policy wrapper)</li>
+</ul>
+</div>
+
+<div class="card warn">
+<h3><span class="pill pill-amber">POC / DEBUG</span> curl one-liner for devs</h3>
+<ul class="clean">
+  <li><b>What ships:</b> <span class="mono">debugger_jamf.sh</span> — a self-contained bash script</li>
+  <li><b>How user gets it:</b> <span class="mono">curl -fsSL https://…/debugger_jamf.sh | bash</span></li>
+  <li><b>What user sees:</b> Terminal output; this is for engineers smoke-testing the pipeline, not for end users</li>
+  <li><b>Credentials:</b> prompts for AWS access key + secret, or reads from existing <span class="mono">~/.aws/credentials</span></li>
+  <li><b>Script we write:</b> <span class="mono">agent/install/macos/debugger_jamf.sh</span></li>
+</ul>
+</div>
+
+</div>
+
+<div class="warn-box"><b>POC only.</b> <span class="mono">debugger_jamf.sh</span> is not a product deliverable — it exists so you and the engineering team can validate the data path into S3 without waiting on the DMG build. Never hand this version to an end user.</div>
+</section>
+
+<!-- ========= SECTION 3: END-USER INSTALL FLOW (PROD DMG) ========= -->
+<section>
+<h2>3. What a Non-Technical User Actually Does</h2>
+<p class="intro">This is the experience for a marketing or ops person who opens a browser, downloads the DMG from the wiki and clicks install. No Terminal at any step.</p>
+
+<table>
+<thead><tr><th>Step</th><th>User action</th><th>What happens under the hood</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Open company wiki, find "PatronAI Agent", click <b>Download for Mac</b> after SSO login</td><td>Wiki serves the signed <span class="mono">PatronAI-Agent-1.1.dmg</span> over HTTPS; download link is short-lived</td></tr>
+<tr><td>2</td><td>Double-click the <span class="mono">.dmg</span> in Downloads</td><td>macOS mounts the disk image; user sees a window with the app icon and an Applications shortcut</td></tr>
+<tr><td>3</td><td>Drag <b>PatronAI Agent.app</b> into the <b>Applications</b> folder</td><td>App bundle copied; no admin password needed</td></tr>
+<tr><td>4</td><td>Launch the app once from Applications</td><td>App registers itself as a Login Item (Apple <span class="mono">SMAppService</span> API) — no admin password; prompts user to confirm "Allow background running"</td></tr>
+<tr><td>5</td><td>Menu bar icon appears (shield glyph)</td><td>Agent is live; first heartbeat fires within 60 seconds; status shows <span class="pill pill-green">CONNECTED</span></td></tr>
+<tr><td>6</td><td>User continues working — no further action ever needed</td><td>Agent auto-starts on every login; wakes every 5 minutes; uploads 2 KB JSON per cycle</td></tr>
+</tbody>
+</table>
+
+<div class="note">macOS will show exactly <b>one</b> permission prompt on first launch — asking whether PatronAI Agent may run in the background. After that, zero interaction for the lifetime of the install.</div>
+</section>
+
+<!-- ========= SECTION 4: WHAT THE AGENT DETECTS ========= -->
+<section>
+<h2>4. The Six Signal Sources</h2>
+<p class="intro">The agent scans six places on every heartbeat. Any signal beyond the authorised list is packaged into the JSON payload and shipped to S3.</p>
+
+<div class="signals">
+<div class="signal"><div class="label">1 · Processes</div><div class="name">Running binaries</div><div class="desc"><span class="mono">ps -axo comm</span> → match against n8n, flowise, langflow, ollama, lm-studio, dify, autogen, crewai binaries</div></div>
+<div class="signal"><div class="label">2 · Ports</div><div class="name">Listening sockets</div><div class="desc"><span class="mono">lsof -nP -iTCP -sTCP:LISTEN</span> → 5678 n8n · 3000 flowise · 7860 langflow · 11434 ollama · 1234 lm studio</div></div>
+<div class="signal"><div class="label">3 · Docker</div><div class="name">AI containers</div><div class="desc"><span class="mono">docker ps --format</span> → flag <span class="mono">ollama/ollama</span>, <span class="mono">flowiseai/flowise</span>, <span class="mono">dify/*</span>, <span class="mono">langflow-ai/*</span> images</div></div>
+<div class="signal"><div class="label">4 · MCP servers</div><div class="name">Desktop app configs</div><div class="desc">Reads <span class="mono">~/Library/Application Support/Claude/claude_desktop_config.json</span> and Cursor MCP settings — lists every MCP server wired up</div></div>
+<div class="signal"><div class="label">5 · API keys</div><div class="name">Env and dotfiles</div><div class="desc">Grep for <span class="mono">OPENAI_API_KEY</span>, <span class="mono">sk-ant-</span>, <span class="mono">hf_</span> prefixes in <span class="mono">~/.env</span>, <span class="mono">~/.zshrc</span>, project <span class="mono">.env</span> files. Key values are <b>hashed</b>, never transmitted.</div></div>
+<div class="signal"><div class="label">6 · Git commits</div><div class="name">Pre-commit hook (async)</div><div class="desc">Separate path — fires only when user runs <span class="mono">git commit</span>. Ships the diff if AI framework patterns are present.</div></div>
+</div>
+
+<div class="card good">
+<b>What the agent never does</b>
+<ul class="clean" style="margin-top:6px;">
+  <li>No keystrokes, no screen capture, no browser history</li>
+  <li>No continuous network packet capture (that's Packetbeat's job, on the network side)</li>
+  <li>No file content upload — only names, paths and pattern matches</li>
+  <li>API key values are hashed locally — only the hash and the file location leave the device</li>
+</ul>
+</div>
+</section>
+
+<!-- ========= SECTION 5: HEARTBEAT CADENCE ========= -->
+<section>
+<h2>5. How the Heartbeat Works</h2>
+
+<div class="diagram">
+<div class="title">Heartbeat timer · default 5 minutes · configurable via settings.json</div>
+
+<div class="row">
+  <div class="blk hi">Timer fires<span class="sub">launchd watches RunAtLoad + StartInterval=300</span></div>
+  <span class="arrow">→</span>
+  <div class="blk">Run 6 scans<span class="sub">~300 ms total on idle Mac</span></div>
+  <span class="arrow">→</span>
+  <div class="blk">Build OCSF JSON<span class="sub">~2 KB payload</span></div>
+  <span class="arrow">→</span>
+  <div class="blk aws">S3 PutObject<span class="sub">ocsf/agent/heartbeat/YYYY/MM/DD/</span></div>
+</div>
+
+<div class="arrow down">↻ sleep 5 min, repeat</div>
+
+<div class="row" style="margin-top:14px;">
+  <div class="blk warn">Fail-closed<span class="sub">network down → queue locally up to 24 h → retry with backoff</span></div>
+  <div class="blk warn">Dedup<span class="sub">same signal set within 60 min → no re-upload</span></div>
+</div>
+</div>
+
+<table>
+<thead><tr><th>Setting</th><th>Default</th><th>Where it lives</th></tr></thead>
+<tbody>
+<tr><td>Heartbeat interval</td><td>300 s (5 min)</td><td>S3 <span class="mono">config/settings.json</span> → <span class="mono">agent.heartbeat_secs</span></td></tr>
+<tr><td>Offline queue cap</td><td>24 hours</td><td>Local plist — <span class="mono">~/Library/Application Support/PatronAI/queue.db</span></td></tr>
+<tr><td>Dedup window</td><td>60 min</td><td>Same as above — last-signal-hash SQLite row</td></tr>
+<tr><td>Upload destination</td><td>Scoped to customer bucket</td><td>Baked into the DMG at build time</td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ========= SECTION 6: STREAMLIT DATA FLOW ========= -->
+<section>
+<h2>6. How Streamlit Shows Your Heartbeat</h2>
+
+<div class="diagram">
+<div class="title">Edge → S3 → EC2 → Streamlit · end-to-end path</div>
+
+<div class="row">
+  <div class="blk hi">Your Mac<br>Agent heartbeat<span class="sub">every 5 min · 2 KB JSON</span></div>
+  <span class="arrow">→</span>
+  <div class="blk aws">S3 bucket<br>ocsf/agent/heartbeat/<span class="sub">raw OCSF JSON</span></div>
+</div>
+
+<div class="arrow down">↓</div>
+
+<div class="row">
+  <div class="blk">EC2 scanner thread<br><span class="mono">src/threads.py scanner_loop</span><span class="sub">runs every SCAN_INTERVAL_SECS</span></div>
+  <span class="arrow">→</span>
+  <div class="blk"><span class="mono">normalizer/agent.py</span><span class="sub">parses OCSF → flat rows</span></div>
+  <span class="arrow">→</span>
+  <div class="blk"><span class="mono">matcher/code_engine.py</span><span class="sub">auth list first · deny list second</span></div>
+</div>
+
+<div class="arrow down">↓ if match</div>
+
+<div class="row">
+  <div class="blk aws">S3 findings/<br>high.jsonl · medium.jsonl<span class="sub">append-only</span></div>
+  <span class="arrow">→</span>
+  <div class="blk aws">S3 summary/daily/<br>YYYY-MM-DD.json<span class="sub">pre-aggregated for dashboards</span></div>
+</div>
+
+<div class="arrow down">↓</div>
+
+<div class="row">
+  <div class="blk good">Streamlit :8501<br><span class="mono">BlobIndexStore.findings.list()</span><span class="sub">Pam and Steve tabs render rows</span></div>
+  <span class="arrow">→</span>
+  <div class="blk good">Settings panel<br>Scanner Health<span class="sub">shows last heartbeat per device · ticks ✓ when fresh</span></div>
+</div>
+</div>
+
+<h3>Where you see your own Mac in the UI</h3>
+<ul class="clean">
+  <li><b>Settings :8501 → Scanner Health:</b> table row shows your hostname, last heartbeat timestamp, and status <span class="pill pill-green">FRESH</span> or <span class="pill pill-amber">STALE</span></li>
+  <li><b>Pam tab 2 (Risk Heatmap):</b> your department gets a cell incremented if your heartbeat flagged an unauthorised tool</li>
+  <li><b>Steve tab 2 (Risks):</b> a new row per finding with source = <span class="mono">agent-heartbeat</span>, tool name, and severity</li>
+  <li><b>Steve tab 3 (Log View):</b> raw OCSF JSON browser — pick your hostname, see every heartbeat in the last 24 h</li>
+</ul>
+</section>
+
+<!-- ========= SECTION 7: GRAFANA DATA FLOW ========= -->
+<section>
+<h2>7. How Grafana Shows Your Heartbeat</h2>
+
+<div class="diagram">
+<div class="title">S3 → Grafana JSON datasource → Pam &amp; Steve dashboards</div>
+
+<div class="row">
+  <div class="blk aws">S3 summary/daily/<br>YYYY-MM-DD.json<span class="sub">written by summarizer thread</span></div>
+  <span class="arrow">→</span>
+  <div class="blk">Grafana datasource<br><span class="mono">GhostAI-S3-Summary</span><span class="sub">marcusolsson-json-datasource</span></div>
+  <span class="arrow">→</span>
+  <div class="blk good">Pam dashboard :3000/d/pam<span class="sub">exec and governance view</span></div>
+</div>
+
+<div class="row" style="margin-top:10px;">
+  <div class="blk aws">S3 findings/high.jsonl<br>medium.jsonl<span class="sub">append-only event log</span></div>
+  <span class="arrow">→</span>
+  <div class="blk">Grafana datasource<br><span class="mono">GhostAI-S3-Findings</span><span class="sub">same plugin · different prefix</span></div>
+  <span class="arrow">→</span>
+  <div class="blk good">Steve dashboard :3000/d/steve<span class="sub">IT admin view · drill-down</span></div>
+</div>
+</div>
+
+<table>
+<thead><tr><th>Dashboard</th><th>Panel</th><th>What you see from your Mac's heartbeat</th></tr></thead>
+<tbody>
+<tr><td><b>Pam</b> tab 1 AI Landscape</td><td>Bubble chart</td><td>Every unauthorised tool your Mac reported becomes a bubble sized by event count</td></tr>
+<tr><td><b>Pam</b> tab 2 Risk Heatmap</td><td>Department × severity grid</td><td>Your department gets a heatmap cell; colour shifts amber/red if your Mac finds CRITICAL signals</td></tr>
+<tr><td><b>Pam</b> tab 3 Data Exposure</td><td>Incident timeline</td><td>Your heartbeat timestamps plot as dots on the timeline if they triggered a finding</td></tr>
+<tr><td><b>Steve</b> tab 1 Inventory</td><td>All assets table</td><td>Row per device; your hostname, last heartbeat, MAC, geo, CrowdStrike banner if enabled</td></tr>
+<tr><td><b>Steve</b> tab 2 Risks</td><td>Open alerts table</td><td>Every finding from your Mac appears here with source = <span class="mono">agent-heartbeat</span> or <span class="mono">agent-git-diff</span></td></tr>
+<tr><td><b>Steve</b> tab 4 Alerts</td><td>Pipeline health</td><td>Agent ingress counter ticks up each time your heartbeat arrives; freshness badge turns green</td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ========= SECTION 8: FILE LIST WE WILL BUILD ========= -->
+<section>
+<h2>8. What We Will Actually Write (Once Approved)</h2>
+
+<table>
+<thead><tr><th>File</th><th>Purpose</th><th>Lines (est)</th></tr></thead>
+<tbody>
+<tr><td><span class="mono">agent/macos/patronai_agent.py</span></td><td>The agent itself — 6 scans, OCSF build, S3 upload, offline queue</td><td>~140</td></tr>
+<tr><td><span class="mono">agent/macos/com.giggso.patronai.agent.plist</span></td><td>launchd spec — RunAtLoad + StartInterval=300</td><td>~40</td></tr>
+<tr><td><span class="mono">agent/macos/PatronAI-Agent.app/</span> (bundle)</td><td>Mac app bundle wrapping the Python agent via <span class="mono">py2app</span>; menu bar icon + Login Item registration</td><td>~80</td></tr>
+<tr><td><span class="mono">agent/macos/build-dmg.sh</span></td><td>Builds signed notarised DMG from the <span class="mono">.app</span> bundle</td><td>~90</td></tr>
+<tr><td><span class="mono">agent/macos/jamf.sh</span></td><td>Jamf policy wrapper — pulls DMG, mounts, installs, sets config</td><td>~70</td></tr>
+<tr><td><span class="mono">agent/macos/debugger_jamf.sh</span></td><td><span class="pill pill-amber">POC</span> curl-install script for engineering smoke tests</td><td>~100</td></tr>
+</tbody>
+</table>
+
+<div class="note">Every file stays under the 150-line project limit. Each gets the standard header + audit log table and passes the regression suite.</div>
+</section>
+
+<!-- ========= SECTION 9: APPROVAL CHECKLIST ========= -->
+<section>
+<h2>9. Approval Checklist Before I Write Code</h2>
+
+<div class="card accent">
+<ul class="clean">
+  <li>Heartbeat interval of <b>5 minutes</b> is acceptable (not 60 s, not 15 min)</li>
+  <li>Six signal sources are the right list (processes, ports, Docker, MCP configs, API keys, git)</li>
+  <li>Distribution = signed notarised DMG (prod) + debugger_jamf.sh (POC only)</li>
+  <li>No admin password during install — Login Item via <span class="mono">SMAppService</span> is fine</li>
+  <li>API key values hashed locally, only hashes leave the device</li>
+  <li>Offline queue caps at 24 h — after that, oldest heartbeats drop</li>
+  <li>S3 path <span class="mono">ocsf/agent/heartbeat/YYYY/MM/DD/</span> alongside existing <span class="mono">ocsf/agent/git-diffs/</span></li>
+  <li>Same JSON schema normaliser (<span class="mono">normalizer/agent.py</span>) handles both heartbeat and git-diff event types</li>
+</ul>
+</div>
+</section>
+
+<!-- ========= SECTION 10: PHASE 1A AGENT ADDITIONS (2026-04-26) ========= -->
+<section>
+<h2>10. Phase 1A — what your re-installed agent does that the old one didn't</h2>
+
+<div class="card">
+<h3 style="margin:0 0 8px 0">7 new scan fragments run on every cycle</h3>
+<ul class="clean">
+  <li><b>MCP server inventory</b> — reads Claude Desktop / Cursor / Continue / Cline JSON configs. Sends server name + command basename + arg flags only (NEVER values, NEVER environment variables values). SHA-256 of the config file is uploaded for change detection.</li>
+  <li><b>Agent workflow inventory</b> — finds <span class="mono">~/.n8n/workflows/*.json</span>, <span class="mono">~/.flowise/</span>, <span class="mono">~/.langflow/flows/*.yaml</span> on disk. File path redacted to <span class="mono">~/...</span>; bytes + mtime shipped. Workflow contents NEVER leave your laptop.</li>
+  <li><b>Scheduled-agent inventory</b> — parses <span class="mono">crontab -l</span> output and <span class="mono">~/Library/LaunchAgents/*.plist</span> for AI keywords. Schedule expression shipped; command line redacted via the secret regex first.</li>
+  <li><b>Tool registration inventory</b> — auto-discovers your git repos (walks <span class="mono">$HOME</span> for <span class="mono">.git/</span> dirs), greps <span class="mono">*.py</span> files for <span class="mono">@tool</span> / <span class="mono">@function_tool</span> / <span class="mono">Tool()</span> decorators. <b>Counts only — source code never ships.</b></li>
+  <li><b>Vector DB inventory</b> — looks for Chroma / FAISS / LanceDB / Qdrant / Milvus / DuckDB-vector files in home caches AND inside discovered repos. File NAME and SIZE shipped; content NEVER read.</li>
+</ul>
+</div>
+
+<div class="card accent">
+<h3 style="margin:0 0 8px 0">Privacy gate — secrets never leak</h3>
+<p>Every Phase 1A finding goes through a <b>shared redactor</b> before upload. Strips:</p>
+<ul class="clean">
+  <li>OpenAI / Anthropic API keys (<span class="mono">sk-...</span>, <span class="mono">sk-ant-...</span>)</li>
+  <li>HuggingFace tokens (<span class="mono">hf_...</span>)</li>
+  <li>AWS access keys (<span class="mono">AKIA...</span>)</li>
+  <li>Google API keys (<span class="mono">AIza...</span>)</li>
+  <li>GitHub PATs (<span class="mono">ghp_</span>, <span class="mono">gho_</span>, <span class="mono">ghu_</span>, <span class="mono">ghs_</span>)</li>
+  <li>Slack tokens (<span class="mono">xoxb-</span> family)</li>
+  <li>JWTs (three-part dot-separated base64)</li>
+  <li>User home dir replaced with <span class="mono">~</span></li>
+</ul>
+<p>If a finding still contains a secret-pattern match after redaction, <b>the entire finding is dropped</b>. We never ship a half-redacted payload — better to lose visibility than to leak credentials.</p>
+</div>
+
+<div class="card">
+<h3 style="margin:0 0 8px 0">Re-install procedure</h3>
+<ol style="margin:0;padding-left:20px;line-height:1.7">
+  <li>Open the dashboard → <b>Settings → Deploy Agents</b></li>
+  <li>Click <b>Re-issue</b> for your email. Download the new <span class="mono">.pkg</span> / <span class="mono">.sh</span> installer.</li>
+  <li>On your Mac: <span class="mono">bash ~/.patronai/uninstall.sh</span> (removes the old agent)</li>
+  <li>Run the new installer. It will create <span class="mono">~/.patronai/first_run.flag</span> at install time.</li>
+  <li>Wait for the next scan cycle (every 30 min). The <b>first scan runs in baseline mode</b> — wider walk, broader file-type matching. The flag clears after a successful payload print, so subsequent recurring scans run lighter.</li>
+  <li>Within ~5–10 minutes of the first scan, the dashboard's <b>AI Inventory tab</b> populates with your real findings.</li>
+</ol>
+</div>
+
+<div class="card">
+<h3 style="margin:0 0 8px 0">What the agent does NOT do</h3>
+<ul class="clean">
+  <li><b>Does not</b> upload your MCP config files or workflow JSON contents — only metadata + a hash for change detection</li>
+  <li><b>Does not</b> ship environment variable VALUES — only the keys (so you know <span class="mono">OPENAI_API_KEY</span> is set without revealing the key itself)</li>
+  <li><b>Does not</b> read source code beyond decorator counts — your code never leaves the laptop</li>
+  <li><b>Does not</b> recurse into <span class="mono">node_modules</span>, <span class="mono">.venv</span>, <span class="mono">Library/</span>, <span class="mono">Applications/</span>, or <span class="mono">.Trash</span></li>
+  <li><b>Does not</b> walk above <span class="mono">$HOME</span> (system files are out of scope)</li>
+  <li><b>Time-capped at 60 s</b> for repo discovery + 30 s for tool grep — never runs away</li>
+</ul>
+</div>
+</section>
+
+<footer>
+  <img src="ghost-ai-scanner/assets/branding/patronai-icon.png" alt="">
+  PatronAI · Giggso Inc · macOS Agent User Guide v1.2 · Phase 1A additions · 2026-04-26
+</footer>
+
+</body>
+</html>

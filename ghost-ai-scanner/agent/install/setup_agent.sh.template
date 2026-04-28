@@ -1,0 +1,373 @@
+#!/usr/bin/env bash
+# =============================================================
+# PatronAI — Agent Installer (Mac / Linux)
+# Generated for: {{RECIPIENT_NAME}} <{{RECIPIENT_EMAIL}}>
+# Token: {{TOKEN}}
+# Expires: {{EXPIRES_AT}}
+# USAGE: bash setup_agent.sh
+# =============================================================
+set -euo pipefail
+
+META_URL="{{META_URL}}"
+STATUS_PUT_URL="{{STATUS_PUT_URL}}"
+HEARTBEAT_PUT_URL="{{HEARTBEAT_PUT_URL}}"
+SCAN_PUT_URL="{{SCAN_PUT_URL}}"
+AUTHORIZED_GET_URL="{{AUTHORIZED_GET_URL}}"
+URLS_REFRESH_URL="{{URLS_REFRESH_URL}}"
+AUTHORIZED_DOMAINS="{{AUTHORIZED_DOMAINS}}"
+BUCKET="{{BUCKET}}"
+REGION="{{REGION}}"
+COMPANY="{{COMPANY}}"
+TOKEN="{{TOKEN}}"
+RECIPIENT_EMAIL="{{RECIPIENT_EMAIL}}"
+AGENT_DIR="$HOME/.patronai"
+
+_die()  { echo "ERROR: $*" >&2; exit 1; }
+_info() { echo "[patronai] $*"; }
+
+# ── Dependencies ──────────────────────────────────────────────
+command -v curl    >/dev/null 2>&1 || _die "curl is required."
+command -v python3 >/dev/null 2>&1 || _die "python3 is required."
+python3 -c "import bcrypt" 2>/dev/null || {
+  _info "Installing bcrypt..."
+  pip3 install --quiet "bcrypt>=4.0.0" || _die "Cannot install bcrypt."
+}
+
+# ── OTP prompt ────────────────────────────────────────────────
+echo ""
+echo "PatronAI — {{COMPANY}} · {{RECIPIENT_NAME}}"
+echo "-------------------------------------------"
+read -rp "Enter your 6-digit OTP from the email: " OTP_INPUT
+[[ "$OTP_INPUT" =~ ^[0-9]{6}$ ]] || _die "OTP must be exactly 6 digits."
+
+# ── Validate OTP against S3 meta ─────────────────────────────
+_info "Validating..."
+TMP=$(mktemp /tmp/patronai.XXXXXX.json)
+trap 'rm -f "$TMP"' EXIT
+curl -fsSL --max-time 30 "$META_URL" -o "$TMP" \
+  || _die "Cannot reach server. Link may have expired — request a new package."
+OTP_HASH=$(python3 -c "import json; print(json.load(open('$TMP'))['otp_hash'])")
+EXPIRES=$(python3  -c "import json; print(json.load(open('$TMP'))['expires_at'])")
+python3 -c "
+from datetime import datetime,timezone
+exit(1 if datetime.now(timezone.utc)>datetime.fromisoformat('$EXPIRES') else 0)
+" || _die "Package expired. Request a new one from your administrator."
+python3 -c "
+import bcrypt
+exit(0 if bcrypt.checkpw(b'$OTP_INPUT',b'$OTP_HASH') else 1)
+" || _die "Invalid OTP."
+_info "OTP validated."
+
+# ── Write agent config (identity baked at install time) ──────
+mkdir -p "$AGENT_DIR"
+DEVICE_UUID=$(python3 -c "import uuid; print(uuid.uuid4())")
+MAC_PRIMARY=$(python3 -c "import uuid; n=uuid.getnode(); print(':'.join(f'{(n>>i)&0xff:02x}' for i in (40,32,24,16,8,0)))")
+python3 - <<PYCFG > "$AGENT_DIR/config.json"
+import json
+print(json.dumps({
+  "bucket":      "$BUCKET",
+  "region":      "$REGION",
+  "company":     "$COMPANY",
+  "token":       "$TOKEN",
+  "email":       "$RECIPIENT_EMAIL",
+  "device_uuid": "$DEVICE_UUID",
+  "mac_primary": "$MAC_PRIMARY",
+  "agent_dir":   "$AGENT_DIR",
+}))
+PYCFG
+chmod 600 "$AGENT_DIR/config.json"
+
+# Persist presigned URLs + URL-refresh endpoint + authorised list fallback.
+# URL files are rotated daily by heartbeat.sh fetching urls.json — see Step 0.
+echo "$HEARTBEAT_PUT_URL"  > "$AGENT_DIR/heartbeat_url"
+echo "$SCAN_PUT_URL"       > "$AGENT_DIR/scan_url"
+echo "$AUTHORIZED_GET_URL" > "$AGENT_DIR/authorized_url"
+echo "$URLS_REFRESH_URL"   > "$AGENT_DIR/urls_refresh_url"
+echo "$AUTHORIZED_DOMAINS" > "$AGENT_DIR/authorized_domains"
+chmod 600 "$AGENT_DIR/heartbeat_url" "$AGENT_DIR/scan_url" \
+          "$AGENT_DIR/authorized_url" "$AGENT_DIR/urls_refresh_url" \
+          "$AGENT_DIR/authorized_domains"
+
+# Local action log — every PUT records {ts,type,http_status,key,error}.
+# Replaces silent ` || true ` swallowing — admins / IT can SCP this back.
+touch "$AGENT_DIR/agent.log" && chmod 600 "$AGENT_DIR/agent.log"
+
+# Phase 1A — drop a first-run flag so the next scan runs in baseline mode.
+# scan_first_run.py.frag reads this and exposes IS_FIRST_RUN=True; the
+# footer clears the flag after a successful payload print so subsequent
+# 30-min recurring scans run in lighter mode.
+touch "$AGENT_DIR/first_run.flag" && chmod 600 "$AGENT_DIR/first_run.flag"
+
+# ── Write pre-commit hook script ──────────────────────────────
+HOOK_SCRIPT="$AGENT_DIR/pre_commit_hook.sh"
+cat > "$HOOK_SCRIPT" << 'HOOK_EOF'
+#!/usr/bin/env bash
+AGENT_DIR="$HOME/.patronai"
+CONFIG="$AGENT_DIR/config.json"
+[ -f "$CONFIG" ] || exit 0
+BUCKET=$(python3 -c "import json; print(json.load(open('$CONFIG'))['bucket'])" 2>/dev/null)
+REGION=$(python3 -c "import json; print(json.load(open('$CONFIG'))['region'])" 2>/dev/null)
+COMPANY=$(python3 -c "import json; print(json.load(open('$CONFIG'))['company'])" 2>/dev/null)
+[ -z "$BUCKET" ] && exit 0
+AI_SIGNALS="langchain|langgraph|llama_index|haystack|autogen|crewai|openai|anthropic|pydantic_ai|smolagents|MCPServer|sk-proj-|sk-ant-|hf_[a-zA-Z0-9]"
+DIFF=$(git diff --cached --unified=3 2>/dev/null || echo "")
+[ -z "$DIFF" ] && exit 0
+echo "$DIFF" | grep -qiE "$AI_SIGNALS" || exit 0
+DEVICE_ID=$(hostname)
+TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+REPO=$(git rev-parse --show-toplevel 2>/dev/null | xargs basename)
+BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+PAYLOAD=$(python3 -c "
+import json,sys
+print(json.dumps({'event_type':'GIT_DIFF_SIGNAL','source':'patronai_git_hook',
+  'device_id':'${DEVICE_ID}','company':'${COMPANY}','repo':'${REPO}',
+  'branch':'${BRANCH}','timestamp':'${TIMESTAMP}','diff_snippet':sys.argv[1]}))" \
+  "$(echo "$DIFF" | head -c 5120)" 2>/dev/null)
+aws s3 cp - "s3://${BUCKET}/ocsf/agent/git-diffs/${DEVICE_ID}-${TIMESTAMP}.json" \
+  --region "$REGION" --content-type "application/json" --quiet <<< "$PAYLOAD" 2>/dev/null &
+exit 0
+HOOK_EOF
+chmod +x "$HOOK_SCRIPT"
+
+# ── Write install_hook.sh helper ──────────────────────────────
+INSTALL_HELPER="$AGENT_DIR/install_hook.sh"
+cat > "$INSTALL_HELPER" << HELPER_EOF
+#!/usr/bin/env bash
+# Usage: bash ~/.patronai/install_hook.sh [/path/to/repo]
+REPO=\${1:-\$(pwd)}
+HOOKS_DIR="\$REPO/.git/hooks"
+[ -d "\$REPO/.git" ] || { echo "ERROR: Not a git repo: \$REPO"; exit 1; }
+mkdir -p "\$HOOKS_DIR"
+HOOK_PATH="\$HOOKS_DIR/pre-commit"
+[ -f "\$HOOK_PATH" ] && [ ! -L "\$HOOK_PATH" ] && cp "\$HOOK_PATH" "\${HOOK_PATH}.backup"
+ln -sf "$HOOK_SCRIPT" "\$HOOK_PATH"
+echo "[patronai] Hook installed in \$REPO"
+HELPER_EOF
+chmod +x "$INSTALL_HELPER"
+
+# ── Auto-install into git repos found under HOME ──────────────
+INSTALL_COUNT=0
+while IFS= read -r -d '' GIT_DIR; do
+  HOOKS_DIR="$GIT_DIR/hooks"
+  mkdir -p "$HOOKS_DIR"
+  HOOK_PATH="$HOOKS_DIR/pre-commit"
+  [ -f "$HOOK_PATH" ] && [ ! -L "$HOOK_PATH" ] && cp "$HOOK_PATH" "${HOOK_PATH}.backup"
+  ln -sf "$HOOK_SCRIPT" "$HOOK_PATH"
+  INSTALL_COUNT=$((INSTALL_COUNT + 1))
+done < <(find "$HOME" -maxdepth 6 -name ".git" -type d -print0 2>/dev/null)
+
+# ── Step 0.1 — git template dir (auto-install on every future init/clone) ──
+# Honours an existing init.templateDir if the user already set one (additive).
+EXISTING_TPL=$(git config --global --get init.templateDir 2>/dev/null || echo "")
+if [ -n "$EXISTING_TPL" ] && [ "$EXISTING_TPL" != "$AGENT_DIR/git-template" ]; then
+  # User already has a template — drop our hook into theirs without disturbing the rest.
+  EXPANDED_TPL="${EXISTING_TPL/#~/$HOME}"
+  mkdir -p "$EXPANDED_TPL/hooks"
+  ln -sf "$HOOK_SCRIPT" "$EXPANDED_TPL/hooks/pre-commit"
+  _info "init.templateDir preserved ($EXISTING_TPL); hook copied alongside."
+else
+  mkdir -p "$AGENT_DIR/git-template/hooks"
+  ln -sf "$HOOK_SCRIPT" "$AGENT_DIR/git-template/hooks/pre-commit"
+  git config --global init.templateDir "$AGENT_DIR/git-template"
+  _info "init.templateDir set — every new git init/clone gets the hook."
+fi
+
+# ── Write endpoint scan script ────────────────────────────────
+# Runs every 30 min. Checks packages, processes, browsers, IDE plugins,
+# containers (image+logs), shell history. Scan logic lives in
+# agent/install/scan_*.py.frag and is inlined here at render time.
+# Findings matched against unauthorised list; authorised list suppresses.
+SCAN_SCRIPT="$AGENT_DIR/scan.sh"
+cat > "$SCAN_SCRIPT" << 'SCAN_EOF'
+#!/usr/bin/env bash
+# PatronAI endpoint scan — multi-surface
+AGENT_DIR="$HOME/.patronai"
+[ -f "$AGENT_DIR/config.json" ] || exit 0
+[ -f "$AGENT_DIR/scan_url" ]    || exit 0
+SCAN_URL=$(cat "$AGENT_DIR/scan_url")
+[ -z "$SCAN_URL" ] && exit 0
+PATRONAI_TOKEN=$(python3 -c "import json; print(json.load(open('$AGENT_DIR/config.json'))['token'])" 2>/dev/null)
+PATRONAI_COMPANY=$(python3 -c "import json; print(json.load(open('$AGENT_DIR/config.json'))['company'])" 2>/dev/null)
+export PATRONAI_TOKEN PATRONAI_COMPANY
+
+# Refresh live authorised list from S3 (presigned GET; admin can edit
+# without reinstalling). Falls back to baked-in list on expiry.
+AUTH_URL=$(cat "$AGENT_DIR/authorized_url" 2>/dev/null || echo "")
+if [ -n "$AUTH_URL" ]; then
+  LIVE=$(curl -fsSL --max-time 10 "$AUTH_URL" 2>/dev/null || echo "")
+  [ -n "$LIVE" ] && echo "$LIVE" > "$AGENT_DIR/authorized_domains"
+fi
+
+python3 << 'PYEOF'
+{{INLINE_SCAN_PYTHON}}
+PYEOF
+SCAN_EOF
+chmod +x "$SCAN_SCRIPT"
+
+# Wrapper that runs scan, PUTs result, and logs the outcome (no more silent failure).
+SCAN_RUNNER="$AGENT_DIR/run_scan.sh"
+cat > "$SCAN_RUNNER" << RUNNER_EOF
+#!/usr/bin/env bash
+AGENT_DIR="\$HOME/.patronai"
+LOG="\$AGENT_DIR/agent.log"
+[ -f "\$AGENT_DIR/scan_url" ] || exit 0
+SCAN_URL=\$(cat "\$AGENT_DIR/scan_url")
+[ -z "\$SCAN_URL" ] && exit 0
+RESULT=\$(bash "$SCAN_SCRIPT" 2>/dev/null)
+[ -z "\$RESULT" ] && exit 0
+HTTP=\$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 \\
+       -X PUT "\$SCAN_URL" -H 'Content-Type: application/json' -d "\$RESULT")
+TS=\$(date -u +%Y-%m-%dT%H:%M:%SZ)
+echo "{\"ts\":\"\$TS\",\"type\":\"scan\",\"http_status\":\$HTTP}" >> "\$LOG"
+RUNNER_EOF
+chmod +x "$SCAN_RUNNER"
+
+# ── Write heartbeat script (identity-rich + URL refresh + structured log) ──
+HEARTBEAT_SCRIPT="$AGENT_DIR/heartbeat.sh"
+cat > "$HEARTBEAT_SCRIPT" << 'HB_EOF'
+#!/usr/bin/env bash
+# Step 0 heartbeat: refresh URLs → emit identity-bound payload → log outcome.
+AGENT_DIR="$HOME/.patronai"
+LOG="$AGENT_DIR/agent.log"
+[ -f "$AGENT_DIR/config.json" ] || exit 0
+
+# 1. Refresh URLs daily — best-effort. If urls.json reachable, overwrite local copies.
+REFRESH_URL=$(cat "$AGENT_DIR/urls_refresh_url" 2>/dev/null || echo "")
+if [ -n "$REFRESH_URL" ]; then
+  BUNDLE=$(curl -fsSL --max-time 10 "$REFRESH_URL" 2>/dev/null || echo "")
+  if [ -n "$BUNDLE" ]; then
+    python3 - <<PYREFRESH 2>/dev/null
+import json, os
+b = json.loads("""$BUNDLE""")
+for k, fname in (("heartbeat_put_url","heartbeat_url"),
+                 ("scan_put_url","scan_url"),
+                 ("authorized_get_url","authorized_url")):
+    if b.get(k):
+        open(os.path.expanduser("~/.patronai/" + fname), "w").write(b[k])
+PYREFRESH
+  fi
+fi
+
+# 2. Emit heartbeat with full identity binding.
+[ -f "$AGENT_DIR/heartbeat_url" ] || exit 0
+HB_URL=$(cat "$AGENT_DIR/heartbeat_url")
+export PATRONAI_TOKEN="$(python3 -c "import json;print(json.load(open('$AGENT_DIR/config.json'))['token'])" 2>/dev/null)"
+export PATRONAI_COMPANY="$(python3 -c "import json;print(json.load(open('$AGENT_DIR/config.json'))['company'])" 2>/dev/null)"
+PAYLOAD=$(python3 - <<PYHB
+import json, os, platform, socket, uuid
+from datetime import datetime, timezone
+cfg = json.load(open(os.path.expanduser("~/.patronai/config.json")))
+try:
+    ips = sorted({ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")})
+except Exception:
+    ips = []
+print(json.dumps({
+    "event_type":   "HEARTBEAT",
+    "status":       "installed",
+    "device_id":    platform.node(),
+    "device_uuid":  cfg.get("device_uuid",""),
+    "mac_primary":  cfg.get("mac_primary",""),
+    "ip_set":       ips,
+    "email":        cfg.get("email",""),
+    "token":        cfg.get("token",""),
+    "company":      cfg.get("company",""),
+    "os_name":      platform.system(),
+    "os_version":   platform.release(),
+    "agent_version":"2.0.0",
+    "timestamp":    datetime.now(timezone.utc).isoformat(),
+}))
+PYHB
+)
+HTTP=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 \
+       -X PUT "$HB_URL" -H 'Content-Type: application/json' -d "$PAYLOAD")
+TS=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+echo "{\"ts\":\"$TS\",\"type\":\"heartbeat\",\"http_status\":$HTTP}" >> "$LOG"
+
+# 4. Hook coverage backstop (Step 0.1) — every 5 min, ensure every git
+# repo under $HOME (depth 6) has our pre-commit hook. Catches repos
+# cloned before the agent was installed and any rare miss by the
+# init.templateDir path. Cheap (<1s on typical home).
+HOOK_SCRIPT="$AGENT_DIR/pre_commit_hook.sh"
+[ -f "$HOOK_SCRIPT" ] || exit 0
+ADDED=0
+while IFS= read -r -d '' GIT_DIR; do
+    HP="$GIT_DIR/hooks/pre-commit"
+    if [ ! -L "$HP" ] || [ "$(readlink "$HP" 2>/dev/null)" != "$HOOK_SCRIPT" ]; then
+        mkdir -p "$GIT_DIR/hooks"
+        [ -f "$HP" ] && [ ! -L "$HP" ] && cp "$HP" "${HP}.backup"
+        ln -sf "$HOOK_SCRIPT" "$HP"
+        ADDED=$((ADDED + 1))
+    fi
+done < <(find "$HOME" -maxdepth 6 -name ".git" -type d -print0 2>/dev/null)
+[ "$ADDED" -gt 0 ] && \
+    echo "{\"ts\":\"$TS\",\"type\":\"hook_backstop\",\"added\":$ADDED}" >> "$LOG"
+HB_EOF
+chmod +x "$HEARTBEAT_SCRIPT"
+
+# ── Schedule heartbeat (5 min) + scan (30 min) ────────────────
+if [ "$(uname -s)" = "Darwin" ]; then
+  # Heartbeat — launchd, every 5 min
+  PLIST_HB="$HOME/Library/LaunchAgents/com.patronai.heartbeat.plist"
+  cat > "$PLIST_HB" << PLIST_EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>com.patronai.heartbeat</string>
+  <key>ProgramArguments</key><array><string>/bin/bash</string><string>$HEARTBEAT_SCRIPT</string></array>
+  <key>StartInterval</key><integer>300</integer>
+  <key>RunAtLoad</key><true/>
+  <key>StandardErrorPath</key><string>$AGENT_DIR/heartbeat.log</string>
+</dict></plist>
+PLIST_EOF
+  launchctl unload "$PLIST_HB" 2>/dev/null || true
+  launchctl load  "$PLIST_HB" 2>/dev/null || true
+
+  # Scan — launchd, every 30 min
+  PLIST_SCAN="$HOME/Library/LaunchAgents/com.patronai.scan.plist"
+  cat > "$PLIST_SCAN" << PLIST_EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>com.patronai.scan</string>
+  <key>ProgramArguments</key><array><string>/bin/bash</string><string>$SCAN_RUNNER</string></array>
+  <key>StartInterval</key><integer>1800</integer>
+  <key>RunAtLoad</key><true/>
+  <key>StandardErrorPath</key><string>$AGENT_DIR/scan.log</string>
+</dict></plist>
+PLIST_EOF
+  launchctl unload "$PLIST_SCAN" 2>/dev/null || true
+  launchctl load  "$PLIST_SCAN" 2>/dev/null || true
+else
+  # Linux — crontab
+  ( crontab -l 2>/dev/null | grep -v patronai
+    echo "*/5  * * * * /bin/bash $HEARTBEAT_SCRIPT"
+    echo "*/30 * * * * /bin/bash $SCAN_RUNNER"
+  ) | crontab -
+fi
+
+# ── Report installed status ───────────────────────────────────
+curl -fsSL -X PUT "$STATUS_PUT_URL" -H "Content-Type: application/json" \
+  -d "{\"token\":\"$TOKEN\",\"status\":\"installed\",\"device_id\":\"$(hostname)\",\"installed_at\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" \
+  >/dev/null 2>&1 || true
+
+# ── Run first scan immediately ────────────────────────────────
+bash "$SCAN_RUNNER" &
+
+# ── Drop the recipient-side diagnose script ──────────────────
+DIAG="$AGENT_DIR/diagnose.sh"
+cat > "$DIAG" << 'DIAG_EOF'
+{{INLINE_DIAGNOSE_SH}}
+DIAG_EOF
+chmod +x "$DIAG"
+
+echo ""
+_info "Installation complete."
+_info "If anything looks off later, run:  bash ~/.patronai/diagnose.sh"
+_info "Pre-commit hook installed in $INSTALL_COUNT existing repo(s)."
+_info "New repos auto-instrumented via init.templateDir — no manual step needed."
+_info "Endpoint scan every 30 min — packages, processes, browsers, IDE plugins, containers, shell history,"
+_info "                              MCP servers, agent workflows, scheduled agents, tool registrations, vector DBs."
+_info "First scan runs in baseline mode (wider walk); subsequent scans run lighter."
+_info "Heartbeat every 5 min — refreshes presigned URLs AND auto-installs the pre-commit hook"
+_info "                       in any new git repo cloned/init-ed since the last cycle."
+_info "AI framework signals in git commits will be forwarded for analysis."
