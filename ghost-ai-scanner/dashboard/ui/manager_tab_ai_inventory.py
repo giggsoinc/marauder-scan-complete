@@ -1,7 +1,7 @@
 # =============================================================
 # FILE: dashboard/ui/manager_tab_ai_inventory.py
 # PROJECT: PatronAI — Phase 1A
-# VERSION: 1.1.0
+# VERSION: 1.2.0
 # UPDATED: 2026-04-28
 # OWNER: Giggso Inc (Ravi Venugopal)
 # PURPOSE: New 5th Manager tab — AI INVENTORY. Surfaces the four Phase 1A
@@ -17,6 +17,7 @@
 #                       under 150 LOC.
 #   v1.1.0  2026-04-28  Replace treemap with mind-map network graph;
 #                       upgrade KPI row from st.metric to clickable_metric.
+#   v1.2.0  2026-04-28  User picker (st.pills) — mind map per selected user.
 # =============================================================
 
 import streamlit as st
@@ -115,14 +116,23 @@ def _render_table(events: list) -> None:
 def render_ai_inventory(events: list) -> None:
     """Top-level entry called by manager_view.py."""
     from .ai_inventory_mindmap import render_mindmap
-    base = phase_1a_only(events)
-    render_mindmap(events)
-    render_drill_panel(_PANEL, base, limit=100)
-    _render_kpis(base)
-    # Phase 1B — global search across all fields, on top of the existing
-    # per-column filters. The category/severity dropdowns inside
-    # _render_filters operate on the result.
     from .filtered_table import search_box, apply_search_dicts
+    base = phase_1a_only(events)
+    _render_kpis(base)
+    # ── User picker — mind map appears per-user ───────────────
+    st.markdown('<div class="card-title">SELECT USER — AI FOOTPRINT</div>',
+                unsafe_allow_html=True)
+    all_owners = owners_in(base)
+    sel = st.pills("User", all_owners, key="ai_inv_user_sel")
+    if sel:
+        ue = [e for e in base
+              if (e.get("email") or e.get("owner")) == sel]
+        render_mindmap(ue, panel_key="mindmap_u",
+                       chart_key="ai_mindmap_user",
+                       title=f"AI ASSETS — {sel} · click a node to drill")
+        render_drill_panel("mindmap_u", ue, limit=100)
+    else:
+        st.caption("↑ Select a user above to explore their AI asset footprint.")
     q = search_box("ai_inv_global",
                    placeholder="search any field — provider / device / repo …")
     if q:

@@ -1,16 +1,18 @@
 # =============================================================
 # FILE: dashboard/ui/ai_inventory_mindmap.py
 # PROJECT: PatronAI — Mega-PR
-# VERSION: 1.0.0
+# VERSION: 1.1.0
 # UPDATED: 2026-04-28
 # OWNER: Giggso Inc (Ravi Venugopal)
-# PURPOSE: Mind-map network/graph for Manager → AI INVENTORY tab.
+# PURPOSE: Mind-map network/graph for Manager → AI INVENTORY tab
+#          and User Detail ASSETS tab.
 #          Hierarchy: AI Assets (root) → Owner → Category → Provider.
 #          Custom radial tree layout — root at centre, branches radiate.
-#          Node click → drill filter on the table below.
+#          Node click → drill filter on the panel below.
 # DEPENDS: plotly, ai_inventory_mindmap_data, theme
 # AUDIT LOG:
 #   v1.0.0  2026-04-28  Initial. Replaces ai_inventory_treemap.py.
+#   v1.1.0  2026-04-28  panel_key/chart_key/title params; render_user_mindmap.
 # =============================================================
 
 import plotly.graph_objects as go
@@ -27,7 +29,10 @@ _SIZE    = {0: 28, 1: 20, 2: 14, 3: 9}
 _BASE_COL = {0: "#0969DA", 1: "#1F2328"}
 
 
-def render_mindmap(events: list) -> None:
+def render_mindmap(events: list, *,
+                   panel_key: str = _PANEL,
+                   chart_key: str = "ai_mindmap",
+                   title: str = "") -> None:
     """Render an interactive mind-map above the AI inventory table.
     Clicking an owner, category, or provider node sets a drill filter."""
     base = dedup_latest(phase_1a_only(events))
@@ -86,11 +91,12 @@ def render_mindmap(events: list) -> None:
         font=dict(family="JetBrains Mono", size=10, color="#1F2328"),
     )
 
-    st.markdown('<div class="card-title">AI ASSET MIND MAP · click a node to drill</div>',
+    _title = title or "AI ASSET MIND MAP · click a node to drill"
+    st.markdown(f'<div class="card-title">{_title}</div>',
                 unsafe_allow_html=True)
     sel = st.plotly_chart(fig, use_container_width=True,
                           on_select="rerun", selection_mode="points",
-                          key="ai_mindmap")
+                          key=chart_key)
     try:
         pts = (sel.selection.points if sel else []) or []
     except Exception:
@@ -106,13 +112,30 @@ def render_mindmap(events: list) -> None:
     lv   = m.get("level", 0)
 
     if lv == 1:
-        set_drill(_PANEL, f"Owner: {m.get('raw_owner', name)}",
+        set_drill(panel_key, f"Owner: {m.get('raw_owner', name)}",
                   "owner", m.get("raw_owner", name))
     elif lv == 2:
-        set_drill(_PANEL, f"Category: {m.get('raw_cat', name)}",
+        set_drill(panel_key, f"Category: {m.get('raw_cat', name)}",
                   "category", m.get("raw_cat", name))
     elif lv == 3:
         raw = name.split("\n")[0]
-        set_drill(_PANEL, f"Provider: {raw}", "provider", raw)
+        set_drill(panel_key, f"Provider: {raw}", "provider", raw)
     if lv in (1, 2, 3):
         st.rerun()
+
+
+def render_user_mindmap(events: list, email: str) -> None:
+    """User-detail mind map — ASSETS tab in user_detail.py.
+    Receives the FULL event list; filters + deduplicates internally."""
+    from .manager_tab_ai_inventory_data import phase_1a_only, dedup_latest
+    from .drill_panel import render_drill_panel as _rdp
+    ue = dedup_latest(phase_1a_only(
+        [e for e in events
+         if (e.get("email") or e.get("owner") or "") == email]))
+    if not ue:
+        st.info("No Phase 1A AI assets recorded for this user yet.")
+        return
+    render_mindmap(ue, panel_key="user_mm",
+                   chart_key="user_detail_mindmap",
+                   title=f"AI ASSET MAP — {email} · click a node to drill")
+    _rdp("user_mm", ue, limit=50)
