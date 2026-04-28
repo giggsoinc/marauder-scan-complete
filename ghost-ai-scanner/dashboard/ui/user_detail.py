@@ -1,25 +1,23 @@
 # =============================================================
 # FILE: dashboard/ui/user_detail.py
 # PROJECT: PatronAI — Mega-PR
-# VERSION: 1.0.0
-# UPDATED: 2026-04-27
+# VERSION: 1.1.0
+# UPDATED: 2026-04-28
 # OWNER: Giggso Inc (Ravi Venugopal)
 # PURPOSE: Per-user detail page — opened by clicking an email or
 #          agent-fleet name. Two tabs:
-#            ASSETS — Treemap + table (reuses asset_map.render_asset_map)
+#            ASSETS — Mind map (replaces treemap; render_user_mindmap)
 #            LOGS   — Recent events for this user, filterable.
-#          Replaces the older single-tab asset_map view; the existing
-#          asset_map module stays as the Treemap/expander renderer used
-#          inside the ASSETS tab here.
-# DEPENDS: streamlit, asset_map, time_fmt
+# DEPENDS: streamlit, ai_inventory_mindmap, time_fmt
 # AUDIT LOG:
 #   v1.0.0  2026-04-27  Initial. Mega-PR.
+#   v1.1.0  2026-04-28  Replace treemap with render_user_mindmap.
 # =============================================================
 
 import streamlit as st
 
-from .asset_map        import render_asset_map
-from .time_fmt         import fmt as fmt_time
+from .ai_inventory_mindmap import render_user_mindmap
+from .time_fmt             import fmt as fmt_time
 from .helpers          import sev_badge, geo_flag
 from .filtered_table   import search_box, apply_search_dicts
 
@@ -37,7 +35,7 @@ def render_user_detail(events: list, email: str) -> None:
 
     t1, t2 = st.tabs(["  ASSETS  ", "  LOGS  "])
     with t1:
-        render_asset_map(events, email)
+        render_user_mindmap(events, email)
     with t2:
         _render_logs(user_events)
 
