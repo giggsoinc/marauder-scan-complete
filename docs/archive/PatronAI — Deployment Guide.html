@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0096)file:///Users/giggso/AntiGravity_Projects/marauder-scan-complete/ghost-ai-scanner/UserGuide.html -->
+<!-- archived from previous deployment guide -->
 <html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -329,14 +329,14 @@
 <!-- ── TOC ── -->
 <div class="toc">
   <div class="toc-title">Contents</div>
-  <a href="file:///Users/giggso/AntiGravity_Projects/marauder-scan-complete/ghost-ai-scanner/UserGuide.html#prereqs">0 · Before you start</a>
-  <a href="file:///Users/giggso/AntiGravity_Projects/marauder-scan-complete/ghost-ai-scanner/UserGuide.html#phase1">1 · Deploy code to EC2 <span style="color:var(--muted)">(your Mac)</span></a>
-  <a href="file:///Users/giggso/AntiGravity_Projects/marauder-scan-complete/ghost-ai-scanner/UserGuide.html#phase2">2 · Provision AWS infrastructure <span style="color:var(--muted)">(your Mac)</span></a>
-  <a href="file:///Users/giggso/AntiGravity_Projects/marauder-scan-complete/ghost-ai-scanner/UserGuide.html#phase3">3 · Start the platform <span style="color:var(--muted)">(EC2)</span></a>
-  <a href="file:///Users/giggso/AntiGravity_Projects/marauder-scan-complete/ghost-ai-scanner/UserGuide.html#phase4">4 · First-boot tasks <span style="color:var(--muted)">(EC2)</span></a>
-  <a href="file:///Users/giggso/AntiGravity_Projects/marauder-scan-complete/ghost-ai-scanner/UserGuide.html#phase5">5 · Configure the UI <span style="color:var(--muted)">(browser)</span></a>
-  <a href="file:///Users/giggso/AntiGravity_Projects/marauder-scan-complete/ghost-ai-scanner/UserGuide.html#phase6">6 · Deploy hook agents to developers <span style="color:var(--muted)">(browser + EC2)</span></a>
-  <a href="file:///Users/giggso/AntiGravity_Projects/marauder-scan-complete/ghost-ai-scanner/UserGuide.html#teardown">Teardown</a>
+  <a href="https://github.com/giggsoinc/patronai/blob/main/ghost-ai-scanner/docs/archive/UserGuide.html#prereqs">0 · Before you start</a>
+  <a href="https://github.com/giggsoinc/patronai/blob/main/ghost-ai-scanner/docs/archive/UserGuide.html#phase1">1 · Deploy code to EC2 <span style="color:var(--muted)">(your Mac)</span></a>
+  <a href="https://github.com/giggsoinc/patronai/blob/main/ghost-ai-scanner/docs/archive/UserGuide.html#phase2">2 · Provision AWS infrastructure <span style="color:var(--muted)">(your Mac)</span></a>
+  <a href="https://github.com/giggsoinc/patronai/blob/main/ghost-ai-scanner/docs/archive/UserGuide.html#phase3">3 · Start the platform <span style="color:var(--muted)">(EC2)</span></a>
+  <a href="https://github.com/giggsoinc/patronai/blob/main/ghost-ai-scanner/docs/archive/UserGuide.html#phase4">4 · First-boot tasks <span style="color:var(--muted)">(EC2)</span></a>
+  <a href="https://github.com/giggsoinc/patronai/blob/main/ghost-ai-scanner/docs/archive/UserGuide.html#phase5">5 · Configure the UI <span style="color:var(--muted)">(browser)</span></a>
+  <a href="https://github.com/giggsoinc/patronai/blob/main/ghost-ai-scanner/docs/archive/UserGuide.html#phase6">6 · Deploy hook agents to developers <span style="color:var(--muted)">(browser + EC2)</span></a>
+  <a href="https://github.com/giggsoinc/patronai/blob/main/ghost-ai-scanner/docs/archive/UserGuide.html#teardown">Teardown</a>
 </div>
 
 <!-- ════════════════════════════════════════════ -->
@@ -364,7 +364,7 @@
     </div>
     <div class="callout info" style="margin-top:14px;">
       <span class="callout-icon">ℹ</span>
-      <span>All scripts run from <code>marauder-scan-complete/</code> — the folder containing both <code>ghost-ai-scanner/</code> and <code>prereqs.sh</code>. Open one terminal there and keep it open.</span>
+      <span>All scripts run from <code>patronai/</code> — the folder containing both <code>ghost-ai-scanner/</code> and <code>prereqs.sh</code>. Open one terminal there and keep it open.</span>
     </div>
   </div>
 </div>
@@ -390,7 +390,7 @@
       Creates an EC2 instance (or uses an existing one), attaches an IAM instance profile, and rsyncs the entire codebase. <strong>Follow the prompts — just press Enter to accept defaults.</strong>
     </div>
     <div class="code-wrap">
-      <pre>cd marauder-scan-complete
+      <pre>cd patronai
 bash deploy_to_ec2.sh</pre>
       <button class="copy-btn" onclick="copyCode(this)">Copy</button>
     </div>
@@ -542,7 +542,7 @@ docker-compose up -d</pre>
       Classifies every network interface in your VPC so the scanner can filter out AWS-internal traffic (NAT gateways, EFS, load balancers). Auto-refreshes every 6 hours after this.
     </div>
     <div class="code-wrap">
-      <pre>docker exec marauder-scan python3 scripts/refresh_eni_cache.py</pre>
+      <pre>docker exec patronai python3 scripts/refresh_eni_cache.py</pre>
       <button class="copy-btn" onclick="copyCode(this)">Copy</button>
     </div>
   </div>
@@ -558,7 +558,7 @@ docker-compose up -d</pre>
       Creates the <code>config/HOOK_AGENTS/catalog.json</code> index in S3 and validates SES + S3 write permissions. Safe to re-run.
     </div>
     <div class="code-wrap">
-      <pre>docker exec marauder-scan bash scripts/setup_hook_agents.sh</pre>
+      <pre>docker exec patronai bash scripts/setup_hook_agents.sh</pre>
       <button class="copy-btn" onclick="copyCode(this)">Copy</button>
     </div>
   </div>
@@ -792,7 +792,7 @@ docker-compose up -d --build</pre>
   </div>
   <div class="step-body">
     <div class="code-wrap">
-      <pre>docker exec marauder-scan bash scripts/run_regression.sh --unit-only</pre>
+      <pre>docker exec patronai bash scripts/run_regression.sh --unit-only</pre>
       <button class="copy-btn" onclick="copyCode(this)">Copy</button>
     </div>
   </div>

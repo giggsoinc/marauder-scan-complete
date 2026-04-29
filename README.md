@@ -118,12 +118,10 @@ the scanner reads from S3 every scan cycle; no third-party cloud plane.
 
 ### What is Marauder Scan?
 
-Marauder Scan is PatronAI's discovery layer for hidden AI usage.
-
-It maps AI activity across source code, configuration files, MCP definitions, API
-calls, provider domains, network telemetry, and deployed endpoints — helping teams
-find shadow AI, ghost AI assets, and unmanaged model usage before they become
-a compliance or security problem.
+Marauder Scan is PatronAI's discovery layer for hidden AI usage. It maps AI activity
+across source code, configuration files, MCP definitions, API calls, provider domains,
+network telemetry, and deployed endpoints to help teams find shadow AI, ghost AI assets,
+and unmanaged model usage.
 
 In short: **PatronAI is the platform; Marauder Scan is the mapping and discovery
 engine inside it.**

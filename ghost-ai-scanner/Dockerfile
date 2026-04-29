@@ -85,8 +85,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
        https://github.com/ggml-org/llama.cpp /tmp/llama.cpp \
     && cmake /tmp/llama.cpp -B /tmp/llama.cpp/build \
        -DBUILD_SHARED_LIBS=OFF -DGGML_CUDA=OFF \
-    && cmake --build /tmp/llama.cpp/build --config Release -j4 \
-       --target llama-cli --target llama-server \
+    && cmake --build /tmp/llama.cpp/build --config Release -j4 --target llama-cli \
+    && cmake --build /tmp/llama.cpp/build --config Release -j4 --target llama-server \
     && cp /tmp/llama.cpp/build/bin/llama-cli /usr/local/bin/ \
     && cp /tmp/llama.cpp/build/bin/llama-server /usr/local/bin/ \
     && mkdir -p /etc/llama \
