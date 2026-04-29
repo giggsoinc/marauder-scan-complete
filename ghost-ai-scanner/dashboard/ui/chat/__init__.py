@@ -9,6 +9,10 @@
 #   v1.0.0  2026-04-28  Initial.
 # =============================================================
 
-from .widget import render_chat  # noqa: F401 — public API
+from .widget import render_chat_panel  # noqa: F401 — public API
 
-__all__ = ["render_chat"]
+# Backward-compat alias (views no longer call this directly — ghost_dashboard
+# handles the column layout — but keep the alias to avoid import errors).
+render_chat = render_chat_panel  # noqa: F401
+
+__all__ = ["render_chat_panel", "render_chat"]

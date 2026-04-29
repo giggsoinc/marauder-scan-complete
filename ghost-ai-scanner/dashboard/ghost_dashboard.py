@@ -1,6 +1,6 @@
 # =============================================================
 # FILE: dashboard/ghost_dashboard.py
-# VERSION: 3.2.0
+# VERSION: 3.3.0
 # UPDATED: 2026-04-29
 # OWNER: Giggso Inc
 # PURPOSE: PatronAI UI — single-page Streamlit entry point.
@@ -9,6 +9,8 @@
 #   v1.0.0  2026-04-07  Initial
 #   v3.1.0  2026-04-28  Reports + Branding tab.
 #   v3.2.0  2026-04-29  Home welcome page; logo from assets/branding/.
+#   v3.3.0  2026-04-29  AI chat moved to persistent right-side column.
+#                       Views render in col_main (75%); chat in col_chat (25%).
 # =============================================================
 
 import os
@@ -68,24 +70,28 @@ def main() -> None:
     if view != "home":
         _render_header(summary)
 
+    from ui.chat import render_chat_panel
+
+    def _with_chat(view_key: str, view_fn, *a, **kw) -> None:
+        """Render view_fn in left 75 %, chat panel in right 25 %."""
+        cm, cc = st.columns([3, 1])
+        with cm: view_fn(*a, **kw)
+        with cc: render_chat_panel(events, email, view_key)
+
     if view == "home":
         from ui.home_view import render as home_render
-        home_render(email, events, summary)
-
+        _with_chat("home", home_render, email, events, summary)
     elif view == "exec":
         from ui.exec_view import render as exec_render
-        exec_render(events, summary, email)
-
+        _with_chat("exec", exec_render, events, summary, email)
     elif view == "manager":
         from ui.manager_view import render as mgr_render
-        mgr_render(events, summary, email)
-
+        _with_chat("manager", mgr_render, events, summary, email)
     elif view == "providers":
         from ui.tabs.provider_lists import render as pl_render
         pl_render(is_admin=False, email=email)
-
     elif view == "support":
-        _render_support(events, summary, email)
+        _with_chat("support", _render_support, events, summary, email)
 
     elif view == "reports":
         from ui.reports_view import render_reports

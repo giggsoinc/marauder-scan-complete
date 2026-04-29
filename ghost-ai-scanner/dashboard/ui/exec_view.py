@@ -21,15 +21,12 @@ from .exec_tab_exposure   import render_exposure
 from .data                import load_yesterday_summary
 from .clickable_metric    import clickable_metric, static_metric
 from .drill_panel         import render_drill_panel
-from .chat                import render_chat
 
 _PANEL = "exec_kpis"
 
 
 def render(events: list, summary: dict, email: str = "") -> None:
-    """Render the Exec view — AI chat header, KPIs, drill panel, three tabs."""
-    render_chat(events, email, "exec")
-    st.markdown("---")
+    """Render the Exec view — KPIs, drill panel, three tabs."""
     _kpis(events, summary)
     render_drill_panel(_PANEL, events, limit=100)
     st.markdown("<br>", unsafe_allow_html=True)

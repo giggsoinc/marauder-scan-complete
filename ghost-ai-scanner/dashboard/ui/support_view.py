@@ -24,19 +24,16 @@ from .support_tab_fleet     import render_fleet
 from .manager_tab_logs      import render_logs
 from .manager_tab_risks     import render_risks
 from .manager_tab_pipeline  import render_pipeline
-from .chat                  import render_chat
 
 
 def render(events: list, summary: dict, store,
            email: str = "") -> None:
-    """Render the Support view — AI chat header, eight analysis tabs."""
+    """Render the Support view — eight analysis tabs."""
     st.markdown(
         '<div style="font-family:JetBrains Mono;font-size:11px;color:#57606A;'
         'letter-spacing:.08em;margin-bottom:8px;">SUPPORT TEAM VIEW</div>',
         unsafe_allow_html=True,
     )
-    render_chat(events, email, "support")
-    st.markdown("---")
     t1, t2, t3, t4, t5, t6, t7, t8 = st.tabs([
         "  RULES  ", "  CODE SIGNALS  ", "  COVERAGE  ", "  HEALTH  ",
         "  LOGS  ", "  RISKS  ", "  PIPELINE  ", "  AGENT FLEET  ",

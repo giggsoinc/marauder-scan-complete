@@ -14,7 +14,7 @@
 
 import os
 import streamlit as st
-from .chat import render_chat
+pass  # chat rendered by ghost_dashboard.py in right-side column
 
 _CO = os.environ.get("COMPANY_NAME", "Your Organisation")
 
@@ -117,7 +117,4 @@ def render(email: str, events: list = None, summary: dict = None) -> None:
             except FileNotFoundError:
                 st.caption(f"Doc not found: `{path}` — run deploy first.")
 
-    st.markdown("---")
-
-    # ── Ask AI ─────────────────────────────────────────────────
-    render_chat(events, email, "home")
+    # Chat rendered in right-side column by ghost_dashboard.py

@@ -19,13 +19,10 @@ from .manager_tab_risks         import render_risks
 from .manager_tab_logs          import render_logs
 from .manager_tab_pipeline      import render_pipeline
 from .manager_tab_ai_inventory  import render_ai_inventory
-from .chat                      import render_chat
 
 
 def render(events: list, summary: dict, email: str = "") -> None:
-    """Render the Manager view — AI chat header, five analysis tabs."""
-    render_chat(events, email, "manager")
-    st.markdown("---")
+    """Render the Manager view — five analysis tabs."""
     t1, t2, t3, t4, t5 = st.tabs([
         "  INVENTORY  ", "  RISKS  ", "  LOG VIEW  ", "  PIPELINE  ",
         "  AI INVENTORY  ",
