@@ -1,7 +1,7 @@
 # =============================================================
 # FILE: dashboard/ui/exec_view.py
-# VERSION: 2.2.0
-# UPDATED: 2026-04-28
+# VERSION: 2.3.0
+# UPDATED: 2026-04-29
 # OWNER: Giggso Inc (Ravi Venugopal)
 # PURPOSE: Exec view — AI governance KPI row + three-tab analysis.
 #          Replaces Pam dashboard. Role: Security Executive / Platform Admin.
@@ -11,6 +11,7 @@
 #                       inline, all charts hand off to drill_panel.set_drill().
 #   v2.1.0  2026-04-27  Fix KPI drill predicates — outcome=ENDPOINT_FINDING.
 #   v2.2.0  2026-04-28  Add 🤖 Ask AI chat widget.
+#   v2.3.0  2026-04-29  Move chat widget to top of page.
 # =============================================================
 
 import streamlit as st
@@ -26,7 +27,9 @@ _PANEL = "exec_kpis"
 
 
 def render(events: list, summary: dict, email: str = "") -> None:
-    """Render the Exec view — KPIs, drill panel, three tabs, AI chat."""
+    """Render the Exec view — AI chat header, KPIs, drill panel, three tabs."""
+    render_chat(events, email, "exec")
+    st.markdown("---")
     _kpis(events, summary)
     render_drill_panel(_PANEL, events, limit=100)
     st.markdown("<br>", unsafe_allow_html=True)
@@ -37,8 +40,6 @@ def render(events: list, summary: dict, email: str = "") -> None:
         render_risk(events)
     with t3:
         render_exposure(events)
-    st.markdown("---")
-    render_chat(events, email, "exec")
 
 
 def _kpis(events: list, summary: dict) -> None:
