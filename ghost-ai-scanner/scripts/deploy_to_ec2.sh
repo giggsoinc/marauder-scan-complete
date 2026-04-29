@@ -234,6 +234,7 @@ rsync -avz --progress \
   --exclude "*.pyc" \
   --exclude ".DS_Store" \
   --exclude "*.egg-info" \
+  --exclude ".env" \
   -e "ssh -i '${EC2_KEY}' -o StrictHostKeyChecking=no" \
   "$REPO_DIR/" \
   "${EC2_USER}@${EC2_HOST}:${EC2_REMOTE_DIR}/" \
@@ -268,19 +269,327 @@ ssh -i "$EC2_KEY" -o StrictHostKeyChecking=no \
   "ls -la '${EC2_REMOTE_DIR}/'" 2>/dev/null
 
 # ══════════════════════════════════════════════════════════════
+# STEP 5.5 — BUILD .env ON EC2
+# .env is NEVER transferred (excluded from rsync — production
+# values differ from local dev). This step reads what is already
+# on EC2, prompts only for missing vars, and appends them.
+# Re-deploying skips vars that already exist — fully idempotent.
+# ══════════════════════════════════════════════════════════════
+echo ""
+echo -e "${BOLD}──────────────────────────────────────────────${NC}"
+echo -e "${BOLD}STEP 5.5 — Environment (.env on EC2)${NC}"
+echo -e "${BOLD}──────────────────────────────────────────────${NC}"
+
+ENV_FILE="${EC2_REMOTE_DIR}/.env"
+
+# Read existing keys on EC2 so we don't overwrite them
+EXISTING_KEYS=$(ssh -i "$EC2_KEY" -o StrictHostKeyChecking=no \
+  "${EC2_USER}@${EC2_HOST}" \
+  "[ -f '${ENV_FILE}' ] && grep -oP '^[A-Z_]+(?==)' '${ENV_FILE}' | tr '\n' ' ' || echo ''" \
+  2>/dev/null)
+info "Existing .env keys on EC2: ${EXISTING_KEYS:-none}"
+
+# Helper: set a var only if not already present
+_env_set() {
+  local KEY="$1" PROMPT="$2" DEFAULT="$3" SECRET="$4"
+  if echo "$EXISTING_KEYS" | grep -qw "$KEY"; then
+    ok "  $KEY already set — skipping"
+    return
+  fi
+  if [[ -n "$DEFAULT" ]]; then
+    ask "  $KEY [$DEFAULT]:"
+  else
+    ask "  $KEY (required):"
+  fi
+  if [[ "$SECRET" == "yes" ]]; then
+    read -r -s VAL; echo ""
+  else
+    read -r VAL
+  fi
+  VAL="${VAL:-$DEFAULT}"
+  if [[ -z "$VAL" ]]; then
+    warn "  $KEY left empty — app may not start correctly"
+    return
+  fi
+  ssh -i "$EC2_KEY" -o StrictHostKeyChecking=no \
+    "${EC2_USER}@${EC2_HOST}" \
+    "echo '${KEY}=${VAL}' >> '${ENV_FILE}'"
+  ok "  $KEY written"
+}
+
+echo ""
+echo "  Enter values for each required var."
+echo "  Press Enter to accept [default]. Already-set vars are skipped."
+echo ""
+
+ssh -i "$EC2_KEY" -o StrictHostKeyChecking=no \
+  "${EC2_USER}@${EC2_HOST}" "touch '${ENV_FILE}'"
+
+_env_set "MARAUDER_SCAN_BUCKET" "" "patronai"         ""
+_env_set "AWS_REGION"           "" "us-east-1"        ""
+_env_set "COMPANY_NAME"         "" "PatronAI"         ""
+_env_set "GRAFANA_URL"          "" ""                 ""
+_env_set "PUBLIC_HOST"          "" "$EC2_HOST"        ""
+# LLM vars are written by Step 7 — skip here
+ok ".env ready at ${ENV_FILE}"
+
+# ══════════════════════════════════════════════════════════════
+# STEP 6 — MCP SERVER SETUP
+# (stdio transport — no persistent process; Claude Desktop
+#  spawns it on demand via SSH. This step installs deps and
+#  validates the server is importable after every deploy.)
+# ══════════════════════════════════════════════════════════════
+echo ""
+echo -e "${BOLD}──────────────────────────────────────────────${NC}"
+echo -e "${BOLD}STEP 6 — MCP Server Setup${NC}"
+echo -e "${BOLD}──────────────────────────────────────────────${NC}"
+
+MCP_SCRIPT="${EC2_REMOTE_DIR}/scripts/patronai_mcp_server.py"
+
+info "Installing / updating Python dependencies (includes fastmcp)..."
+ssh -i "$EC2_KEY" -o StrictHostKeyChecking=no \
+  "${EC2_USER}@${EC2_HOST}" \
+  "cd '${EC2_REMOTE_DIR}' && pip install -q -r requirements.txt 2>&1 | tail -5" \
+  && ok "Dependencies installed" \
+  || warn "pip install had warnings — check manually"
+
+info "Making MCP server script executable..."
+ssh -i "$EC2_KEY" -o StrictHostKeyChecking=no \
+  "${EC2_USER}@${EC2_HOST}" \
+  "chmod +x '${MCP_SCRIPT}'" \
+  && ok "Script is executable: $MCP_SCRIPT"
+
+info "Smoke-testing MCP server import..."
+MCP_SMOKE=$(ssh -i "$EC2_KEY" -o StrictHostKeyChecking=no \
+  "${EC2_USER}@${EC2_HOST}" \
+  "cd '${EC2_REMOTE_DIR}/dashboard' && \
+   python -c \"
+import sys, os
+sys.path.insert(0, os.path.join('..','src'))
+sys.path.insert(0, '.')
+from fastmcp import FastMCP
+from ui.chat.tools import get_summary_stats
+from ui.chat.tools_schema import TOOLS_SCHEMA
+print('OK tools=%d' % len(TOOLS_SCHEMA))
+\" 2>&1" || echo "FAIL")
+
+if [[ "$MCP_SMOKE" == OK* ]]; then
+  ok "MCP smoke test passed — $MCP_SMOKE"
+else
+  warn "MCP smoke test output: $MCP_SMOKE"
+  warn "MCP server may need manual check — continuing deploy"
+fi
+
+# Print ready-to-paste Claude Desktop config
+EC2_KEY_ABS=$(realpath "$EC2_KEY" 2>/dev/null || echo "$EC2_KEY")
+echo ""
+echo -e "${BOLD}${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${BOLD}  PatronAI MCP — Claude Desktop Config${NC}"
+echo -e "${BOLD}${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo ""
+echo "  Add to: ~/.config/claude/claude_desktop_config.json"
+echo "  (macOS: ~/Library/Application Support/Claude/claude_desktop_config.json)"
+echo ""
+echo '  "mcpServers": {'
+echo '    "patronai": {'
+echo '      "command": "ssh",'
+echo '      "args": ['
+echo "        \"-i\", \"${EC2_KEY_ABS}\","
+echo '        "-o", "StrictHostKeyChecking=yes",'
+echo "        \"${EC2_USER}@${EC2_HOST}\","
+echo "        \"python ${MCP_SCRIPT}\""
+echo '      ]'
+echo '    }'
+echo '  }'
+echo ""
+echo -e "${YELLOW}  V1 Security: SSH stdio only. Access = SSH key to EC2.${NC}"
+echo -e "${YELLOW}  Revoke: remove public key from authorized_keys on EC2.${NC}"
+echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+
+# ══════════════════════════════════════════════════════════════
+# STEP 7 — LLM SETUP (powers the 🤖 Ask AI chat widget)
+# Priority: llama-server (already on box) → Ollama → offer install
+# ══════════════════════════════════════════════════════════════
+echo ""
+echo -e "${BOLD}──────────────────────────────────────────────${NC}"
+echo -e "${BOLD}STEP 7 — LLM Setup (Chat Widget)${NC}"
+echo -e "${BOLD}──────────────────────────────────────────────${NC}"
+
+# Detect what LLM runtime is available on EC2
+LLM_DETECT=$(ssh -i "$EC2_KEY" -o StrictHostKeyChecking=no \
+  "${EC2_USER}@${EC2_HOST}" \
+  'if command -v llama-server &>/dev/null; then echo "llama";
+   elif command -v ollama &>/dev/null; then echo "ollama";
+   else echo "none"; fi' 2>/dev/null)
+
+LLM_PROVIDER_VAL="openai_compat"
+LLM_BASE_URL_VAL="http://localhost:8080"
+LLM_MODEL_VAL=""
+
+if [[ "$LLM_DETECT" == "llama" ]]; then
+  ok "llama-server found on EC2 (port 8080)"
+  LLM_BASE_URL_VAL="http://localhost:8080"
+  # Search for Qwen 3.5 9B Q4 GGUF first, then any .gguf fallback
+  LLM_MODEL_PATH=$(ssh -i "$EC2_KEY" -o StrictHostKeyChecking=no \
+    "${EC2_USER}@${EC2_HOST}" \
+    'find /models -name "qwen3.5*9b*q4*.gguf" \
+                  -o -name "qwen3.5*9b*Q4*.gguf" \
+                  -o -name "qwen*3.5*9b*.gguf" \
+     2>/dev/null | head -1' \
+    2>/dev/null || echo "")
+  # Fallback to any .gguf present on the box
+  if [[ -z "$LLM_MODEL_PATH" ]]; then
+    LLM_MODEL_PATH=$(ssh -i "$EC2_KEY" -o StrictHostKeyChecking=no \
+      "${EC2_USER}@${EC2_HOST}" \
+      'find /models -name "*.gguf" 2>/dev/null | head -1' 2>/dev/null || echo "")
+  fi
+  if [[ -n "$LLM_MODEL_PATH" ]]; then
+    ok "Model: $LLM_MODEL_PATH"
+    # Install systemd service so llama-server survives reboots
+    ssh -i "$EC2_KEY" -o StrictHostKeyChecking=no \
+      "${EC2_USER}@${EC2_HOST}" "
+      LLAMA_BIN=\$(which llama-server)
+      sudo tee /etc/systemd/system/llama-server.service > /dev/null <<EOF
+[Unit]
+Description=llama.cpp server — Qwen 3.5 9B
+After=network.target
+[Service]
+ExecStart=\${LLAMA_BIN} --model ${LLM_MODEL_PATH} --port 8080 --ctx-size 4096
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+[Install]
+WantedBy=multi-user.target
+EOF
+      sudo systemctl daemon-reload
+      sudo systemctl enable --now llama-server
+    "
+    ok "llama-server systemd service installed and started"
+  else
+    warn "No .gguf found — expected at /models/qwen3.5-9b-q4_k_m.gguf"
+    warn "Upload the model to EC2 then re-deploy to activate chat."
+    LLM_DETECT="none"
+  fi
+
+elif [[ "$LLM_DETECT" == "ollama" ]]; then
+  ok "Ollama found on EC2"
+  LLM_BASE_URL_VAL="http://localhost:11434"
+
+  # Pick model — default qwen3:8b (Qwen 3 8B Q4, ~5.2 GB, tool-capable)
+  ask "Ollama model to use [qwen3:8b]  (other options: qwen3:14b, llama3.2, gemma3:4b):"
+  read -r OLLAMA_MODEL
+  OLLAMA_MODEL="${OLLAMA_MODEL:-qwen3:8b}"
+  LLM_MODEL_VAL="$OLLAMA_MODEL"
+
+  info "Pulling model $OLLAMA_MODEL (may take a few minutes)..."
+  ssh -i "$EC2_KEY" -o StrictHostKeyChecking=no \
+    "${EC2_USER}@${EC2_HOST}" \
+    "ollama pull '${OLLAMA_MODEL}'" \
+    && ok "Model ready: $OLLAMA_MODEL" \
+    || warn "ollama pull had issues — check EC2 connectivity"
+
+  # Ensure Ollama service is running
+  ssh -i "$EC2_KEY" -o StrictHostKeyChecking=no \
+    "${EC2_USER}@${EC2_HOST}" \
+    "sudo systemctl enable --now ollama 2>/dev/null || \
+     pgrep -f 'ollama serve' >/dev/null || \
+     nohup ollama serve >> /tmp/ollama.log 2>&1 &"
+  ok "Ollama service running"
+
+else
+  warn "No LLM runtime found on EC2."
+  ask "Install Ollama now? (recommended for V1) (y/N):"
+  read -r INSTALL_OLLAMA
+  if [[ "$INSTALL_OLLAMA" =~ ^[yY]$ ]]; then
+    info "Installing Ollama on EC2..."
+    ssh -i "$EC2_KEY" -o StrictHostKeyChecking=no \
+      "${EC2_USER}@${EC2_HOST}" \
+      "curl -fsSL https://ollama.ai/install.sh | sh" \
+      && ok "Ollama installed" \
+      || err "Ollama install failed — check EC2 internet access"
+
+    ask "Model to pull [qwen3:8b]  (~5.2 GB Q4, or qwen3:14b for ~8.5 GB):"
+    read -r OLLAMA_MODEL
+    OLLAMA_MODEL="${OLLAMA_MODEL:-qwen3:8b}"
+    LLM_MODEL_VAL="$OLLAMA_MODEL"
+    LLM_BASE_URL_VAL="http://localhost:11434"
+    LLM_DETECT="ollama"
+
+    info "Pulling $OLLAMA_MODEL..."
+    ssh -i "$EC2_KEY" -o StrictHostKeyChecking=no \
+      "${EC2_USER}@${EC2_HOST}" \
+      "ollama pull '${OLLAMA_MODEL}'" \
+      && ok "Model ready: $OLLAMA_MODEL"
+    ssh -i "$EC2_KEY" -o StrictHostKeyChecking=no \
+      "${EC2_USER}@${EC2_HOST}" \
+      "sudo systemctl enable --now ollama 2>/dev/null || \
+       nohup ollama serve >> /tmp/ollama.log 2>&1 &"
+  else
+    warn "Skipping LLM setup — chat widget will show 'LLM server unreachable'."
+    warn "Place model at /models/qwen3.5-9b-q4_k_m.gguf and re-deploy to activate chat."
+  fi
+fi
+
+# Write LLM vars to .env ONLY for non-default configs (cloud APIs).
+# Local llama.cpp on port 8080 is the built-in default — no .env needed.
+# Rule: if LLM_BASE_URL is the llama.cpp default AND no API key, skip .env.
+_LLAMA_DEFAULT_URL="http://localhost:8080"
+if [[ "$LLM_DETECT" != "none" ]]; then
+  ENV_FILE="${EC2_REMOTE_DIR}/.env"
+  if [[ "$LLM_BASE_URL_VAL" == "$_LLAMA_DEFAULT_URL" && -z "$LLM_MODEL_VAL" ]]; then
+    ok "Local llama.cpp on :8080 — no .env LLM entries needed (built-in defaults)"
+    # Remove any stale LLM_ lines from previous non-default deploys
+    ssh -i "$EC2_KEY" -o StrictHostKeyChecking=no \
+      "${EC2_USER}@${EC2_HOST}" \
+      "sed -i '/^LLM_PROVIDER=/d;/^LLM_BASE_URL=/d;/^LLM_MODEL=/d;/^LLM_API_KEY=/d' \
+       '${ENV_FILE}' 2>/dev/null || true"
+  else
+    # Non-default config (Ollama, cloud API) — write explicit vars
+    ssh -i "$EC2_KEY" -o StrictHostKeyChecking=no \
+      "${EC2_USER}@${EC2_HOST}" "
+      touch '${ENV_FILE}'
+      sed -i '/^LLM_PROVIDER=/d;/^LLM_BASE_URL=/d;/^LLM_MODEL=/d' '${ENV_FILE}'
+      echo 'LLM_PROVIDER=${LLM_PROVIDER_VAL}' >> '${ENV_FILE}'
+      echo 'LLM_BASE_URL=${LLM_BASE_URL_VAL}' >> '${ENV_FILE}'
+      echo 'LLM_MODEL=${LLM_MODEL_VAL}'        >> '${ENV_FILE}'
+    "
+    ok ".env updated with LLM config (non-default: ${LLM_BASE_URL_VAL})"
+  fi
+
+  # Connectivity smoke test — give service 5 s to accept connections
+  info "Testing LLM connectivity at ${LLM_BASE_URL_VAL}..."
+  sleep 5
+  LLM_OK=$(ssh -i "$EC2_KEY" -o StrictHostKeyChecking=no \
+    "${EC2_USER}@${EC2_HOST}" \
+    "curl -sf '${LLM_BASE_URL_VAL}/v1/models' | python3 -c \
+     'import sys,json; d=json.load(sys.stdin); print(\"OK models=%d\"%len(d.get(\"data\",[])))' \
+     2>/dev/null || echo FAIL" 2>/dev/null)
+  if [[ "$LLM_OK" == OK* ]]; then
+    ok "LLM ready — $LLM_OK"
+  else
+    warn "LLM not yet answering — model may still be loading (Qwen 3.5 9B takes ~30 s)."
+    warn "Check on EC2:  curl ${LLM_BASE_URL_VAL}/v1/models"
+    warn "  or tail log:  journalctl -u llama-server -f"
+  fi
+fi
+
+# ══════════════════════════════════════════════════════════════
 # DONE + SSH IN
 # ══════════════════════════════════════════════════════════════
 echo ""
 echo -e "${BOLD}${GREEN}"
 echo "=================================================="
-echo "  Transfer complete!"
+echo "  Deploy complete!"
 echo "=================================================="
 echo -e "${NC}"
 echo "  EC2:       ${EC2_USER}@${EC2_HOST}"
 echo "  Directory: ${EC2_REMOTE_DIR}"
+echo "  MCP:       Ready — paste config above into Claude Desktop"
+echo "  LLM:       ${LLM_BASE_URL_VAL} (${LLM_DETECT})"
 echo ""
-echo "What's next on the EC2:"
-echo "  1. Run prereqs.sh to set up AWS resources and generate .env"
+echo "Remaining on EC2 (first deploy only):"
+echo "  1. Run prereqs.sh to set up AWS resources and .env"
 echo "  2. docker-compose up -d"
 echo ""
 ask "Open SSH session to EC2 now? (y/N):"

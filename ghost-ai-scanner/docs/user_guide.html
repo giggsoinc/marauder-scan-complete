@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PatronAI — User Guide</title>
+  <style>
+    /* ── Reset & Base ────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 15px; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #F6F8FA;
+      color: #24292F;
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ── Sidebar ─────────────────────────────────────────── */
+    #sidebar {
+      width: 260px;
+      min-width: 260px;
+      background: #0D1117;
+      color: #C9D1D9;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      flex-shrink: 0;
+      padding-bottom: 2rem;
+    }
+    #sidebar-header {
+      background: #161B22;
+      padding: 1.25rem 1.5rem 1rem;
+      border-bottom: 1px solid #30363D;
+    }
+    #sidebar-header .brand {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #58A6FF;
+      letter-spacing: 0.02em;
+    }
+    #sidebar-header .version {
+      font-size: 0.75rem;
+      color: #8B949E;
+      margin-top: 0.2rem;
+    }
+    #sidebar nav { padding: 0.75rem 0; }
+    #sidebar nav .nav-group-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #6E7681;
+      padding: 0.9rem 1.5rem 0.3rem;
+    }
+    #sidebar nav a {
+      display: block;
+      padding: 0.42rem 1.5rem;
+      color: #8B949E;
+      text-decoration: none;
+      font-size: 0.875rem;
+      border-left: 3px solid transparent;
+      transition: color 0.15s, border-color 0.15s, background 0.15s;
+      line-height: 1.45;
+    }
+    #sidebar nav a:hover {
+      color: #E6EDF3;
+      background: #161B22;
+      border-left-color: #58A6FF;
+    }
+    #sidebar nav a.active {
+      color: #58A6FF;
+      border-left-color: #58A6FF;
+      background: #161B22;
+    }
+    #sidebar nav a.sub {
+      padding-left: 2.25rem;
+      font-size: 0.82rem;
+    }
+
+    /* ── Main Content ─────────────────────────────────────── */
+    #content {
+      flex: 1;
+      padding: 2.5rem 3rem 4rem;
+      max-width: 920px;
+    }
+
+    /* ── Page Header ─────────────────────────────────────── */
+    .page-header {
+      background: #0D1117;
+      color: #E6EDF3;
+      border-radius: 10px;
+      padding: 2.5rem 2.5rem 2rem;
+      margin-bottom: 2.5rem;
+      border: 1px solid #30363D;
+    }
+    .page-header .product-label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #58A6FF;
+      margin-bottom: 0.5rem;
+    }
+    .page-header h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.6rem;
+    }
+    .page-header p {
+      font-size: 0.975rem;
+      color: #8B949E;
+      max-width: 560px;
+      line-height: 1.65;
+    }
+    .page-header .meta {
+      margin-top: 1.25rem;
+      display: flex;
+      gap: 1.5rem;
+      font-size: 0.8rem;
+      color: #6E7681;
+    }
+    .page-header .meta span strong { color: #C9D1D9; }
+
+    /* ── Headings ─────────────────────────────────────────── */
+    h2 {
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: #0D1117;
+      margin: 2.5rem 0 0.75rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid #E2E8F0;
+    }
+    h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #24292F;
+      margin: 1.6rem 0 0.5rem;
+    }
+    h4 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #444D56;
+      margin: 1.2rem 0 0.4rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    p { line-height: 1.7; margin-bottom: 0.85rem; color: #444D56; }
+    ul, ol { margin: 0.5rem 0 0.85rem 1.5rem; }
+    li { line-height: 1.7; color: #444D56; margin-bottom: 0.2rem; }
+    strong { color: #24292F; }
+    code {
+      background: #F0F3F6;
+      border: 1px solid #D0D7DE;
+      border-radius: 4px;
+      padding: 0.15em 0.45em;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 0.85em;
+      color: #CF222E;
+    }
+
+    /* ── Section anchor offset ───────────────────────────── */
+    section { scroll-margin-top: 1.5rem; }
+
+    /* ── Screenshot placeholder ──────────────────────────── */
+    .screenshot {
+      background: #E9EEF4;
+      border: 2px dashed #C4CCDA;
+      border-radius: 8px;
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+      color: #6E7681;
+      font-size: 0.875rem;
+      font-style: italic;
+      margin: 1rem 0 1.5rem;
+    }
+    .screenshot::before {
+      content: "🖼";
+      display: block;
+      font-size: 1.75rem;
+      margin-bottom: 0.5rem;
+      opacity: 0.5;
+    }
+
+    /* ── Callout boxes ───────────────────────────────────── */
+    .callout {
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin: 1rem 0 1.25rem;
+      border-left: 4px solid;
+      font-size: 0.9rem;
+      line-height: 1.65;
+    }
+    .callout .callout-title {
+      font-weight: 700;
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.35rem;
+    }
+    .callout p { margin: 0; color: inherit; }
+    .callout-tip   { background: #EFFAF0; border-color: #1A7F37; color: #1C4428; }
+    .callout-tip   .callout-title { color: #1A7F37; }
+    .callout-note  { background: #EEF4FF; border-color: #3B80D4; color: #0D2657; }
+    .callout-note  .callout-title { color: #3B80D4; }
+    .callout-warn  { background: #FFF8E1; border-color: #D97706; color: #4D2E00; }
+    .callout-warn  .callout-title { color: #D97706; }
+
+    /* ── Keyboard shortcut ───────────────────────────────── */
+    .kbd-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 0.35rem 0;
+      font-size: 0.875rem;
+      color: #444D56;
+    }
+    kbd {
+      display: inline-block;
+      background: #F6F8FA;
+      border: 1px solid #A0ADB8;
+      border-bottom-width: 2px;
+      border-radius: 5px;
+      padding: 0.18em 0.55em;
+      font-family: inherit;
+      font-size: 0.82em;
+      font-weight: 600;
+      color: #24292F;
+    }
+    .kbd-desc { color: #6E7681; }
+
+    /* ── Role badge ──────────────────────────────────────── */
+    .badge {
+      display: inline-block;
+      border-radius: 12px;
+      padding: 0.18em 0.75em;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      vertical-align: middle;
+      margin-left: 0.3em;
+    }
+    .badge-exec    { background: #FFF3CD; color: #6D4A00; border: 1px solid #F5C842; }
+    .badge-manager { background: #D1F0E0; color: #0D4A1E; border: 1px solid #50C878; }
+    .badge-support { background: #DBE9FF; color: #0A2D6B; border: 1px solid #5B9BF7; }
+    .badge-admin   { background: #F3D6FA; color: #4A0060; border: 1px solid #C44DE8; }
+
+    /* ── Table ───────────────────────────────────────────── */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.75rem 0 1.5rem;
+      font-size: 0.875rem;
+    }
+    .data-table th {
+      background: #0D1117;
+      color: #C9D1D9;
+      text-align: left;
+      padding: 0.65rem 1rem;
+      font-weight: 600;
+      font-size: 0.8rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .data-table td {
+      padding: 0.6rem 1rem;
+      border-bottom: 1px solid #E2E8F0;
+      color: #444D56;
+      vertical-align: top;
+      line-height: 1.6;
+    }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:nth-child(even) td { background: #F8FAFC; }
+    .check { color: #1A7F37; font-size: 1rem; }
+    .dash  { color: #C4CCDA; font-size: 1rem; }
+
+    /* ── Step list ───────────────────────────────────────── */
+    .steps { counter-reset: step; list-style: none; margin: 0.5rem 0 1rem 0; padding: 0; }
+    .steps li {
+      counter-increment: step;
+      position: relative;
+      padding: 0.55rem 0 0.55rem 3rem;
+      border-left: 2px solid #E2E8F0;
+      margin-left: 1.1rem;
+      margin-bottom: 0;
+    }
+    .steps li::before {
+      content: counter(step);
+      position: absolute;
+      left: -1.2rem;
+      top: 0.5rem;
+      width: 2rem;
+      height: 2rem;
+      background: #0D1117;
+      color: #58A6FF;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+    .steps li:last-child { border-left-color: transparent; }
+
+    /* ── Chat example ────────────────────────────────────── */
+    .chat-bubble {
+      background: #F0F3F6;
+      border: 1px solid #D0D7DE;
+      border-radius: 18px 18px 18px 4px;
+      padding: 0.6rem 1.1rem;
+      font-size: 0.875rem;
+      color: #24292F;
+      display: inline-block;
+      max-width: 82%;
+      margin-bottom: 0.5rem;
+    }
+    .chat-row { margin: 0.3rem 0; }
+
+    /* ── Report card ─────────────────────────────────────── */
+    .report-card {
+      background: #fff;
+      border: 1px solid #D0D7DE;
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin: 0.5rem 0 0.75rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+    .report-card .report-id {
+      background: #0D1117;
+      color: #58A6FF;
+      border-radius: 6px;
+      padding: 0.3rem 0.65rem;
+      font-size: 0.85rem;
+      font-weight: 800;
+      white-space: nowrap;
+      letter-spacing: 0.04em;
+      font-family: monospace;
+    }
+    .report-card .report-body h4 {
+      font-size: 0.95rem;
+      color: #24292F;
+      margin: 0 0 0.25rem;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    .report-card .report-body p {
+      font-size: 0.85rem;
+      margin: 0;
+      color: #6E7681;
+    }
+
+    /* ── Divider ─────────────────────────────────────────── */
+    hr { border: none; border-top: 1px solid #E2E8F0; margin: 2rem 0; }
+
+    /* ── Footer ──────────────────────────────────────────── */
+    footer {
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 2px solid #E2E8F0;
+      font-size: 0.8rem;
+      color: #8B949E;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    footer strong { color: #444D56; }
+
+    /* ── Print ───────────────────────────────────────────── */
+    @media print {
+      #sidebar { display: none; }
+      #content { padding: 1.5rem 2rem; max-width: 100%; }
+      body { display: block; }
+      h2 { page-break-before: auto; }
+      .screenshot { border: 1px dashed #aaa; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!-- SIDEBAR                                                            -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<aside id="sidebar" role="navigation" aria-label="Page navigation">
+  <div id="sidebar-header">
+    <div class="brand">PatronAI</div>
+    <div class="version">AI Security Dashboard &nbsp;·&nbsp; v1.0.0</div>
+  </div>
+  <nav>
+    <div class="nav-group-label">Getting Started</div>
+    <a href="#overview">Overview</a>
+    <a href="#roles">Roles &amp; Access</a>
+    <a href="#login">Logging In</a>
+
+    <div class="nav-group-label">Views</div>
+    <a href="#exec-view">Exec View</a>
+    <a class="sub" href="#exec-kpis">KPI Tiles</a>
+    <a class="sub" href="#exec-tabs">Landscape, Heatmap &amp; Exposure</a>
+    <a href="#manager-view">Manager View</a>
+    <a class="sub" href="#manager-tabs">Tabs: Inventory to AI Inventory</a>
+    <a href="#support-view">Support View</a>
+    <a class="sub" href="#support-tabs">Support Tabs</a>
+    <a href="#user-detail">User Detail Page</a>
+
+    <div class="nav-group-label">Features</div>
+    <a href="#reports">Reports (R1–R7)</a>
+    <a href="#ai-chat">Ask AI Chat</a>
+    <a href="#mcp-server">MCP Server (Admin)</a>
+
+    <div class="nav-group-label">Administration</div>
+    <a href="#settings">Settings</a>
+    <a class="sub" href="#settings-users">Users Tab</a>
+    <a class="sub" href="#settings-branding">Branding Tab</a>
+    <a class="sub" href="#settings-agents">Deploy Agents Tab</a>
+    <a class="sub" href="#settings-other">Other Settings Tabs</a>
+
+    <div class="nav-group-label">Reference</div>
+    <a href="#glossary">Glossary</a>
+    <a href="#faq">FAQ</a>
+  </nav>
+</aside>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!-- MAIN CONTENT                                                        -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<main id="content" role="main">
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div class="product-label">Giggso Inc — User Guide</div>
+    <h1>PatronAI</h1>
+    <p>AI Security Dashboard — monitor, investigate, and respond to AI usage across your organisation in real time.</p>
+    <div class="meta">
+      <span><strong>Version</strong> 1.0.0</span>
+      <span><strong>Audience</strong> Executives, Managers, Support, Admins</span>
+      <span><strong>Deployed on</strong> EC2 · Browser-based</span>
+    </div>
+  </div>
+
+  <!-- ── OVERVIEW ─────────────────────────────────────────────────── -->
+  <section id="overview">
+    <h2>Overview</h2>
+    <p>PatronAI is a browser-based security dashboard that gives your organisation complete visibility into AI tool usage — who is using which AI services, what data is being sent, and where the risks are concentrated.</p>
+    <p>Key capabilities at a glance:</p>
+    <ul>
+      <li><strong>AI Landscape</strong> — geographic and flow visualisations of AI provider traffic.</li>
+      <li><strong>Risk Heatmap</strong> — identify which user or device combinations carry the highest risk score.</li>
+      <li><strong>Data Exposure</strong> — track sensitive data categories reaching AI endpoints.</li>
+      <li><strong>User Intelligence</strong> — per-user asset mind maps, findings, and risk summaries.</li>
+      <li><strong>Reports</strong> — seven on-demand PDF reports covering executives through individual users.</li>
+      <li><strong>Ask AI</strong> — a conversational interface backed by a local LLM (no data leaves your EC2 instance).</li>
+      <li><strong>Scanning Agents</strong> — lightweight agents deployed to endpoints that feed data back to the dashboard.</li>
+    </ul>
+
+    <div class="callout callout-note">
+      <div class="callout-title">Note — Deployment</div>
+      <p>PatronAI runs entirely on your EC2 instance. All data, including the AI chat LLM, stays inside your infrastructure. Nothing is sent to a third-party cloud by default.</p>
+    </div>
+  </section>
+
+  <!-- ── ROLES & ACCESS ────────────────────────────────────────────── -->
+  <section id="roles">
+    <h2>Roles &amp; Access</h2>
+    <p>Every user account has one of four roles. What you see in the dashboard depends on your role.</p>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Role</th>
+          <th>Exec View</th>
+          <th>Manager View</th>
+          <th>Support View</th>
+          <th>Provider Lists</th>
+          <th>Reports</th>
+          <th>Ask AI</th>
+          <th>Settings</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="badge badge-exec">exec</span></td>
+          <td><span class="check">✔</span></td>
+          <td><span class="dash">—</span></td>
+          <td><span class="dash">—</span></td>
+          <td><span class="dash">—</span></td>
+          <td><span class="dash">—</span></td>
+          <td><span class="dash">—</span></td>
+          <td><span class="dash">—</span></td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-manager">manager</span></td>
+          <td><span class="check">✔</span></td>
+          <td><span class="check">✔</span></td>
+          <td><span class="dash">—</span></td>
+          <td><span class="check">✔</span></td>
+          <td><span class="check">✔</span></td>
+          <td><span class="check">✔</span></td>
+          <td><span class="dash">—</span></td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-support">support</span></td>
+          <td><span class="check">✔</span></td>
+          <td><span class="check">✔</span></td>
+          <td><span class="check">✔</span></td>
+          <td><span class="check">✔</span></td>
+          <td><span class="check">✔</span></td>
+          <td><span class="check">✔</span></td>
+          <td><span class="dash">—</span></td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-admin">admin</span> <span style="font-size:0.8rem;color:#6E7681;">(flag)</span></td>
+          <td><span class="check">✔</span></td>
+          <td><span class="check">✔</span></td>
+          <td><span class="check">✔</span></td>
+          <td><span class="check">✔</span></td>
+          <td><span class="check">✔</span></td>
+          <td><span class="check">✔</span></td>
+          <td><span class="check">✔</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout-note">
+      <div class="callout-title">Note — Admin is a flag, not a separate role</div>
+      <p>The admin flag can be added on top of any role. An admin-flagged user gains the Settings tab and full access to all views regardless of their base role. Admins manage users, branding, scanning rules, and agent deployment.</p>
+    </div>
+  </section>
+
+  <!-- ── LOGGING IN ────────────────────────────────────────────────── -->
+  <section id="login">
+    <h2>Logging In</h2>
+    <p>PatronAI is accessed through a standard web browser. No software installation is required on your workstation.</p>
+    <ol class="steps">
+      <li>Open your browser and navigate to the URL provided by your admin (e.g. <code>http://&lt;your-ec2-ip&gt;:8501</code>).</li>
+      <li>Enter your email address and the password you received in your welcome email.</li>
+      <li>The dashboard loads directly into the view appropriate for your role.</li>
+    </ol>
+
+    <div class="callout callout-tip">
+      <div class="callout-title">Tip — First-time login</div>
+      <p>You will receive a welcome email from your admin when your account is created. Use the credentials in that email. Contact your admin if you did not receive it or need a password reset.</p>
+    </div>
+
+    <div class="screenshot">[Screenshot: Login screen — email + password fields]</div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <!-- EXEC VIEW                                                       -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <section id="exec-view">
+    <h2>Exec View <span class="badge badge-exec">exec</span> <span class="badge badge-manager">manager</span> <span class="badge badge-support">support</span> <span class="badge badge-admin">admin</span></h2>
+    <p>The Exec View is the top-level summary dashboard. It is designed for quick situational awareness — leadership can understand the organisation's AI risk posture in under a minute.</p>
+
+    <div class="screenshot">[Screenshot: Exec View — full page showing KPI tiles and tab bar]</div>
+
+    <!-- KPI TILES -->
+    <section id="exec-kpis">
+      <h3>KPI Tiles</h3>
+      <p>Five large metric tiles run across the top of the Exec View. Each tile shows a live count calculated over the currently selected time window.</p>
+
+      <table class="data-table">
+        <thead>
+          <tr><th>Tile</th><th>What it counts</th><th>Drill-down shows</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>AI Findings</strong></td>
+            <td>Total number of AI-related findings detected across all users and devices</td>
+            <td>Findings list — timestamp, user, severity, category, description</td>
+          </tr>
+          <tr>
+            <td><strong>High Severity</strong></td>
+            <td>Findings rated HIGH or CRITICAL only</td>
+            <td>Filtered findings list — only HIGH/CRITICAL events</td>
+          </tr>
+          <tr>
+            <td><strong>Providers Detected</strong></td>
+            <td>Distinct AI providers seen in traffic (e.g. OpenAI, Gemini, Midjourney)</td>
+            <td>Provider table — name, request count, first seen, last seen</td>
+          </tr>
+          <tr>
+            <td><strong>Categories</strong></td>
+            <td>Number of distinct AI usage categories observed (e.g. Code Generation, Image Gen, Summarisation)</td>
+            <td>Category breakdown — category name, finding count, top users</td>
+          </tr>
+          <tr>
+            <td><strong>Alerts Fired</strong></td>
+            <td>Number of alerting rules that triggered during the window</td>
+            <td>Alert event log — rule name, trigger time, affected user/device</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h4>Clicking a KPI tile</h4>
+      <p>Click any KPI tile to open an inline drill-down panel directly below the tiles. The panel shows the matching events in a sortable table. Click the tile again to collapse the panel.</p>
+
+      <div class="callout callout-tip">
+        <div class="callout-title">Tip — Sorting the drill-down</div>
+        <p>Click any column header in the drill-down table to sort ascending or descending. Click the user's email to jump to their full User Detail page.</p>
+      </div>
+
+      <div class="screenshot">[Screenshot: KPI tiles — Providers Detected tile highlighted + drill-down panel open below]</div>
+    </section>
+
+    <!-- EXEC TABS -->
+    <section id="exec-tabs">
+      <h3>Tabs: AI Landscape, Risk Heatmap, Data Exposure</h3>
+      <p>Below the KPI tiles, three tabs provide deeper analytical views.</p>
+
+      <h4>AI Landscape</h4>
+      <p>Contains two visualisations side by side:</p>
+      <ul>
+        <li><strong>Choropleth map</strong> — world map shaded by volume of AI provider traffic per country. Darker shading means more traffic. Hover a country to see provider count and request volume.</li>
+        <li><strong>Sankey diagram</strong> — flow chart from <em>Users → AI Categories → AI Providers</em>. Width of each band is proportional to traffic volume. Useful for seeing which teams drive which providers.</li>
+      </ul>
+
+      <div class="screenshot">[Screenshot: AI Landscape tab — choropleth map on left, Sankey diagram on right]</div>
+
+      <h4>Risk Heatmap</h4>
+      <p>A matrix heatmap where rows are users (or user groups) and columns are risk categories. Each cell is colour-coded from green (low) through amber to red (critical). Hovering a cell shows the individual score and contributing factors. Use this view to identify which users are consistently appearing in high-risk cells.</p>
+
+      <div class="screenshot">[Screenshot: Risk Heatmap tab — matrix with colour gradient cells]</div>
+
+      <h4>Data Exposure</h4>
+      <p>Tracks sensitive data categories (PII, financial, credentials, source code, etc.) that have been detected in AI traffic. Shows a bar chart of category volume and a timeline of exposure events. Use this tab to answer "is sensitive data being sent to AI providers?"</p>
+
+      <div class="screenshot">[Screenshot: Data Exposure tab — bar chart of categories + timeline below]</div>
+    </section>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <!-- MANAGER VIEW                                                    -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <section id="manager-view">
+    <h2>Manager View <span class="badge badge-manager">manager</span> <span class="badge badge-support">support</span> <span class="badge badge-admin">admin</span></h2>
+    <p>The Manager View provides operational depth. It is designed for managers and analysts who need to investigate specific users, assets, risks, and pipeline activity.</p>
+
+    <div class="screenshot">[Screenshot: Manager View — tab bar showing Inventory, Risks, Logs, Pipeline, AI Inventory]</div>
+
+    <section id="manager-tabs">
+      <h3>Manager Tabs</h3>
+
+      <h4>Inventory</h4>
+      <p>A table of all monitored users and devices. Each row shows user email, device count, active AI providers, last seen timestamp, and overall risk score. Click a column header to sort. Click a user's email to open their <a href="#user-detail">User Detail page</a>.</p>
+
+      <div class="screenshot">[Screenshot: Inventory tab — user/device table with sortable columns]</div>
+
+      <h4>Risks</h4>
+      <p>A filterable list of all risk events. Use the filter dropdowns to narrow by severity, category, date range, or user. Each row expands to show the full finding detail including raw evidence and recommended remediation action.</p>
+
+      <div class="callout callout-tip">
+        <div class="callout-title">Tip — Exporting risks</div>
+        <p>Use the <strong>Reports</strong> section to generate a formatted PDF of risk data. The Risks tab is for live investigation; Reports is for sharing with stakeholders.</p>
+      </div>
+
+      <div class="screenshot">[Screenshot: Risks tab — filterable findings list with expanded row]</div>
+
+      <h4>Logs</h4>
+      <p>Raw event log — every network event captured by scanning agents, sorted newest first. Useful for forensic investigation. Filter by user, provider, or date range. Each row shows: timestamp, user, device, destination, bytes, provider classification, and findings flags.</p>
+
+      <div class="screenshot">[Screenshot: Logs tab — raw event log table]</div>
+
+      <h4>Pipeline</h4>
+      <p>Shows the scanning agent data ingestion pipeline status. Each agent is listed with its last heartbeat, events processed in the last hour, and any pipeline errors. Green = healthy, amber = degraded, red = offline or stalled. Contact your admin if agents appear red.</p>
+
+      <div class="screenshot">[Screenshot: Pipeline tab — agent status table with colour-coded health indicators]</div>
+
+      <h4>AI Inventory</h4>
+      <p>The AI Inventory tab provides a per-user mind map of all AI assets PatronAI has discovered for each individual.</p>
+
+      <ol class="steps">
+        <li>At the top of the tab, a row of user pill buttons is shown — one pill per monitored user.</li>
+        <li>Click a user's pill to select them. Their name pill highlights and the mind map renders below.</li>
+        <li>The mind map shows the selected user at the centre, with branches for each AI provider they use. Sub-nodes show specific models, endpoints, and categories.</li>
+        <li>Click any node in the mind map to drill into it — a side panel opens with details: request count, data categories involved, risk flags, and a timeline.</li>
+      </ol>
+
+      <div class="callout callout-note">
+        <div class="callout-title">Note — Mind map rendering</div>
+        <p>The mind map may take a moment to render for users with a large number of AI assets. If the map appears blank, try selecting the user pill again.</p>
+      </div>
+
+      <div class="screenshot">[Screenshot: AI Inventory tab — user pills at top, mind map below with node selected and side panel open]</div>
+    </section>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <!-- SUPPORT VIEW                                                    -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <section id="support-view">
+    <h2>Support View <span class="badge badge-support">support</span> <span class="badge badge-admin">admin</span></h2>
+    <p>The Support View adds eight operational and diagnostic tabs used by support engineers to manage rules, monitor agent health, and investigate coverage gaps.</p>
+
+    <div class="screenshot">[Screenshot: Support View — tab bar with all 8 tabs visible]</div>
+
+    <section id="support-tabs">
+      <h3>Support Tabs</h3>
+
+      <h4>Rules</h4>
+      <p>Lists all active detection rules configured in PatronAI. Each rule shows: rule name, trigger condition, severity threshold, and enabled/disabled state. Contact your admin to add or modify rules (rule editing is in <a href="#settings-other">Settings → Scanning</a>).</p>
+
+      <h4>Code Signals</h4>
+      <p>Displays behavioural signals extracted from code-related AI traffic — for example, code generation requests, repository names detected in context, and programming language distribution. Use this tab to understand how developers in your organisation interact with AI coding tools.</p>
+
+      <h4>Coverage</h4>
+      <p>Shows a coverage map — which users and devices are currently instrumented with scanning agents versus which are not. Uninstrumented endpoints appear in amber. Use this tab to identify coverage gaps and plan agent deployment.</p>
+
+      <div class="callout callout-warn">
+        <div class="callout-title">Warning — Coverage gaps</div>
+        <p>Devices that appear amber in the Coverage tab are not being monitored. AI usage on those devices is invisible to PatronAI. Prioritise deploying agents to any amber devices that handle sensitive data.</p>
+      </div>
+
+      <h4>Health</h4>
+      <p>System health overview — shows the PatronAI backend services, scanning agent fleet aggregate statistics, S3 upload queue depth, and LLM service availability. Red indicators here require admin attention.</p>
+
+      <h4>Logs</h4>
+      <p>Same raw event log available in the Manager View, included here for support engineers investigating specific incidents without needing to switch to the Manager View.</p>
+
+      <h4>Risks</h4>
+      <p>Same filterable risks list as Manager View, available here for support engineers. Useful for working an incident ticket while staying in the Support View context.</p>
+
+      <h4>Pipeline</h4>
+      <p>Same pipeline status view as Manager View. Support engineers can monitor agent ingestion health directly from this tab.</p>
+
+      <h4>Agent Fleet</h4>
+      <p>Detailed view of every deployed scanning agent — hostname, IP, OS, agent version, last heartbeat, events sent today, and configuration version. Use this tab to identify agents that are out of date or have stopped reporting. Click an agent row to see its configuration details.</p>
+
+      <div class="screenshot">[Screenshot: Agent Fleet tab — table of agents with health status, version, and last heartbeat columns]</div>
+    </section>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <!-- USER DETAIL PAGE                                               -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <section id="user-detail">
+    <h2>User Detail Page</h2>
+    <p>The User Detail page is a deep-dive view for a single user. It is available to all roles that can see tables containing user emails.</p>
+
+    <h3>How to access</h3>
+    <p>Click any user's <strong>email address</strong> in any table across the dashboard — Inventory, drill-down panels, risk lists, or log tables. The User Detail page opens inline.</p>
+
+    <div class="screenshot">[Screenshot: User Detail page — risk summary at top, ASSETS tab selected with mind map, findings list below]</div>
+
+    <h3>What the User Detail page shows</h3>
+
+    <h4>Risk Summary banner</h4>
+    <p>At the top, a colour-coded banner shows the user's overall risk level (LOW / MEDIUM / HIGH / CRITICAL), total findings count, active providers, and last-seen timestamp.</p>
+
+    <h4>ASSETS tab</h4>
+    <p>An interactive mind map of all AI assets tied to this specific user. This is the same mind map available in the Manager View AI Inventory tab, but pre-filtered to the selected user. Click any node to see detailed event data for that asset.</p>
+
+    <h4>Findings</h4>
+    <p>A chronological list of every finding associated with this user. Each finding shows: severity, category, timestamp, description, and the raw evidence snippet. Findings can be filtered by severity or date range directly on this page.</p>
+
+    <div class="callout callout-tip">
+      <div class="callout-title">Tip — Back navigation</div>
+      <p>Use your browser's back button or the breadcrumb at the top of the page to return to the view you came from.</p>
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <!-- REPORTS                                                         -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <section id="reports">
+    <h2>Reports (R1–R7) <span class="badge badge-manager">manager</span> <span class="badge badge-support">support</span> <span class="badge badge-admin">admin</span></h2>
+    <p>PatronAI includes seven pre-built report templates. Reports are generated on demand, previewed in the browser, and downloaded as PDF files. They include your company logo if one has been uploaded in <a href="#settings-branding">Settings → Branding</a>.</p>
+
+    <h3>How to generate a report</h3>
+    <ol class="steps">
+      <li>In the left sidebar, click <strong>Reports</strong>.</li>
+      <li>Select the report type from the list (R1 through R7).</li>
+      <li>Choose a <strong>date range</strong> using the start/end date pickers. For R3, also select a <strong>user</strong> from the dropdown.</li>
+      <li>Click the <strong>👁 Preview</strong> button. The report renders as formatted HTML inline in the page. Review it for accuracy.</li>
+      <li>Click the <strong>⬇ PDF</strong> button to download the finalized PDF to your computer.</li>
+    </ol>
+
+    <div class="callout callout-note">
+      <div class="callout-title">Note — Logo in reports</div>
+      <p>Reports will display a generic PatronAI header until a company logo is uploaded. To add your logo, go to <a href="#settings-branding">Settings → Branding</a>.</p>
+    </div>
+
+    <div class="screenshot">[Screenshot: Reports page — date range pickers, Preview button, rendered HTML report preview, PDF download button]</div>
+
+    <h3>Report Catalogue</h3>
+
+    <div class="report-card">
+      <div class="report-id">R1</div>
+      <div class="report-body">
+        <h4>Executive Summary Report</h4>
+        <p>High-level AI risk posture for leadership. Includes KPI summary, top risks, provider landscape, and trend direction over the selected period. One to two pages, optimised for board or leadership presentations.</p>
+      </div>
+    </div>
+
+    <div class="report-card">
+      <div class="report-id">R2</div>
+      <div class="report-body">
+        <h4>AI Findings Report</h4>
+        <p>Full list of all AI findings within the date range. Grouped by severity (CRITICAL → LOW). Each finding includes timestamp, user, device, provider, category, and description. Suitable for security team review.</p>
+      </div>
+    </div>
+
+    <div class="report-card">
+      <div class="report-id">R3</div>
+      <div class="report-body">
+        <h4>User Risk Report</h4>
+        <p>Per-user deep dive. Select a specific user from the dropdown. Report covers their risk score timeline, AI asset inventory, findings history, and behavioural patterns. Used for HR, compliance, or incident response.</p>
+      </div>
+    </div>
+
+    <div class="report-card">
+      <div class="report-id">R4</div>
+      <div class="report-body">
+        <h4>Provider Intelligence Report</h4>
+        <p>Analysis of all AI providers detected in the environment. For each provider: usage volume, user count, data categories sent, first detected date, and risk classification. Useful for procurement and security policy decisions.</p>
+      </div>
+    </div>
+
+    <div class="report-card">
+      <div class="report-id">R5</div>
+      <div class="report-body">
+        <h4>Data Exposure Report</h4>
+        <p>Focused on sensitive data categories detected in AI traffic — PII, financial, credentials, source code, and others. Shows volume, trend, and which users/providers are involved. Used for DLP and compliance reporting.</p>
+      </div>
+    </div>
+
+    <div class="report-card">
+      <div class="report-id">R6</div>
+      <div class="report-body">
+        <h4>Alert Activity Report</h4>
+        <p>Summary of all alerts that fired during the period. Each alert shows: rule name, trigger time, affected user, severity, and whether it was acknowledged. Useful for SOC review and demonstrating control effectiveness.</p>
+      </div>
+    </div>
+
+    <div class="report-card">
+      <div class="report-id">R7</div>
+      <div class="report-body">
+        <h4>Coverage &amp; Fleet Report</h4>
+        <p>Agent deployment coverage report. Shows which users and devices are instrumented, which are not, agent version distribution, and pipeline health metrics. Used for audit evidence and coverage gap remediation tracking.</p>
+      </div>
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <!-- ASK AI CHAT                                                     -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <section id="ai-chat">
+    <h2>Ask AI — Chat Widget <span class="badge badge-manager">manager</span> <span class="badge badge-support">support</span> <span class="badge badge-admin">admin</span></h2>
+    <p>PatronAI includes a built-in AI chat assistant. Ask questions in plain English and receive answers derived directly from your organisation's security data. The chat is powered by a local LLM running on your EC2 instance — no data leaves your infrastructure.</p>
+
+    <div class="callout callout-note">
+      <div class="callout-title">Note — Privacy</div>
+      <p>The Ask AI feature uses Qwen 3.5 9B running locally on your EC2 instance via Ollama. Your organisation's data does not leave the server. No queries are sent to external AI services.</p>
+    </div>
+
+    <h3>Opening the chat</h3>
+    <ol class="steps">
+      <li>The chat widget appears as a collapsed bar at the <strong>bottom of the page</strong> in the Exec, Manager, and Support views.</li>
+      <li>Click the widget bar (or the expand arrow) to open the chat panel.</li>
+      <li>Type your question in the input field and press <kbd>Enter</kbd> to submit.</li>
+      <li>Click the widget bar again to collapse it — your conversation is preserved.</li>
+    </ol>
+
+    <div class="kbd-row"><kbd>Enter</kbd> <span class="kbd-desc">Submit message to AI</span></div>
+    <div class="kbd-row"><kbd>Shift</kbd> + <kbd>Enter</kbd> <span class="kbd-desc">Add a new line without submitting</span></div>
+
+    <div class="screenshot">[Screenshot: Ask AI widget — expanded, showing a conversation thread and input field at bottom]</div>
+
+    <h3>Example questions</h3>
+    <p>The AI can answer questions about your live data. Some examples:</p>
+
+    <div class="chat-row"><div class="chat-bubble">"Who are my top 5 riskiest users?"</div></div>
+    <div class="chat-row"><div class="chat-bubble">"Show me all CRITICAL findings this week."</div></div>
+    <div class="chat-row"><div class="chat-bubble">"Which AI providers are new this month compared to last month?"</div></div>
+    <div class="chat-row"><div class="chat-bubble">"Tell me about alice@company.com's AI footprint."</div></div>
+    <div class="chat-row"><div class="chat-bubble">"How many devices are silent?"</div></div>
+    <div class="chat-row"><div class="chat-bubble">"What data categories are being sent to ChatGPT?"</div></div>
+    <div class="chat-row"><div class="chat-bubble">"Has there been any credential exposure in the last 30 days?"</div></div>
+
+    <h3>Chat history</h3>
+    <p>The conversation is saved between sessions. When you re-open the chat widget, your previous messages and responses are shown. To start a fresh conversation, click the <strong>Clear history</strong> button inside the chat panel.</p>
+
+    <div class="callout callout-tip">
+      <div class="callout-title">Tip — Getting better answers</div>
+      <p>Be specific about time ranges and users when possible. "Show CRITICAL findings for alice@company.com this week" returns a much more targeted answer than "show me findings."</p>
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <!-- MCP SERVER                                                      -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <section id="mcp-server">
+    <h2>MCP Server <span class="badge badge-admin">admin only</span></h2>
+    <p>The MCP (Model Context Protocol) Server allows Claude Desktop or Cursor IDE to query PatronAI directly from your development environment. Instead of switching to the browser dashboard, you can ask PatronAI questions directly inside your AI coding assistant.</p>
+
+    <div class="callout callout-warn">
+      <div class="callout-title">Warning — SSH Access Required</div>
+      <p>The MCP server is secured by SSH key. Only users who have an SSH key authorised for your EC2 instance can connect. Do not share your SSH private key. Treat it with the same care as a password.</p>
+    </div>
+
+    <h3>Setup</h3>
+    <ol class="steps">
+      <li>After PatronAI is deployed, the admin deployment script prints a Claude Desktop configuration block to the terminal.</li>
+      <li>Copy that configuration block.</li>
+      <li>Open Claude Desktop. Go to <strong>Settings → Developer → Edit Config</strong>.</li>
+      <li>Paste the configuration block into the JSON config file and save.</li>
+      <li>Restart Claude Desktop. PatronAI will appear as a connected tool.</li>
+    </ol>
+
+    <h3>Example prompts in Claude Desktop</h3>
+    <ul>
+      <li>"What critical findings does PatronAI see right now?"</li>
+      <li>"Which users have accessed new AI providers in the last 7 days?"</li>
+      <li>"Get me the risk summary for bob@company.com."</li>
+      <li>"Are there any agents offline right now?"</li>
+      <li>"Show me the top 10 AI providers by usage volume this month."</li>
+    </ul>
+
+    <div class="callout callout-note">
+      <div class="callout-title">Note — Who can use the MCP server</div>
+      <p>Only admin-flagged users configure and manage the MCP server. The MCP connection uses your SSH credentials, so each user who wants MCP access must have their own SSH key on the EC2 instance — contact your admin to arrange this.</p>
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <!-- SETTINGS                                                        -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <section id="settings">
+    <h2>Settings <span class="badge badge-admin">admin only</span></h2>
+    <p>The Settings area is accessible only to users with the admin flag. It is reached via the left sidebar navigation. Settings is organised into seven tabs.</p>
+
+    <div class="screenshot">[Screenshot: Settings page — tab bar showing Scanning, Alerting, Identity, Provider Lists, Users, Deploy Agents, Branding]</div>
+
+    <!-- USERS TAB -->
+    <section id="settings-users">
+      <h3>Users Tab</h3>
+      <p>Manage who has access to PatronAI — add users, remove users, and change roles.</p>
+
+      <h4>Adding a user</h4>
+      <ol class="steps">
+        <li>Click the <strong>Add User</strong> button.</li>
+        <li>Enter the user's <strong>email address</strong>.</li>
+        <li>Select their <strong>role</strong> from the dropdown: <code>exec</code>, <code>manager</code>, or <code>support</code>.</li>
+        <li>Optionally check the <strong>Admin</strong> checkbox to grant admin flag access.</li>
+        <li>Check the <strong>Send welcome email</strong> checkbox to email the user their login credentials automatically.</li>
+        <li>Click <strong>Save</strong>. The user appears in the user list immediately.</li>
+      </ol>
+
+      <div class="callout callout-tip">
+        <div class="callout-title">Tip — Welcome email</div>
+        <p>Always check "Send welcome email" when creating a new user. It sends them their login credentials and a link to this user guide. If the email fails to send, a warning banner will appear — check that your SMTP settings are configured in the environment.</p>
+      </div>
+
+      <h4>Removing a user</h4>
+      <p>Find the user in the user table and click the <strong>Remove</strong> button on their row. Confirm the prompt. The user's account is deactivated immediately — they will not be able to log in. Their historical data is retained.</p>
+
+      <h4>Changing a role</h4>
+      <p>Click the role badge on any user's row in the table. A dropdown appears — select the new role. The change takes effect on the user's next page load.</p>
+
+      <div class="screenshot">[Screenshot: Settings → Users tab — user table with Add User form visible]</div>
+    </section>
+
+    <!-- BRANDING TAB -->
+    <section id="settings-branding">
+      <h3>Branding Tab</h3>
+      <p>Upload your organisation's logo. Once uploaded, it appears in the header of all generated PDF reports (R1–R7).</p>
+
+      <ol class="steps">
+        <li>Go to <strong>Settings → Branding</strong>.</li>
+        <li>Click <strong>Upload Logo</strong> and select your logo file (PNG or SVG recommended, minimum 200 px wide).</li>
+        <li>A preview of the logo is shown. If it looks correct, click <strong>Save</strong>.</li>
+        <li>Generate any report to confirm the logo appears in the PDF output.</li>
+      </ol>
+
+      <div class="callout callout-note">
+        <div class="callout-title">Note — Logo format</div>
+        <p>PNG with a transparent background works best. Avoid JPEG for logos as compression artefacts can appear in PDFs. Maximum file size is 2 MB.</p>
+      </div>
+
+      <div class="screenshot">[Screenshot: Settings → Branding tab — logo upload area and preview]</div>
+    </section>
+
+    <!-- DEPLOY AGENTS TAB -->
+    <section id="settings-agents">
+      <h3>Deploy Agents Tab</h3>
+      <p>Scanning agents are lightweight processes that run on endpoints (workstations, servers, VMs) and report AI usage data back to the PatronAI dashboard. This tab provides deployment instructions and agent status.</p>
+
+      <h4>Deploying an agent to an endpoint</h4>
+      <ol class="steps">
+        <li>Go to <strong>Settings → Deploy Agents</strong>.</li>
+        <li>Select the target operating system (macOS, Windows, Linux).</li>
+        <li>Copy the one-line install command shown on screen.</li>
+        <li>Run that command on the target endpoint in a terminal with admin/sudo privileges.</li>
+        <li>Within two minutes, the new agent should appear in the <a href="#support-tabs">Support → Agent Fleet</a> tab with a green heartbeat status.</li>
+      </ol>
+
+      <div class="callout callout-warn">
+        <div class="callout-title">Warning — Admin privileges required</div>
+        <p>Agent installation requires administrator (Windows) or sudo (macOS/Linux) privileges on the target endpoint. Agents that fail to install silently will not appear in Agent Fleet — confirm installation success before marking a device as covered.</p>
+      </div>
+
+      <div class="screenshot">[Screenshot: Settings → Deploy Agents tab — OS selector and install command display]</div>
+    </section>
+
+    <!-- OTHER SETTINGS TABS -->
+    <section id="settings-other">
+      <h3>Other Settings Tabs</h3>
+
+      <h4>Scanning</h4>
+      <p>Configure detection rules — create new rules, edit existing rule conditions, adjust severity thresholds, and enable/disable individual rules. Changes take effect within one scanning cycle (typically under one minute).</p>
+
+      <h4>Alerting</h4>
+      <p>Configure alert delivery channels — email recipients, alert thresholds, cooldown periods between repeat alerts for the same condition, and alert suppression windows (for example, during planned maintenance).</p>
+
+      <h4>Identity</h4>
+      <p>Configure how PatronAI maps network identities (IP addresses, device names) to user accounts. Useful when users share devices or when VPNs cause IP ambiguity.</p>
+
+      <h4>Provider Lists</h4>
+      <p>Manage the lists of known AI providers PatronAI tracks — add new providers, categorise them, mark them as approved or blocked in your policy, and adjust their risk weight.</p>
+    </section>
+  </section>
+
+  <hr />
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <!-- GLOSSARY                                                        -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <section id="glossary">
+    <h2>Glossary</h2>
+    <table class="data-table">
+      <thead>
+        <tr><th>Term</th><th>Definition</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Agent</strong></td><td>A lightweight process installed on an endpoint that monitors AI-related network traffic and sends findings to PatronAI.</td></tr>
+        <tr><td><strong>Category</strong></td><td>A classification of AI usage purpose, e.g. Code Generation, Image Generation, Summarisation, Translation.</td></tr>
+        <tr><td><strong>Coverage</strong></td><td>The proportion of monitored users and devices that have active scanning agents installed.</td></tr>
+        <tr><td><strong>Data Exposure</strong></td><td>Detection of sensitive data (PII, credentials, source code, etc.) present in traffic sent to an AI provider.</td></tr>
+        <tr><td><strong>Finding</strong></td><td>A specific event that PatronAI has identified as noteworthy based on its detection rules — e.g. sensitive data sent to an unapproved provider.</td></tr>
+        <tr><td><strong>Heartbeat</strong></td><td>A periodic signal sent by a scanning agent to confirm it is alive and connected. Missing heartbeats indicate an offline agent.</td></tr>
+        <tr><td><strong>MCP Server</strong></td><td>Model Context Protocol server — allows Claude Desktop and Cursor IDE to query PatronAI directly via SSH.</td></tr>
+        <tr><td><strong>Mind Map</strong></td><td>An interactive graph showing a user's AI assets — providers, models, categories — as connected nodes.</td></tr>
+        <tr><td><strong>Pipeline</strong></td><td>The data ingestion path from scanning agent → PatronAI backend → dashboard. Pipeline health indicates whether data is flowing correctly.</td></tr>
+        <tr><td><strong>Provider</strong></td><td>An AI service endpoint detected in network traffic, e.g. OpenAI, Anthropic, Google Gemini, Midjourney.</td></tr>
+        <tr><td><strong>Risk Score</strong></td><td>A composite score (0–100) calculated for each user or device based on findings severity, volume, and data exposure.</td></tr>
+        <tr><td><strong>Sankey Diagram</strong></td><td>A flow diagram where band widths are proportional to flow volume. Used in the AI Landscape tab to show traffic from users through categories to providers.</td></tr>
+        <tr><td><strong>Silent Device</strong></td><td>A device that has an installed agent but has not sent any events in the expected window — potentially offline or misconfigured.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <!-- FAQ                                                             -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <section id="faq">
+    <h2>Frequently Asked Questions</h2>
+
+    <h3>I can't log in — what do I do?</h3>
+    <p>Check that you are using the exact email address your admin registered. Passwords are case-sensitive. If you still cannot log in, contact your PatronAI admin — they can reset your credentials from <a href="#settings-users">Settings → Users</a>.</p>
+
+    <h3>I can see the dashboard but a tab is missing — why?</h3>
+    <p>Your role determines which tabs are visible. Refer to the <a href="#roles">Roles &amp; Access table</a>. If you believe you need access to a tab not shown for your role, ask your admin to update your role in Settings → Users.</p>
+
+    <h3>The Ask AI chat is not responding — what should I check?</h3>
+    <p>The chat depends on the local LLM service (Ollama + Qwen 3.5 9B) running on the EC2 instance. If the chat shows a service error, contact your admin to check the LLM service health in <a href="#support-tabs">Support → Health</a>.</p>
+
+    <h3>An agent shows as offline — is this a problem?</h3>
+    <p>An offline agent means that endpoint is no longer reporting data. AI usage on that device is invisible until the agent is restored. Check <a href="#support-tabs">Support → Agent Fleet</a> for details and share the hostname with your admin for remediation.</p>
+
+    <h3>How do I add my company logo to reports?</h3>
+    <p>Admin users can upload a logo at <a href="#settings-branding">Settings → Branding</a>. Once saved, it appears in all subsequent PDF report downloads.</p>
+
+    <h3>Does PatronAI send my data to external services?</h3>
+    <p>No. PatronAI runs entirely on your EC2 instance. The AI chat LLM is local (Qwen 3.5 9B via Ollama). Your organisation's data does not leave your EC2 instance unless you explicitly export a report PDF.</p>
+
+    <h3>Can I schedule reports to be sent automatically?</h3>
+    <p>Scheduled report delivery is on the PatronAI roadmap. In the current version (v1.0.0), reports are generated on demand. You can generate and download PDFs from the <a href="#reports">Reports section</a> at any time.</p>
+  </section>
+
+  <hr />
+
+  <!-- FOOTER -->
+  <footer>
+    <div>
+      <strong>Giggso Inc</strong> &nbsp;·&nbsp; PatronAI v1.0.0 &nbsp;·&nbsp; AI Security Dashboard
+    </div>
+    <div style="color: #8B949E;">
+      &copy; 2025 Giggso Inc. All rights reserved. &nbsp;·&nbsp; Confidential — not for external distribution without authorisation.
+    </div>
+  </footer>
+
+</main>
+
+<script>
+  // Highlight active nav link on scroll
+  (function () {
+    var sections = document.querySelectorAll('section[id]');
+    var navLinks = document.querySelectorAll('#sidebar nav a');
+
+    function onScroll() {
+      var scrollY = window.scrollY + 80;
+      var current = '';
+      sections.forEach(function (sec) {
+        if (sec.offsetTop <= scrollY) {
+          current = sec.getAttribute('id');
+        }
+      });
+      navLinks.forEach(function (link) {
+        link.classList.remove('active');
+        var href = link.getAttribute('href');
+        if (href === '#' + current) {
+          link.classList.add('active');
+        }
+      });
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  })();
+</script>
+
+</body>
+</html>

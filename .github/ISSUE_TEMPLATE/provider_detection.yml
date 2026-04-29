@@ -1,0 +1,75 @@
+name: Provider Detection Request
+description: Request detection for a new AI provider or model endpoint
+labels: ["provider-detection", "rules"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        PatronAI's value comes from having comprehensive provider coverage.
+        Use this template to request detection for a new AI provider, model API,
+        or local LLM tool that is not currently covered.
+
+  - type: input
+    id: provider_name
+    attributes:
+      label: Provider / product name
+      placeholder: "e.g. Mistral API, LM Studio, Groq, etc."
+    validations:
+      required: true
+
+  - type: input
+    id: provider_url
+    attributes:
+      label: Public URL or domain
+      placeholder: "e.g. api.mistral.ai"
+
+  - type: dropdown
+    id: provider_type
+    attributes:
+      label: Provider type
+      options:
+        - Cloud API (SaaS)
+        - Local / on-prem LLM
+        - Browser extension / plugin
+        - IDE plugin (Copilot-style)
+        - Mobile app
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: traffic_patterns
+    attributes:
+      label: Known traffic patterns
+      description: >
+        Any observable network patterns? Domain names, HTTP headers, URL paths,
+        TLS SNI, or payload signatures that could identify this provider.
+      placeholder: |
+        - Domain: api.example.com
+        - Path: /v1/chat/completions
+        - Header: X-Api-Key or Authorization: Bearer ...
+        - User-Agent: ExampleSDK/1.0
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Supporting evidence / sources
+      description: Public documentation, blog posts, network captures, etc.
+
+  - type: textarea
+    id: risk_notes
+    attributes:
+      label: Risk / compliance notes
+      description: >
+        Any known data-retention policies, geo-residency concerns, or compliance
+        issues that security teams should know about?
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-flight
+      options:
+        - label: I checked config/providers_deny.csv and this provider is not already listed
+          required: true
+        - label: This is a publicly known AI provider (not internal tooling)
+          required: true

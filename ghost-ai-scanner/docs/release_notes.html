@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<!--
+  File: release_notes.html
+  Product: PatronAI
+  Version: 1.0.0
+  Author: Giggso Inc / Ravi Venugopal
+  Created: 2026-04-28
+
+  Audit Log:
+  | Version | Date       | Author          | Change                  |
+  |---------|------------|-----------------|-------------------------|
+  | 1.0.0   | 2026-04-28 | Ravi Venugopal  | Initial release notes   |
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PatronAI v1.0.0 — Release Notes</title>
+  <style>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                   "Helvetica Neue", Arial, sans-serif;
+      background: #F6F8FA;
+      color: #24292F;
+      line-height: 1.6;
+    }
+
+    /* ── Header ── */
+    header {
+      background: #0D1117;
+      color: #E6EDF3;
+      padding: 40px 48px 36px;
+      border-bottom: 3px solid #1F6FEB;
+    }
+    header .product-badge {
+      display: inline-block;
+      background: #1F6FEB;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-bottom: 14px;
+    }
+    header h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 6px;
+      color: #FFFFFF;
+    }
+    header .subtitle {
+      font-size: 1rem;
+      color: #8B949E;
+      margin-bottom: 18px;
+    }
+    header .meta-row {
+      display: flex;
+      gap: 32px;
+      flex-wrap: wrap;
+    }
+    header .meta-item {
+      font-size: 0.82rem;
+      color: #8B949E;
+    }
+    header .meta-item span {
+      color: #58A6FF;
+      font-weight: 600;
+    }
+
+    /* ── Layout ── */
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 48px 24px 64px;
+    }
+
+    /* ── TOC ── */
+    .toc {
+      background: #FFFFFF;
+      border: 1px solid #D0D7DE;
+      border-radius: 8px;
+      padding: 24px 28px;
+      margin-bottom: 48px;
+    }
+    .toc h2 {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #57606A;
+      margin-bottom: 14px;
+    }
+    .toc ol {
+      padding-left: 20px;
+    }
+    .toc ol li {
+      margin-bottom: 6px;
+    }
+    .toc a {
+      color: #1F6FEB;
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+    .toc a:hover { text-decoration: underline; }
+
+    /* ── Section blocks ── */
+    .section {
+      background: #FFFFFF;
+      border: 1px solid #D0D7DE;
+      border-radius: 8px;
+      padding: 32px 36px;
+      margin-bottom: 32px;
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #EAEEF2;
+    }
+    .section-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+    .icon-new    { background: #DDF4FF; color: #0969DA; }
+    .icon-report { background: #FFF8C5; color: #9A6700; }
+    .icon-ai     { background: #F3F0FF; color: #6E40C9; }
+    .icon-sec    { background: #DAFBE1; color: #1A7F37; }
+    .icon-risk   { background: #FFEBE9; color: #CF222E; }
+    .icon-defer  { background: #F6F8FA; color: #57606A; }
+
+    .section h2 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #0D1117;
+    }
+    .section-id {
+      font-size: 0.75rem;
+      color: #8B949E;
+      font-weight: 500;
+      margin-left: auto;
+    }
+
+    /* ── Feature grid ── */
+    .view-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .view-card {
+      border: 1px solid #D0D7DE;
+      border-radius: 6px;
+      padding: 16px 18px;
+      background: #F6F8FA;
+    }
+    .view-card h4 {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #0D1117;
+      margin-bottom: 8px;
+    }
+    .view-card ul {
+      padding-left: 16px;
+      font-size: 0.82rem;
+      color: #57606A;
+    }
+    .view-card ul li { margin-bottom: 4px; }
+
+    /* ── Feature list ── */
+    .feature-list {
+      list-style: none;
+      padding: 0;
+    }
+    .feature-list li {
+      padding: 10px 0;
+      border-bottom: 1px solid #EAEEF2;
+      font-size: 0.9rem;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .feature-list li:last-child { border-bottom: none; }
+    .feature-list .fi-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #1F6FEB;
+      margin-top: 7px;
+      flex-shrink: 0;
+    }
+
+    /* ── Reports table ── */
+    .reports-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+    .reports-table thead tr {
+      background: #F6F8FA;
+    }
+    .reports-table th {
+      text-align: left;
+      padding: 10px 14px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #57606A;
+      border-bottom: 2px solid #D0D7DE;
+    }
+    .reports-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid #EAEEF2;
+      color: #24292F;
+      vertical-align: top;
+    }
+    .reports-table tr:last-child td { border-bottom: none; }
+    .reports-table tr:hover td { background: #F6F8FA; }
+    .report-id {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-weight: 700;
+      color: #0969DA;
+    }
+    .badge-pdf {
+      display: inline-block;
+      background: #DAFBE1;
+      color: #1A7F37;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 1px 7px;
+      border-radius: 12px;
+      margin-left: 4px;
+    }
+    .badge-preview {
+      display: inline-block;
+      background: #DDF4FF;
+      color: #0969DA;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 1px 7px;
+      border-radius: 12px;
+      margin-left: 4px;
+    }
+
+    /* ── Risk table ── */
+    .risk-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+    .risk-table thead tr { background: #F6F8FA; }
+    .risk-table th {
+      text-align: left;
+      padding: 10px 14px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #57606A;
+      border-bottom: 2px solid #D0D7DE;
+    }
+    .risk-table td {
+      padding: 13px 14px;
+      border-bottom: 1px solid #EAEEF2;
+      vertical-align: top;
+    }
+    .risk-table tr:last-child td { border-bottom: none; }
+    .risk-table tr:hover td { background: #FAFAFA; }
+    .risk-id {
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .sev {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 12px;
+      white-space: nowrap;
+    }
+    .sev-HIGH   { background: #FFEBE9; color: #CF222E; border: 1px solid #FFCECB; }
+    .sev-MEDIUM { background: #FFF3CD; color: #9A6700; border: 1px solid #FFE585; }
+    .sev-LOW    { background: #FFF8C5; color: #7D4E17; border: 1px solid #FFDF5D; }
+    .sev-INFO   { background: #DDF4FF; color: #0550AE; border: 1px solid #80CCFF; }
+    .mitigation-tag {
+      display: inline-block;
+      font-size: 0.72rem;
+      background: #F3F0FF;
+      color: #6E40C9;
+      padding: 1px 8px;
+      border-radius: 12px;
+      margin-right: 4px;
+      margin-bottom: 4px;
+    }
+    .target-ver {
+      display: inline-block;
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: 0.78rem;
+      background: #0D1117;
+      color: #58A6FF;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    /* ── Security model ── */
+    .sec-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 14px;
+    }
+    .sec-card {
+      background: #F6F8FA;
+      border: 1px solid #D0D7DE;
+      border-radius: 6px;
+      padding: 14px 16px;
+    }
+    .sec-card h4 {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #0D1117;
+      margin-bottom: 6px;
+    }
+    .sec-card p {
+      font-size: 0.8rem;
+      color: #57606A;
+      line-height: 1.5;
+    }
+
+    /* ── Note/callout ── */
+    .callout {
+      border-left: 3px solid #1F6FEB;
+      background: #F0F7FF;
+      padding: 12px 16px;
+      border-radius: 0 6px 6px 0;
+      font-size: 0.85rem;
+      color: #0550AE;
+      margin-top: 20px;
+    }
+    .callout.warn {
+      border-color: #D1242F;
+      background: #FFF5F5;
+      color: #82071E;
+    }
+    .callout strong { font-weight: 700; }
+
+    /* ── Deferred ── */
+    .defer-item {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      padding: 12px 0;
+      border-bottom: 1px solid #EAEEF2;
+      font-size: 0.9rem;
+    }
+    .defer-item:last-child { border-bottom: none; }
+    .defer-label {
+      background: #F6F8FA;
+      border: 1px solid #D0D7DE;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #57606A;
+      padding: 2px 8px;
+      white-space: nowrap;
+      font-family: "SFMono-Regular", Consolas, monospace;
+    }
+
+    /* ── Footer ── */
+    footer {
+      background: #0D1117;
+      color: #57606A;
+      padding: 28px 48px;
+      font-size: 0.82rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      border-top: 1px solid #21262D;
+    }
+    footer .footer-brand {
+      color: #8B949E;
+      font-weight: 600;
+    }
+    footer .footer-brand span { color: #1F6FEB; }
+    footer .footer-meta { color: #57606A; }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      header { padding: 28px 20px 24px; }
+      .section { padding: 22px 18px; }
+      .container { padding: 28px 16px 48px; }
+      footer { padding: 20px 20px; flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<header>
+  <div class="product-badge">Release Notes</div>
+  <h1>PatronAI</h1>
+  <p class="subtitle">AI Usage Governance &amp; Shadow AI Detection Platform</p>
+  <div class="meta-row">
+    <div class="meta-item">Version <span>1.0.0</span></div>
+    <div class="meta-item">Released <span>2026-04-28</span></div>
+    <div class="meta-item">Status <span>General Availability</span></div>
+    <div class="meta-item">Vendor <span>Giggso Inc</span></div>
+  </div>
+</header>
+
+<!-- ===== MAIN CONTENT ===== -->
+<div class="container">
+
+  <!-- Table of Contents -->
+  <div class="toc">
+    <h2>In this document</h2>
+    <ol>
+      <li><a href="#whats-new">What's New in v1.0.0</a></li>
+      <li><a href="#reports">Reports Module (R1 – R7)</a></li>
+      <li><a href="#ai-chat-mcp">AI Chat Widget &amp; MCP Server</a></li>
+      <li><a href="#security-model">Security Model &amp; Architecture</a></li>
+      <li><a href="#risk-gaps">Known Risk Gaps — Targeted for V2</a></li>
+      <li><a href="#deferred">Deferred to v1.1</a></li>
+    </ol>
+  </div>
+
+  <!-- ===== SECTION 1 — WHAT'S NEW ===== -->
+  <div class="section" id="whats-new">
+    <div class="section-header">
+      <div class="section-icon icon-new">&#10003;</div>
+      <h2>What's New in v1.0.0</h2>
+      <span class="section-id">SEC-01</span>
+    </div>
+
+    <p style="font-size:0.9rem; color:#57606A; margin-bottom:22px;">
+      PatronAI v1.0.0 is the first generally-available release. It ships three role-based views,
+      a full reports module, an AI chat widget, and a pluggable LLM layer — all deployable to a
+      single EC2 instance in under 30 minutes using the included automated deploy script.
+    </p>
+
+    <!-- View cards -->
+    <div class="view-grid">
+      <div class="view-card">
+        <h4>Executive View</h4>
+        <ul>
+          <li>AI security KPIs at a glance</li>
+          <li>Clickable drill-down metrics</li>
+          <li>Landscape, Risk, and Exposure tabs</li>
+          <li>AI Chat Widget integrated</li>
+        </ul>
+      </div>
+      <div class="view-card">
+        <h4>Manager View</h4>
+        <ul>
+          <li>Inventory, Risks, Logs, Pipeline tabs</li>
+          <li>AI Inventory: MCP / agent / vector DB mind map</li>
+          <li>Per-user picker on mind map</li>
+          <li>AI Chat Widget integrated</li>
+        </ul>
+      </div>
+      <div class="view-card">
+        <h4>Support View</h4>
+        <ul>
+          <li>Rules, Code Signals, Coverage, Health</li>
+          <li>Logs, Risks, Pipeline, Agent Fleet tabs</li>
+          <li>Agent fleet status at a glance</li>
+          <li>AI Chat Widget integrated</li>
+        </ul>
+      </div>
+      <div class="view-card">
+        <h4>User Detail Page</h4>
+        <ul>
+          <li>Per-user AI risk profile</li>
+          <li>AI asset mind map (scoped to user)</li>
+          <li>Full findings drill-through</li>
+        </ul>
+      </div>
+      <div class="view-card">
+        <h4>Provider Lists</h4>
+        <ul>
+          <li>Editable allow-list per AI provider</li>
+          <li>Block-list with enforcement flags</li>
+          <li>Changes persisted to S3</li>
+        </ul>
+      </div>
+      <div class="view-card">
+        <h4>Users &amp; Branding</h4>
+        <ul>
+          <li>Add / remove users, role assignment</li>
+          <li>Welcome email on user add</li>
+          <li>Logo upload to S3 (embedded in PDFs)</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>Deploy script included.</strong> Full automated deploy covers code transfer, .env
+      builder, MCP setup, LLM service setup (systemd), and prints the Claude Desktop config —
+      target host is up in &lt; 30 minutes.
+    </div>
+  </div>
+
+  <!-- ===== SECTION 2 — REPORTS ===== -->
+  <div class="section" id="reports">
+    <div class="section-header">
+      <div class="section-icon icon-report">&#128196;</div>
+      <h2>Reports Module — R1 through R7</h2>
+      <span class="section-id">SEC-02</span>
+    </div>
+    <p style="font-size:0.9rem; color:#57606A; margin-bottom:20px;">
+      All seven reports support in-browser HTML preview and one-click PDF download.
+      Branding (logo) is embedded in PDF output from the S3 branding asset.
+      R6 includes SHA-256 integrity hashing for compliance audit chains.
+    </p>
+
+    <table class="reports-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Report Name</th>
+          <th>Description</th>
+          <th>Formats</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="report-id">R1</span></td>
+          <td>Executive Risk Summary</td>
+          <td>High-level KPIs: risk posture, top findings, trend lines. Designed for board or C-suite distribution.</td>
+          <td><span class="badge-preview">HTML</span><span class="badge-pdf">PDF</span></td>
+        </tr>
+        <tr>
+          <td><span class="report-id">R2</span></td>
+          <td>AI Asset Inventory</td>
+          <td>Full catalog of detected AI tools, models, agents, MCP servers, and vector databases across the tenant.</td>
+          <td><span class="badge-preview">HTML</span><span class="badge-pdf">PDF</span></td>
+        </tr>
+        <tr>
+          <td><span class="report-id">R3</span></td>
+          <td>User Risk Report</td>
+          <td>Per-user risk breakdown scoped to a single user. AI asset usage, risk findings, and behavioral signals.</td>
+          <td><span class="badge-preview">HTML</span><span class="badge-pdf">PDF</span></td>
+        </tr>
+        <tr>
+          <td><span class="report-id">R4</span></td>
+          <td>Incident / Findings</td>
+          <td>Full incident and findings log with severity, timestamps, affected users, and resolution status.</td>
+          <td><span class="badge-preview">HTML</span><span class="badge-pdf">PDF</span></td>
+        </tr>
+        <tr>
+          <td><span class="report-id">R5</span></td>
+          <td>Fleet Health &amp; Coverage</td>
+          <td>Agent fleet availability, coverage gaps, pipeline health, and scan freshness metrics.</td>
+          <td><span class="badge-preview">HTML</span><span class="badge-pdf">PDF</span></td>
+        </tr>
+        <tr>
+          <td><span class="report-id">R6</span></td>
+          <td>Compliance Audit Trail</td>
+          <td>Tamper-evident audit log with SHA-256 integrity hashing per record. Suitable for regulatory submissions.</td>
+          <td><span class="badge-preview">HTML</span><span class="badge-pdf">PDF</span></td>
+        </tr>
+        <tr>
+          <td><span class="report-id">R7</span></td>
+          <td>Shadow AI Census</td>
+          <td>Detected shadow AI usage outside sanctioned tooling — unapproved models, personal API keys, unsanctioned agents.</td>
+          <td><span class="badge-preview">HTML</span><span class="badge-pdf">PDF</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ===== SECTION 3 — AI CHAT & MCP ===== -->
+  <div class="section" id="ai-chat-mcp">
+    <div class="section-header">
+      <div class="section-icon icon-ai">&#129302;</div>
+      <h2>AI Chat Widget &amp; MCP Server</h2>
+      <span class="section-id">SEC-03</span>
+    </div>
+
+    <ul class="feature-list">
+      <li>
+        <span class="fi-dot"></span>
+        <span><strong>Chat Widget — Ask AI button</strong> available in Executive, Manager, and Support views. Collapsed by default; click to expand inline.</span>
+      </li>
+      <li>
+        <span class="fi-dot"></span>
+        <span><strong>8 built-in tools</strong> exposed to the chat agent: query findings, look up user risk, list assets, check fleet health, pull report data, search providers, audit trail query, and coverage check.</span>
+      </li>
+      <li>
+        <span class="fi-dot"></span>
+        <span><strong>Conversation history persisted to S3</strong> under a SHA-256(email)-keyed prefix — no email address ever appears in the S3 object path.</span>
+      </li>
+      <li>
+        <span class="fi-dot"></span>
+        <span><strong>MCP Server (stdio transport)</strong> exposes PatronAI as a tool to Claude Desktop and Cursor IDE. Access requires SSH key to the EC2 host.</span>
+      </li>
+      <li>
+        <span class="fi-dot"></span>
+        <span><strong>Pluggable LLM backend</strong> via <code style="font-size:0.82rem; background:#F6F8FA; padding:1px 5px; border-radius:4px;">openai_compat</code> adapter — supports llama.cpp, Ollama, OpenAI, and Groq interchangeably. Anthropic client also supported. Backend selected via <code style="font-size:0.82rem; background:#F6F8FA; padding:1px 5px; border-radius:4px;">.env</code> or AWS Parameter Store at startup.</span>
+      </li>
+      <li>
+        <span class="fi-dot"></span>
+        <span><strong>Primary model:</strong> gpt-4.1-mini &nbsp;|&nbsp; <strong>Fallback:</strong> gpt-4.1-mini (configurable). All LLM calls use <code style="font-size:0.82rem; background:#F6F8FA; padding:1px 5px; border-radius:4px;">temperature=0</code>.</span>
+      </li>
+    </ul>
+  </div>
+
+  <!-- ===== SECTION 4 — SECURITY MODEL ===== -->
+  <div class="section" id="security-model">
+    <div class="section-header">
+      <div class="section-icon icon-sec">&#128274;</div>
+      <h2>Security Model &amp; Architecture</h2>
+      <span class="section-id">SEC-04</span>
+    </div>
+    <p style="font-size:0.9rem; color:#57606A; margin-bottom:20px;">
+      PatronAI v1.0.0 is a single-tenant deployment on a dedicated EC2 instance.
+      All persistent state lives in a single S3 bucket (<code style="font-size:0.82rem; background:#F6F8FA; padding:1px 5px; border-radius:4px;">patronai</code>).
+      There is no Oracle dependency.
+    </p>
+
+    <div class="sec-grid">
+      <div class="sec-card">
+        <h4>Identity &amp; Users</h4>
+        <p>User records stored in <code>s3://patronai/users/users.json</code>. Role assignment (exec / manager / support) enforced at view render. No external IdP dependency in v1.0.</p>
+      </div>
+      <div class="sec-card">
+        <h4>Credentials</h4>
+        <p>All secrets loaded from <code>.env</code> at runtime. No credentials are hardcoded in source. AWS access via named profile (<code>rvdts</code>) on the EC2 host.</p>
+      </div>
+      <div class="sec-card">
+        <h4>MCP Access Control</h4>
+        <p>MCP server uses stdio transport. External access requires an SSH key to the EC2 host. No unauthenticated HTTP endpoint is exposed for MCP in v1.0.</p>
+      </div>
+      <div class="sec-card">
+        <h4>Chat History Privacy</h4>
+        <p>History keyed by <code>SHA-256(email)</code>. Email is never stored as a plaintext S3 path component. Bucket-level IAM is the boundary in v1.0 (see RISK-4).</p>
+      </div>
+      <div class="sec-card">
+        <h4>Audit Integrity</h4>
+        <p>R6 Compliance Audit Trail records carry SHA-256 hashes. Report generation timestamps are immutable once written to S3.</p>
+      </div>
+      <div class="sec-card">
+        <h4>Transport</h4>
+        <p>All external traffic served via nginx reverse proxy on the EC2 host. TLS termination handled at the nginx layer.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SECTION 5 — RISK GAPS ===== -->
+  <div class="section" id="risk-gaps">
+    <div class="section-header">
+      <div class="section-icon icon-risk">&#9888;</div>
+      <h2>Known Risk Gaps — Targeted for V2</h2>
+      <span class="section-id">SEC-05</span>
+    </div>
+    <p style="font-size:0.9rem; color:#57606A; margin-bottom:20px;">
+      The following security gaps are documented and accepted for v1.0.0. Each has a defined
+      mitigation strategy targeted for V2. No gap is a blocker for initial deployment in a
+      controlled enterprise environment.
+    </p>
+
+    <table class="risk-table">
+      <thead>
+        <tr>
+          <th>Risk ID</th>
+          <th>Severity</th>
+          <th>Description</th>
+          <th>V2 Mitigation</th>
+          <th>Target</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="risk-id">RISK-1</span></td>
+          <td><span class="sev sev-HIGH">HIGH</span></td>
+          <td>
+            <strong>Overly-broad IAM role on MCP server.</strong><br/>
+            The MCP server process inherits the EC2 instance IAM role, which has broader than
+            read-only S3 access. A compromised MCP process could read or write outside the
+            <code>patronai</code> bucket.
+          </td>
+          <td>
+            <span class="mitigation-tag">Dedicated IAM role</span>
+            <span class="mitigation-tag">Least-privilege S3</span>
+            <br/>Create a dedicated IAM role scoped to <code>s3:GetObject</code> /
+            <code>s3:PutObject</code> on <code>patronai/*</code> only. Attach via instance
+            profile swap or task role.
+          </td>
+          <td><span class="target-ver">V2.0</span></td>
+        </tr>
+        <tr>
+          <td><span class="risk-id">RISK-2</span></td>
+          <td><span class="sev sev-MEDIUM">MEDIUM</span></td>
+          <td>
+            <strong>MCP access requires SSH — not suitable for non-admin users.</strong><br/>
+            The stdio MCP transport means only users with SSH key access to the EC2 host can
+            use Claude Desktop / Cursor integration. This excludes non-technical analysts.
+          </td>
+          <td>
+            <span class="mitigation-tag">SSE transport</span>
+            <span class="mitigation-tag">JWT RS256 auth</span>
+            <br/>Migrate MCP server to SSE transport with an HTTP endpoint. Issue short-lived
+            JWT tokens (RS256) per authenticated user. No SSH required.
+          </td>
+          <td><span class="target-ver">V2.0</span></td>
+        </tr>
+        <tr>
+          <td><span class="risk-id">RISK-3</span></td>
+          <td><span class="sev sev-LOW">LOW</span></td>
+          <td>
+            <strong>No per-call rate limiting on MCP tools.</strong><br/>
+            Rapid successive MCP tool calls incur S3 GET/LIST costs and could degrade service
+            availability. There is no per-key or per-user throttle in v1.0.
+          </td>
+          <td>
+            <span class="mitigation-tag">Per-key rate limiting</span>
+            <br/>Implement token-bucket rate limiting per API key / SSH identity at the MCP
+            server layer. Configurable threshold via environment variable.
+          </td>
+          <td><span class="target-ver">V2.0</span></td>
+        </tr>
+        <tr>
+          <td><span class="risk-id">RISK-4</span></td>
+          <td><span class="sev sev-INFO">INFO</span></td>
+          <td>
+            <strong>Chat history visible to any principal with bucket access.</strong><br/>
+            Chat history objects are stored under a <code>SHA-256(email)</code> prefix.
+            Email is not in the path, but any IAM principal with <code>s3:GetObject</code>
+            on <code>patronai/*</code> can read all users' history.
+          </td>
+          <td>
+            <span class="mitigation-tag">Per-user KMS key</span>
+            <br/>Encrypt each user's history prefix with a dedicated AWS KMS key. IAM key
+            policies enforce per-user decryption rights; bucket access alone is insufficient.
+          </td>
+          <td><span class="target-ver">V2.0</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout warn">
+      <strong>Note for operators:</strong> RISK-1 (HIGH) should be remediated before exposing
+      the MCP server to users outside the immediate admin team. The remaining risks are acceptable
+      in a controlled internal deployment.
+    </div>
+  </div>
+
+  <!-- ===== SECTION 6 — DEFERRED ===== -->
+  <div class="section" id="deferred">
+    <div class="section-header">
+      <div class="section-icon icon-defer">&#8635;</div>
+      <h2>Deferred to v1.1</h2>
+      <span class="section-id">SEC-06</span>
+    </div>
+    <p style="font-size:0.9rem; color:#57606A; margin-bottom:20px;">
+      The following features were scoped for v1.0 but deferred to v1.1 to keep the initial
+      release focused and shippable. Each item has a full design memo.
+    </p>
+
+    <div class="defer-item">
+      <span class="defer-label">V1.1</span>
+      <div>
+        <strong style="font-size:0.9rem;">Email / SMTP Module</strong>
+        <p style="font-size:0.83rem; color:#57606A; margin-top:4px;">
+          Per-user outbound email via configurable SMTP. Credentials stored in AWS Secrets Manager
+          (never in <code>.env</code>). Includes a test-send-before-save flow and per-user
+          credential isolation. Welcome-email on user-add is triggered from this module.
+          Designed as a pluggable optional module (~965 LOC estimated). SES-based approach was
+          evaluated and superseded by this SMTP design.
+        </p>
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>Current behavior:</strong> The welcome email on user-add in v1.0 is a stub —
+      the UI shows a confirmation but no email is actually sent until the v1.1 SMTP module ships.
+    </div>
+  </div>
+
+</div>
+<!-- ===== FOOTER ===== -->
+<footer>
+  <div class="footer-brand">
+    <span>Giggso Inc</span> &mdash; PatronAI Platform
+  </div>
+  <div class="footer-meta">
+    Version 1.0.0 &nbsp;&bull;&nbsp; Released 2026-04-28 &nbsp;&bull;&nbsp; Confidential
+  </div>
+</footer>
+
+</body>
+</html>

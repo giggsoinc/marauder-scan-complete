@@ -84,6 +84,8 @@ def render_mindmap(events: list, *,
     fig = go.Figure(data=[edge_trace, node_trace])
     fig.update_layout(
         showlegend=False, hovermode="closest",
+        clickmode="event+select",   # single click selects a point → on_select fires
+        dragmode=False,             # disable zoom/pan so clicks are the primary action
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
         margin=dict(l=0, r=0, t=10, b=0), height=480,
         xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),

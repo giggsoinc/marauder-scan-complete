@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "develop"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  unit-tests:
+    name: Unit tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install dependencies
+        working-directory: ghost-ai-scanner
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run unit tests
+        working-directory: ghost-ai-scanner
+        env:
+          PYTHONPATH: src
+        run: pytest tests/unit/ -q --tb=short
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install linters
+        run: pip install ruff
+
+      - name: Ruff check
+        working-directory: ghost-ai-scanner
+        run: ruff check src/ dashboard/ --select E,F,W --ignore E501
+
+  docker-build:
+    name: Docker build (smoke test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image (no classifier, no model bake)
+        working-directory: ghost-ai-scanner
+        run: |
+          docker build \
+            --build-arg INCLUDE_CLASSIFIER=0 \
+            --tag patronai:ci-${{ github.sha }} \
+            .
+
+      - name: Verify image starts
+        run: |
+          docker run --rm -d \
+            --name patronai_ci \
+            -e MARAUDER_SCAN_BUCKET=test \
+            -e PYTHONPATH=/app/src \
+            patronai:ci-${{ github.sha }} \
+            sleep 10
+          sleep 3
+          docker ps | grep patronai_ci
+          docker stop patronai_ci

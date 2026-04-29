@@ -1,7 +1,7 @@
 # =============================================================
 # FILE: dashboard/ui/exec_view.py
-# VERSION: 2.1.0
-# UPDATED: 2026-04-27
+# VERSION: 2.2.0
+# UPDATED: 2026-04-28
 # OWNER: Giggso Inc (Ravi Venugopal)
 # PURPOSE: Exec view — AI governance KPI row + three-tab analysis.
 #          Replaces Pam dashboard. Role: Security Executive / Platform Admin.
@@ -9,10 +9,8 @@
 #   v1.0.0  2026-04-19  Initial — renamed from pam_dashboard, de-branded
 #   v2.0.0  2026-04-27  Mega-PR — KPIs are clickable, drill panel renders
 #                       inline, all charts hand off to drill_panel.set_drill().
-#   v2.1.0  2026-04-27  Fix KPI drill predicates — endpoint findings have
-#                       outcome=ENDPOINT_FINDING (not ALERT); HIGH is the
-#                       top severity for current scan data; alerts_fired
-#                       computed live from events list.
+#   v2.1.0  2026-04-27  Fix KPI drill predicates — outcome=ENDPOINT_FINDING.
+#   v2.2.0  2026-04-28  Add 🤖 Ask AI chat widget.
 # =============================================================
 
 import streamlit as st
@@ -22,12 +20,13 @@ from .exec_tab_exposure   import render_exposure
 from .data                import load_yesterday_summary
 from .clickable_metric    import clickable_metric, static_metric
 from .drill_panel         import render_drill_panel
+from .chat                import render_chat
 
 _PANEL = "exec_kpis"
 
 
-def render(events: list, summary: dict) -> None:
-    """Render the Exec view — KPIs, drill panel, then three tabs."""
+def render(events: list, summary: dict, email: str = "") -> None:
+    """Render the Exec view — KPIs, drill panel, three tabs, AI chat."""
     _kpis(events, summary)
     render_drill_panel(_PANEL, events, limit=100)
     st.markdown("<br>", unsafe_allow_html=True)
@@ -38,6 +37,8 @@ def render(events: list, summary: dict) -> None:
         render_risk(events)
     with t3:
         render_exposure(events)
+    st.markdown("---")
+    render_chat(events, email, "exec")
 
 
 def _kpis(events: list, summary: dict) -> None:

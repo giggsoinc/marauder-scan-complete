@@ -1,7 +1,7 @@
 # =============================================================
 # FILE: docker-compose.yml
-# VERSION: 1.0.0
-# UPDATED: 2026-04-18
+# VERSION: 1.1.0
+# UPDATED: 2026-04-29
 # OWNER: Giggso Inc
 # PURPOSE: Production docker-compose for single EC2 deployment.
 #          Three containers: scanner, grafana, nginx.
@@ -47,6 +47,15 @@ services:
       # If GRAFANA_URL is set it takes precedence over PUBLIC_HOST
       - PUBLIC_HOST=${PUBLIC_HOST:-}
       - GRAFANA_URL=${GRAFANA_URL:-}
+      # LLM chat — llama-server runs inside the container on :8080
+      - LLM_PROVIDER=${LLM_PROVIDER:-openai_compat}
+      - LLM_BASE_URL=${LLM_BASE_URL:-http://localhost:8080}
+      - LLM_MODEL=${LLM_MODEL:-}
+      - LLM_API_KEY=${LLM_API_KEY:-}
+      - LLM_MODEL_REPO=${LLM_MODEL_REPO:-unsloth/Qwen3-0.6B-GGUF}
+      - LLM_MODEL_FILE=${LLM_MODEL_FILE:-Qwen3-0.6B-Q4_K_M.gguf}
+    volumes:
+      - patronai-models:/models
     ports:
       - "8501:8501"
     networks:
@@ -124,4 +133,6 @@ networks:
 
 volumes:
   grafana-data:
+    driver: local
+  patronai-models:
     driver: local

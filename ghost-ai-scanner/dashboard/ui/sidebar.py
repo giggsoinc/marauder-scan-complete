@@ -1,7 +1,7 @@
 # =============================================================
 # FILE: dashboard/ui/sidebar.py
-# VERSION: 2.0.0
-# UPDATED: 2026-04-26
+# VERSION: 2.3.0
+# UPDATED: 2026-04-29
 # OWNER: Giggso Inc
 # PURPOSE: PatronAI sidebar — role-aware view selector and links.
 #          Phase 1B role model: role ∈ {exec, manager, support} +
@@ -10,17 +10,13 @@
 #            manager  → Manager + Provider Lists
 #            support  → Support + Manager (read-only) + Provider Lists
 #            admin    → All views above + Settings (regardless of role)
+#          Home is shown first for all roles; default on first visit.
 # AUDIT LOG:
-#   v1.0.0  2026-04-19  Initial — extracted + de-branded from ghost_dashboard.py
-#   v1.1.0  2026-04-19  Absolute Grafana URL via PUBLIC_HOST / GRAFANA_URL
-#   v1.2.0  2026-04-19  Contrast fix — lighter tokens
-#   v1.3.0  2026-04-19  Support role — SUPPORT_EMAILS env var
-#   v1.4.0  2026-04-20  Grafana URL from S3 settings (session_state)
-#   v2.0.0  2026-04-26  Phase 1B — role + is_admin matrix, options
-#                       computed from role; SUPPORT_EMAILS env var dropped
-#                       (replaced by users.json role field).
-#   v2.1.0  2026-04-27  Mega-PR — removed LINKS section + Open dashboard
-#                       link. Sidebar now: brand · radio · footer only.
+#   v1.0.0  2026-04-19  Initial
+#   v2.0.0  2026-04-26  Phase 1B role/admin matrix.
+#   v2.1.0  2026-04-27  Removed LINKS section.
+#   v2.2.0  2026-04-28  Add Reports nav.
+#   v2.3.0  2026-04-29  Home nav; logo rendered from assets/branding/.
 # =============================================================
 
 import os
@@ -54,81 +50,89 @@ def _grafana_link(path: str) -> str:
 
 
 def render(email: str, role: str, is_admin: bool) -> str:
-    """
-    Render sidebar and return the selected view name.
-    Phase 1B role/admin matrix:
-      exec     → 'exec'
-      manager  → 'exec' | 'manager' | 'providers'   (manager landing default)
-      support  → 'exec' | 'manager' | 'support' | 'providers'  (support default)
-      admin    → 'exec' | 'manager' | 'support' | 'providers' | 'settings'
-                 (admin overrides — sees ALL regardless of role; lands on
-                  their role's view)
-    """
-    options, default_idx = _options_for(role, is_admin)
+    """Render sidebar; return selected view name.
+    Home is the default on first session visit (_home_seen not set).
+    Phase 1B role/admin matrix applies to subsequent navigations."""
+    options, role_idx = _options_for(role, is_admin)
+    # First visit → land on Home (index 0); thereafter keep role default
+    if not st.session_state.get("_home_seen"):
+        default_idx = 0
+    else:
+        default_idx = role_idx
 
     with st.sidebar:
+        # ── Logo tile — dark background matches brand PNG ─────
         try:
-            st.image("assets/branding/patronai-logo.png", width=200)
+            import base64, pathlib
+            logo_path = pathlib.Path("assets/branding/patronai-logo.png")
+            if logo_path.exists():
+                b64 = base64.b64encode(logo_path.read_bytes()).decode()
+                st.markdown(
+                    f'<div style="background:#0A0F1F;border-radius:10px;'
+                    f'padding:14px 10px;text-align:center;margin-bottom:4px">'
+                    f'<img src="data:image/png;base64,{b64}" width="170"/>'
+                    f'</div>', unsafe_allow_html=True)
+            else:
+                raise FileNotFoundError
         except Exception:
             st.markdown(
-                '<div style="font-family:JetBrains Mono;font-size:18px;font-weight:700;'
-                'color:#0D1117;letter-spacing:.05em;margin-bottom:4px;">PATRONAI</div>',
-                unsafe_allow_html=True,
-            )
+                '<div style="background:#0A0F1F;border-radius:10px;padding:16px;'
+                'text-align:center;margin-bottom:4px">'
+                '<span style="font-family:JetBrains Mono;font-size:20px;'
+                'font-weight:700;color:#FFFFFF">Patron'
+                '<span style="color:#1F6FEB">AI</span></span></div>',
+                unsafe_allow_html=True)
 
         if _COMPANY:
             st.markdown(
-                f'<div style="font-family:JetBrains Mono;font-size:10px;color:#1F2328;'
-                f'margin-bottom:4px;">{_COMPANY}</div>',
-                unsafe_allow_html=True,
-            )
+                f'<div style="font-family:JetBrains Mono;font-size:10px;'
+                f'color:#1F2328;margin:4px 0 0">{_COMPANY}</div>',
+                unsafe_allow_html=True)
         st.markdown(
-            f'<div style="font-family:JetBrains Mono;font-size:10px;color:#57606A;">'
-            f'{email}</div>',
-            unsafe_allow_html=True,
-        )
+            f'<div style="font-family:JetBrains Mono;font-size:10px;'
+            f'color:#57606A;margin-bottom:2px">{email}</div>',
+            unsafe_allow_html=True)
         st.markdown("---")
 
         choice = st.radio("View", options, index=default_idx,
                           label_visibility="collapsed")
         st.markdown("---")
-
         st.markdown(
             '<div style="font-family:JetBrains Mono;font-size:9px;color:#6E7781;'
             'position:fixed;bottom:20px;">PatronAI · v1.1.0</div>',
-            unsafe_allow_html=True,
-        )
+            unsafe_allow_html=True)
 
-    if "Support" in choice:
-        return "support"
-    if "Manager" in choice:
-        return "manager"
-    if "Settings" in choice:
-        return "settings"
-    if "Provider" in choice:
-        return "providers"
+    # Mark as seen so next visit skips Home default
+    st.session_state["_home_seen"] = True
+
+    if "Home" in choice:    return "home"
+    if "Support" in choice: return "support"
+    if "Manager" in choice: return "manager"
+    if "Reports" in choice: return "reports"
+    if "Settings" in choice: return "settings"
+    if "Provider" in choice: return "providers"
     return "exec"
 
 
 def _options_for(role: str, is_admin: bool) -> tuple:
-    """Return (sidebar option labels, default index) for a given role/admin.
-    Admin always sees the union of all role-tabs + Settings; default index
-    points at the user's role's view so they land where they expect."""
+    """Return (option labels list, role-default index) for a given role/admin.
+    Home is always prepended at index 0; role_idx points at the role's
+    natural landing view (used after first visit).
+    """
+    HOME = "🏠  Home"
     EXEC, MGR, SUP = "📊  Exec view", "🔧  Manager view", "🛡  Support view"
-    PROV, SET      = "📋  Provider Lists", "⚙  Settings"
+    PROV, REP, SET = "📋  Provider Lists", "📄  Reports", "⚙  Settings"
     if is_admin:
-        opts = [EXEC, MGR, SUP, PROV, SET]
-        idx  = {"exec": 0, "manager": 1, "support": 2}.get(role, 1)
-        return opts, idx
+        opts    = [HOME, EXEC, MGR, SUP, PROV, REP, SET]
+        role_i  = {"exec": 1, "manager": 2, "support": 3}.get(role, 2)
+        return opts, role_i
     if role == "exec":
-        return [EXEC], 0
+        return [HOME, EXEC], 1
     if role == "manager":
-        return [MGR, PROV], 0
+        return [HOME, MGR, PROV, REP], 1
     if role == "support":
-        return [SUP, MGR, PROV], 0
-    # Unknown role — minimal menu (auth.py already blocked them, this is
-    # belt-and-suspenders).
-    return [EXEC], 0
+        return [HOME, SUP, MGR, PROV, REP], 1
+    return [HOME, EXEC], 1
 
 
 # _render_links() removed 2026-04-27 — Grafana lives elsewhere; the "Open

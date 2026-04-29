@@ -1,7 +1,7 @@
 # =============================================================
 # FILE: Dockerfile
-# VERSION: 1.1.0
-# UPDATED: 2026-04-19
+# VERSION: 1.2.0
+# UPDATED: 2026-04-29
 # OWNER: Giggso Inc
 # PURPOSE: PatronAI scanner + Streamlit container.
 #          Python 3.12 slim base. Minimal attack surface.
@@ -27,11 +27,23 @@ WORKDIR /app
 # System dependencies
 # genisoimage — creates HFS disk images (macOS DMG) on Linux
 # nsis        — Nullsoft Scriptable Install System, creates Windows EXE installers on Linux
+# weasyprint GTK/GLib deps — Debian 12 Bookworm renamed libglib2.0-0 → libglib2.0-0t64
+#   libgobject-2.0.so.0 is inside libglib2.0-0t64; without it weasyprint
+#   raises OSError on import and the Reports page crashes.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ca-certificates \
     genisoimage \
     nsis \
+    libglib2.0-0t64 \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    libpangoft2-1.0-0 \
+    libcairo2 \
+    libgdk-pixbuf-2.0-0 \
+    libharfbuzz0b \
+    fonts-dejavu-core \
+    libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
@@ -45,6 +57,8 @@ COPY dashboard/ ./dashboard/
 COPY config/    ./config/
 COPY scripts/   ./scripts/
 COPY agent/     ./agent/
+COPY assets/    ./assets/
+COPY docs/      ./docs/
 COPY main.py    .
 
 # Streamlit config — dark theme + server settings (from .streamlit/config.toml)
@@ -62,10 +76,9 @@ EXPOSE 8501
 # Build llama.cpp binary used to run the AMBIGUOUS-snippet classifier.
 # Pinned to a release tag rather than HEAD for deterministic builds.
 # To bump: confirm the new tag still supports Qwen 3 architecture, then update
-# LLAMA_CPP_TAG. Qwen 3 support landed in llama.cpp shortly after Qwen 3's
-# Apr 2025 release — any tag from b4400 onwards is safe.
+# LLAMA_CPP_TAG. Qwen 3 architecture support landed in b5000; do not use b4939 or earlier.
 USER root
-ARG LLAMA_CPP_TAG=b4404
+ARG LLAMA_CPP_TAG=b8960
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential cmake libcurl4-openssl-dev git \
     && git clone --depth 1 --branch "${LLAMA_CPP_TAG}" \
@@ -73,8 +86,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && cmake /tmp/llama.cpp -B /tmp/llama.cpp/build \
        -DBUILD_SHARED_LIBS=OFF -DGGML_CUDA=OFF \
     && cmake --build /tmp/llama.cpp/build --config Release -j4 \
-       --target llama-cli \
+       --target llama-cli --target llama-server \
     && cp /tmp/llama.cpp/build/bin/llama-cli /usr/local/bin/ \
+    && cp /tmp/llama.cpp/build/bin/llama-server /usr/local/bin/ \
     && mkdir -p /etc/llama \
     && cp /tmp/llama.cpp/grammars/json.gbnf /etc/llama/ \
     && rm -rf /tmp/llama.cpp \
@@ -102,7 +116,7 @@ RUN mkdir -p /models && \
         cp /root/.cache/llama.cpp/Qwen3-1.7B*.gguf /models/qwen3-1.7b-q4_k_m.gguf; \
     fi
 
-RUN chown -R scanner:scanner /usr/local/bin/llama-cli /etc/llama /models 2>/dev/null || true
+RUN chown -R scanner:scanner /usr/local/bin/llama-cli /usr/local/bin/llama-server /etc/llama /models 2>/dev/null || true
 USER scanner
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \

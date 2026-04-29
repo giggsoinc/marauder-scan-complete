@@ -41,3 +41,11 @@ htmlcov/
 *.tfstate
 *.tfstate.backup
 *.tfvars
+
+# ── Branding assets (binary — keep in design tool) ──────────
+assets/branding/*.png
+assets/branding/*.svg
+assets/branding/*.jpg
+ghost-ai-scanner/assets/branding/*.png
+ghost-ai-scanner/assets/branding/*.svg
+ghost-ai-scanner/assets/branding/*.jpg

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # =============================================================
 # FILE: deploy_to_ec2.sh
-# VERSION: 1.2.0
-# UPDATED: 2026-04-19
+# VERSION: 1.3.0
+# UPDATED: 2026-04-28
 # OWNER: Giggso Inc
 # PURPOSE: Deploy ghost-ai-scanner/ codebase to an EC2 instance.
 #          Creates EC2 if needed. Creates/attaches IAM instance
@@ -41,7 +41,7 @@ clear
 echo -e "${BOLD}"
 echo "=================================================="
 echo "  PatronAI — Deploy Codebase to EC2"
-echo "  Giggso Inc  |  v1.2.0"
+echo "  Giggso Inc  |  v1.3.0"
 echo "=================================================="
 echo -e "${NC}"
 echo "Source : $SOURCE_DIR"
@@ -698,6 +698,12 @@ docker --version
 docker-compose --version
 REMOTE
   ok "Docker and docker-compose installed"
+
+  info "Installing system libraries (Pango / Cairo / GDK-PixBuf / HarfBuzz)..."
+  ssh -i "$EC2_KEY" -o StrictHostKeyChecking=no "${EC2_USER}@${EC2_HOST}" \
+    "sudo apt-get install -y libpango-1.0-0 libcairo2 libgdk-pixbuf2.0-0 libharfbuzz0b 2>/dev/null || \
+     sudo dnf install -y pango cairo gdk-pixbuf2 harfbuzz 2>/dev/null || true"
+  ok "System libraries installed"
 
   info "Installing Python dependencies..."
   ssh -i "$EC2_KEY" -o StrictHostKeyChecking=no "${EC2_USER}@${EC2_HOST}" \

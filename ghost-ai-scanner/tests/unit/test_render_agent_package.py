@@ -130,16 +130,16 @@ def test_s3_upload_failure_returns_error():
     assert "S3" in result["error"] or "upload" in result["error"].lower()
 
 
-def test_renderer_called_three_times_for_real_urls():
+def test_renderer_called_five_times_for_real_urls():
     """
-    Template is rendered three times today:
-      1. Pre-render the bash template with placeholder context to mint the
-         token bound into URLs.
-      2. Render the final macOS/Linux .sh script with real presigned URLs.
-      3. Render the Windows .ps1 script with the same real URLs (added
-         after this test was first written — counted now).
-    The original assertion of `== 2` predates the PowerShell render and
-    failed every time the .ps1 path was added to render_agent_package.py.
+    Template is rendered five times today:
+      1. Pre-render .sh with placeholder context to mint the token.
+      2. Render final .sh with real presigned URLs.
+      3. Render final .ps1 with the same real URLs.
+      4. Render uninstall_agent.sh with token baked in.
+      5. Render uninstall_agent.ps1 with token baked in.
+    History: assertion was == 2 (pre-ps1), then == 3 (pre-uninstall),
+    now == 5 after uninstall scripts were added to render_agent_package.py.
     """
     store    = _make_store(token="abc-def-123")
     renderer = _make_renderer()
@@ -153,9 +153,8 @@ def test_renderer_called_three_times_for_real_urls():
         send_email      = False,
     )
 
-    assert renderer.render.call_count == 3
-    # The FINAL real-URL render context must include the real token —
-    # any of calls 2 or 3 will do; assert on the second (.sh) for clarity.
+    assert renderer.render.call_count == 5
+    # Call 2 (.sh with real URLs) must carry the real token and META_URL.
     second_ctx = renderer.render.call_args_list[1][0][1]
     assert second_ctx["TOKEN"] == "abc-def-123"
     assert second_ctx["META_URL"] == "https://s3.example.com/meta"
