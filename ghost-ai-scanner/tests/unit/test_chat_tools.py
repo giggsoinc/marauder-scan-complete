@@ -11,6 +11,7 @@
 # =============================================================
 
 import sys
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
@@ -23,11 +24,16 @@ from ui.chat.tools import (  # noqa: E402
 )
 
 OLD = "2020-01-01T00:00:00+00:00"   # guaranteed > 24 h ago
+# RECENT is always 1 hour ago — avoids hardcoded dates that age out
+_RECENT = (datetime.now(timezone.utc) - timedelta(hours=1)).strftime(
+    "%Y-%m-%dT%H:%M:%S+00:00")
 
 
 def _ev(outcome="ENDPOINT_FINDING", severity="HIGH", email="alice@x.com",
         host="alice-mbp", provider="mcp:cf:fs", category="mcp_server",
-        ts="2026-04-28T10:00:00+00:00") -> dict:
+        ts: str = "") -> dict:
+    if not ts:
+        ts = _RECENT
     return {"outcome": outcome, "severity": severity, "email": email,
             "src_hostname": host, "provider": provider,
             "category": category, "timestamp": ts}

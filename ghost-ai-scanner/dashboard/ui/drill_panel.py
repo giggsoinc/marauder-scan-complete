@@ -1,8 +1,8 @@
 # =============================================================
 # FILE: dashboard/ui/drill_panel.py
 # PROJECT: PatronAI — Mega-PR (drill-down everywhere)
-# VERSION: 1.0.0
-# UPDATED: 2026-04-27
+# VERSION: 1.1.0
+# UPDATED: 2026-04-29
 # OWNER: Giggso Inc (Ravi Venugopal)
 # PURPOSE: Single drill-down convention used by every view.
 #          Two surfaces:
@@ -17,6 +17,9 @@
 # DEPENDS: streamlit (for render_drill_panel only)
 # AUDIT LOG:
 #   v1.0.0  2026-04-27  Initial. Mega-PR.
+#   v1.1.0  2026-04-29  Clear button bumps _chart_ver_{panel_key} so
+#                       Plotly mind-map resets its selection state on
+#                       the next render (prevents drill re-activating).
 # =============================================================
 
 from typing import Callable, Optional
@@ -109,6 +112,11 @@ def render_drill_panel(panel_key: str, events: list,
     with head_r:
         if st.button("✕ Clear", key=f"drill_clear_{panel_key}"):
             clear_drill(panel_key)
+            # Bump chart version — forces any Plotly chart using this panel_key
+            # to reinitialise with no selection, so the drill can't re-activate
+            # from stale Plotly selection state on the next render.
+            _ver_key = f"_chart_ver_{panel_key}"
+            st.session_state[_ver_key] = st.session_state.get(_ver_key, 0) + 1
             st.rerun()
 
     if not subset:

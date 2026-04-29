@@ -1,18 +1,25 @@
 # =============================================================
 # FILE: dashboard/ui/ai_inventory_mindmap.py
 # PROJECT: PatronAI — Mega-PR
-# VERSION: 1.1.0
-# UPDATED: 2026-04-28
+# VERSION: 1.2.0
+# UPDATED: 2026-04-29
 # OWNER: Giggso Inc (Ravi Venugopal)
 # PURPOSE: Mind-map network/graph for Manager → AI INVENTORY tab
 #          and User Detail ASSETS tab.
-#          Hierarchy: AI Assets (root) → Owner → Category → Provider.
-#          Custom radial tree layout — root at centre, branches radiate.
+#          Hierarchy: Owner → Category → Provider (ROOT hidden).
+#          Custom radial tree layout — owners radiate from centre.
 #          Node click → drill filter on the panel below.
 # DEPENDS: plotly, ai_inventory_mindmap_data, theme
 # AUDIT LOG:
 #   v1.0.0  2026-04-28  Initial. Replaces ai_inventory_treemap.py.
 #   v1.1.0  2026-04-28  panel_key/chart_key/title params; render_user_mindmap.
+#   v1.2.0  2026-04-29  Fix: remove explicit st.rerun() (on_select already
+#                       reruns; double-rerun caused infinite loop).
+#                       Hide ROOT node — owners radiate from centre directly.
+#                       Track rendered_nodes separately so customdata index
+#                       matches point_index correctly.
+#                       Chart key version-bumped on drill-clear so Plotly
+#                       resets its selection state.
 # =============================================================
 
 import plotly.graph_objects as go
@@ -43,9 +50,11 @@ def render_mindmap(events: list, *,
     ocp, edges, meta, node_labels = build_graph(base)
     pos = _radial_pos(ocp)
 
-    # ── Edge trace ────────────────────────────────────────────
+    # ── Edge trace — skip ROOT edges (owners radiate from centre) ─
     ex, ey = [], []
     for a, b in edges:
+        if a == ROOT or b == ROOT:   # hide ROOT hub; owners become anchors
+            continue
         if a in pos and b in pos:
             ex += [pos[a][0], pos[b][0], None]
             ey += [pos[a][1], pos[b][1], None]
@@ -56,10 +65,11 @@ def render_mindmap(events: list, *,
         hoverinfo="none",
     )
 
-    # ── Node trace ────────────────────────────────────────────
-    nx_list, ny_list, ncolors, nsizes, ntext = [], [], [], [], []
+    # ── Node trace — skip ROOT; track rendered order for accurate index ─
+    nx_list, ny_list, ncolors, nsizes, ntext, rendered_nodes = \
+        [], [], [], [], [], []
     for n in node_labels:
-        if n not in pos:
+        if n not in pos or n == ROOT:   # ROOT node hidden
             continue
         m   = meta.get(n, {"level": 0, "severity": "CLEAN"})
         lv  = m["level"]
@@ -68,7 +78,8 @@ def render_mindmap(events: list, *,
         ny_list.append(pos[n][1])
         ncolors.append(_BASE_COL.get(lv, _SEV_COL.get(sev, "#57606A")))
         nsizes.append(_SIZE.get(lv, 9))
-        ntext.append(n.split("\n")[0])     # first line = display label
+        ntext.append(n.split("\n")[0])   # first line = display label
+        rendered_nodes.append(n)         # matches Plotly point_index exactly
 
     node_trace = go.Scatter(
         x=nx_list, y=ny_list,
@@ -77,7 +88,7 @@ def render_mindmap(events: list, *,
                     line=dict(width=1.5, color="#FFFFFF")),
         text=ntext, textposition="top center",
         textfont=dict(size=9, color="#1F2328"),
-        customdata=node_labels,
+        customdata=rendered_nodes,       # index-aligned with rendered points
         hovertemplate="<b>%{text}</b><extra></extra>",
     )
 
@@ -96,9 +107,12 @@ def render_mindmap(events: list, *,
     _title = title or "AI ASSET MIND MAP · click a node to drill"
     st.markdown(f'<div class="card-title">{_title}</div>',
                 unsafe_allow_html=True)
+    # Chart key includes a version counter — bumped by the drill-clear button
+    # so Plotly resets its selection state and doesn't re-trigger the drill.
+    _ver = st.session_state.get(f"_chart_ver_{panel_key}", 0)
     sel = st.plotly_chart(fig, use_container_width=True,
                           on_select="rerun", selection_mode="points",
-                          key=chart_key)
+                          key=f"{chart_key}_v{_ver}")
     try:
         pts = (sel.selection.points if sel else []) or []
     except Exception:
@@ -107,9 +121,9 @@ def render_mindmap(events: list, *,
         return
 
     idx  = pts[0].get("point_index", -1)
-    if not (0 <= idx < len(node_labels)):
+    if not (0 <= idx < len(rendered_nodes)):
         return
-    name = node_labels[idx]
+    name = rendered_nodes[idx]       # accurate: customdata is index-aligned
     m    = meta.get(name, {})
     lv   = m.get("level", 0)
 
@@ -122,8 +136,10 @@ def render_mindmap(events: list, *,
     elif lv == 3:
         raw = name.split("\n")[0]
         set_drill(panel_key, f"Provider: {raw}", "provider", raw)
-    if lv in (1, 2, 3):
-        st.rerun()
+    # NOTE: do NOT call st.rerun() here.
+    # on_select="rerun" already triggered a rerun when the node was clicked.
+    # A second st.rerun() would create an infinite loop: chart preserves its
+    # selection state across reruns, so set_drill + rerun would fire forever.
 
 
 def render_user_mindmap(events: list, email: str) -> None:

@@ -12,8 +12,20 @@ This guide gets PatronAI running on your laptop in under 10 minutes,
 | Docker + Docker Compose | ≥ 25 | `docker --version` |
 | Python | 3.12 or 3.13 | for unit tests only |
 | Git | any | |
+| S3 bucket | existing | or [LocalStack](https://localstack.cloud) for fully offline dev |
 
-No AWS account, no API keys, no cloud required for local dev.
+---
+
+## First-boot checklist
+
+Read these before starting — they prevent the most common surprises:
+
+| | What to know |
+|---|---|
+| 🔑 **Email-only login** | PatronAI has **no password field**. Add your email to `ALLOWED_EMAILS` in `.env` — that is your login credential. There is no `admin@local / patronai` default. |
+| ⬇️ **LLM download on first start** | `docker compose up` triggers a background download of Qwen3-0.6B (~500 MB) into the `patronai-models` Docker volume. The dashboard opens immediately; the **🤖 Ask AI** chat tab activates once the download finishes (~2 min on a fast connection). |
+| 📧 **SNS confirmation email** | If you ran `prereqs.sh`, AWS sent a subscription confirmation to `ADMIN_EMAILS`. You **must click that link** — if you skip it, alert emails are silently dropped with no error logged. |
+| 🔒 **Grafana default password** | Grafana starts with `admin / admin`. Change the password on first login at `http://localhost/grafana` before exposing to any network. |
 
 ---
 
@@ -32,27 +44,25 @@ cd patronai/ghost-ai-scanner
 cp .env.example .env
 ```
 
-Minimal `.env` for local mode (no S3, no SMTP):
+Open `.env` and fill in the **5 REQUIRED lines** at the top. Everything else has a safe default:
 
 ```dotenv
-# ── Required ──────────────────────────────────────
+# ── REQUIRED — fill in these 5 ────────────────────
+PATRONAI_BUCKET=my-patronai-bucket   # must already exist in S3
 COMPANY_NAME=Acme Corp
-SECRET_KEY=any-random-string-here
+COMPANY_SLUG=acme
+ADMIN_EMAILS=you@yourcompany.com
+ALLOWED_EMAILS=you@yourcompany.com
 
-# ── Leave blank for local-only mode ───────────────
-PATRONAI_BUCKET=
-AWS_REGION=us-east-1
+# ── AWS credentials (leave blank on EC2 with instance profile) ─
 AWS_ACCESS_KEY_ID=
 AWS_SECRET_ACCESS_KEY=
-
-# ── AI Chat (optional) ────────────────────────────
-# If you have Ollama running: gemma3:4b or similar
-LLAMA_SERVER_URL=http://localhost:8080
+AWS_REGION=us-east-1
 ```
 
-> **Local mode**: with `PATRONAI_BUCKET` blank the dashboard runs in
-> demo/stub mode — you can browse the UI but findings are synthetic.
-> S3 is only needed for real agent data.
+> **S3 required.** PatronAI reads and writes all findings, agent events, and
+> config to S3. Create a bucket first: `aws s3 mb s3://my-patronai-bucket`
+> Use [LocalStack](https://localstack.cloud) for a fully offline bucket.
 
 ---
 
@@ -78,14 +88,11 @@ First build downloads ~500 MB of Python packages and compiles llama.cpp
 http://localhost:8501
 ```
 
-Default credentials (local mode):
+Enter the email you set in `ALLOWED_EMAILS`. No password field — press Enter or click **Sign in**.
 
-| Email | Password | Role |
-|-------|----------|------|
-| admin@local | `patronai` | admin |
-
-> In production these are stored in S3 (`s3://your-bucket/users/users.json`).
-> See the full deployment guide in `README.md`.
+> **First-time login creates your user record** in S3 at
+> `s3://{PATRONAI_BUCKET}/users/users.json`. Admin access is determined by
+> whether your email appears in `ADMIN_EMAILS`.
 
 ---
 
@@ -101,24 +108,24 @@ Expected: **353 tests pass**, ~40 seconds, no network required.
 
 ---
 
-## Step 6 (optional) — Enable AI chat
+## Step 6 — AI chat
 
-If you have [Ollama](https://ollama.ai) installed:
+AI chat is on by default — no action needed. PatronAI downloads Qwen3-0.6B
+(~500 MB) into the `patronai-models` Docker volume on first start. Once done,
+open any dashboard view → scroll to bottom → **🤖 Ask AI** expander.
+
+**To use Ollama instead** (if you have it running locally):
+
+```dotenv
+# In .env:
+LLM_BASE_URL=http://host.docker.internal:11434/v1
+LLM_MODEL=gemma3:4b
+```
 
 ```bash
 ollama pull gemma3:4b
-# Then set in .env:
-# LLAMA_SERVER_URL=http://localhost:11434/v1
+docker compose restart patronai
 ```
-
-Or start llama.cpp server with the bundled Qwen 3 model (after baking):
-
-```bash
-docker exec -it patronai \
-  llama-server --model /models/qwen3-1.7b-q4_k_m.gguf --port 8080 --ctx-size 4096
-```
-
-Open any dashboard view → scroll to bottom → **🤖 Ask AI** expander.
 
 ---
 

@@ -130,85 +130,77 @@ engine inside it.**
 
 ---
 
-## 60-Second Local Quickstart
+## Quickstart
 
-```bash
-# 1. Clone
-git clone https://github.com/giggsoinc/patronai.git
-cd patronai/ghost-ai-scanner
-
-# 2. Run unit tests (~40 seconds, no network calls, no Docker needed)
-pip install -r requirements.txt
-cd .. && pytest ghost-ai-scanner/tests/unit/ -q
-# → 353 passed
-
-# 3. Start the full stack locally (requires Docker + an S3 bucket)
-cd ghost-ai-scanner
-cp .env.example .env   # set PATRONAI_BUCKET, COMPANY_NAME, ADMIN_EMAILS
-docker compose up -d
-
-# 4. Open the dashboard
-open http://localhost:8501
-```
-
-> **Note:** `.env.example` documents every variable. `PATRONAI_BUCKET` must point
-> to a real S3 bucket (or a LocalStack bucket if you run LocalStack separately).
-> See [`docs/quickstart-local.md`](docs/quickstart-local.md) for the full local
-> setup guide.
+> **Before you start — 3 things to know:**
+> - **Email-only login.** PatronAI has no password field. Add your email to
+>   `ALLOWED_EMAILS` in `.env` and that becomes your login credential.
+> - **First-boot LLM download.** On first `docker compose up`, PatronAI
+>   auto-downloads Qwen3-0.6B (~500 MB) into a Docker volume. The dashboard
+>   opens immediately; AI chat activates once the download finishes (~2 min).
+> - **SNS confirmation email.** If you use `prereqs.sh`, AWS sends a
+>   subscription confirmation to `ADMIN_EMAILS`. You must click it — if you
+>   miss it, alert emails are silently dropped with no error logged.
 
 ---
 
-## Full Deployment — AWS EC2
+### ⚡ Try it locally (5 min, no AWS needed)
+
+Requires: Docker Desktop + an existing S3 bucket (or [LocalStack](https://localstack.cloud)).
+
+```bash
+git clone https://github.com/giggsoinc/patronai.git
+cd patronai/ghost-ai-scanner
+
+cp .env.example .env
+# Open .env and fill in the 5 REQUIRED lines:
+#   PATRONAI_BUCKET, COMPANY_NAME, COMPANY_SLUG, ADMIN_EMAILS, ALLOWED_EMAILS
+
+docker compose up -d
+open http://localhost:8501   # macOS — or navigate in any browser
+```
+
+Log in with any email you added to `ALLOWED_EMAILS`. No password required.
+
+**Run unit tests first (optional, ~40 s, no Docker needed):**
+
+```bash
+pip install -r requirements.txt
+cd .. && pytest ghost-ai-scanner/tests/unit/ -q
+# → 353 passed
+```
+
+Full local guide: [`docs/quickstart-local.md`](docs/quickstart-local.md)
+
+---
+
+### 🚀 Deploy to production (AWS EC2)
 
 Run all commands from the repo root (`patronai/`).
 
-### Step 1 — Deploy EC2 and transfer code
-
 ```bash
+# Step 1 — Deploy EC2, transfer code, install Docker + LLM
 bash deploy_to_ec2.sh
-```
 
-Creates EC2 instance, attaches IAM instance profile, rsyncs the codebase,
-installs Docker, configures LLM (llama-server + Qwen 3.5 9B) and MCP server.
-
-### Step 2 — Provision AWS infrastructure (on EC2)
-
-```bash
-# SSH in when deploy_to_ec2.sh finishes, then:
-cd patronai
+# Step 2 — SSH in when the script finishes, then run interactive setup
+#   (creates S3 bucket, SNS topic, IAM role + policy, VPC Flow Logs, writes .env)
 bash prereqs.sh
-```
 
-Creates S3 bucket, SNS alert topic, IAM role and scoped policy, configures VPC
-Flow Log delivery to S3, writes `.env`.
-
-### Step 3 — Start the stack
-
-```bash
+# Step 3 — Start the stack  (3 containers: patronai, grafana, nginx)
 docker compose up -d
-```
 
-Three containers: `scanner` (PatronAI + Streamlit), `grafana`, `nginx`.
-
-### Step 4 — Populate ENI metadata cache (run once)
-
-```bash
+# Step 4 — Populate ENI metadata cache (run once after first deploy)
 docker exec patronai python3 scripts/refresh_eni_cache.py
 ```
-
-### Step 5 — Open the platform
 
 | Surface | URL |
 |---|---|
 | PatronAI UI | `http://<ec2-ip>/` |
 | Grafana | `http://<ec2-ip>/grafana/` |
 
-nginx routes `/` → Streamlit (8501) and `/grafana/` → Grafana (3000).
-
-### Teardown
-
 ```bash
-bash teardown.sh   # removes EC2, S3, SNS, IAM, VPC Flow Log
+# Teardown — removes EC2, S3, SNS, IAM, VPC Flow Log
+bash teardown.sh
 ```
 
 ---
