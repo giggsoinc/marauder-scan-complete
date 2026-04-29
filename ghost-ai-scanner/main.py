@@ -57,7 +57,7 @@ def _llama_server_thread() -> None:
     subprocess.Popen(
         ["llama-server", "--model", _MODEL_PATH,
          "--port", str(_LLM_PORT), "--host", "127.0.0.1",
-         "--ctx-size", "4096"],
+         "--ctx-size", "8192"],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
     )
     log.info("llama-server: process launched on :%d", _LLM_PORT)

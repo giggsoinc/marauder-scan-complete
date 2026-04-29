@@ -84,7 +84,8 @@ def call_llm(messages: list, events: list, view: str,
     """
     sys_msg  = {"role": "system",
                 "content": build_system_prompt(events, view, email, company)}
-    all_msgs = [sys_msg] + messages
+    # Keep last 20 messages to stay within the 8192-token context window.
+    all_msgs = [sys_msg] + messages[-20:]
 
     try:
         client = get_client()
