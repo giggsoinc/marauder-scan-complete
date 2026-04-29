@@ -135,7 +135,7 @@ Hosting suggestion: upload to YouTube → embed in README.
 ```bash
 # Requires: gh auth login + public repo
 
-REPO="giggso/patronai"   # update with actual org/repo
+REPO="giggsoinc/patronai"
 
 gh issue create --repo $REPO \
   --title "[Detection] Add Mistral API (api.mistral.ai)" \

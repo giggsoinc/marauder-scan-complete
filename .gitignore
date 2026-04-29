@@ -1,5 +1,5 @@
 # =============================================================
-# .gitignore — marauder-scan-complete
+# .gitignore — patronai
 # NEVER commit credentials, keys, or generated configs
 # =============================================================
 .claude
@@ -16,6 +16,9 @@ ghost-ai-scanner/.env
 ghost-ai-scanner/packetbeat.yml
 ghost-ai-scanner/agent/config.json
 ghost-ai-scanner/grafana/datasources/s3.json
+# ── MCP config files (may contain tokens / server paths) ─────
+.mcp.json
+**/.mcp.json
 
 # ── Python ───────────────────────────────────────────────────
 __pycache__/

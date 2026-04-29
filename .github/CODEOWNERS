@@ -1,0 +1,14 @@
+# PatronAI — code owners
+# Replace @REPLACE_WITH_MAINTAINER_HANDLE with the GitHub handle(s) of the
+# PatronAI maintainer(s) before making the repository public.
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Global — all files require maintainer review
+* @REPLACE_WITH_MAINTAINER_HANDLE
+
+# Detection rules — extra care, these affect customer alerts
+ghost-ai-scanner/config/providers_deny.csv @REPLACE_WITH_MAINTAINER_HANDLE
+ghost-ai-scanner/config/providers_allow.csv @REPLACE_WITH_MAINTAINER_HANDLE
+ghost-ai-scanner/config/unauthorized.csv @REPLACE_WITH_MAINTAINER_HANDLE
+ghost-ai-scanner/config/unauthorized_code.csv @REPLACE_WITH_MAINTAINER_HANDLE
+ghost-ai-scanner/config/rules/ @REPLACE_WITH_MAINTAINER_HANDLE

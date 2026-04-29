@@ -29,7 +29,7 @@ div()  { echo -e "\n${BOLD}─────────────────�
 PREFIX="marauder-scan"
 REGION="us-east-1"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# Works from marauder-scan-complete/ (Mac) or ~/marauder-scan/ (EC2)
+# Works from patronai/ (Mac) or ~/marauder-scan/ (EC2)
 if [[ -d "$SCRIPT_DIR/ghost-ai-scanner" ]]; then
   REPORT_DIR="$SCRIPT_DIR/ghost-ai-scanner/reports"
 else

@@ -1,9 +1,5 @@
 # PatronAI
 
-<p align="left">
-  <img src="assets/branding/patronai-logo.png" alt="PatronAI" width="280"/>
-</p>
-
 [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
 [![Tests](https://img.shields.io/badge/tests-353%20passing-brightgreen.svg)](ghost-ai-scanner/tests/)
@@ -120,36 +116,45 @@ the scanner reads from S3 every scan cycle; no third-party cloud plane.
 
 ---
 
-## 60-Second Local Quickstart
+### What is Marauder Scan?
 
-No AWS account required for the local run. Uses LocalStack to mock S3/SNS.
+Marauder Scan is PatronAI's discovery layer for hidden AI usage.
+
+It maps AI activity across source code, configuration files, MCP definitions, API
+calls, provider domains, network telemetry, and deployed endpoints — helping teams
+find shadow AI, ghost AI assets, and unmanaged model usage before they become
+a compliance or security problem.
+
+In short: **PatronAI is the platform; Marauder Scan is the mapping and discovery
+engine inside it.**
+
+---
+
+## 60-Second Local Quickstart
 
 ```bash
 # 1. Clone
 git clone https://github.com/giggsoinc/patronai.git
 cd patronai/ghost-ai-scanner
 
-# 2. Install Python deps
-pip install pytest moto boto3 requests streamlit
-
-# 3. Run unit tests (~40 seconds, no network calls)
-cd ..
-pytest ghost-ai-scanner/tests/unit/ -q
+# 2. Run unit tests (~40 seconds, no network calls, no Docker needed)
+pip install -r requirements.txt
+cd .. && pytest ghost-ai-scanner/tests/unit/ -q
 # → 353 passed
 
-# 4. Start the full stack locally (requires Docker)
+# 3. Start the full stack locally (requires Docker + an S3 bucket)
 cd ghost-ai-scanner
-cp .env.example .env   # edit MARAUDER_SCAN_BUCKET, COMPANY_NAME, ADMIN_EMAILS
+cp .env.example .env   # set PATRONAI_BUCKET, COMPANY_NAME, ADMIN_EMAILS
 docker compose up -d
 
-# 5. Open the dashboard
+# 4. Open the dashboard
 open http://localhost:8501
 ```
 
-> **Note:** `.env.example` documents every variable. For a real deployment the
-> `MARAUDER_SCAN_BUCKET` must point to a real or LocalStack S3 bucket with findings
-> data. See [`docs/quickstart-local.md`](docs/quickstart-local.md) for the full
-> LocalStack walkthrough.
+> **Note:** `.env.example` documents every variable. `PATRONAI_BUCKET` must point
+> to a real S3 bucket (or a LocalStack bucket if you run LocalStack separately).
+> See [`docs/quickstart-local.md`](docs/quickstart-local.md) for the full local
+> setup guide.
 
 ---
 
@@ -170,7 +175,7 @@ installs Docker, configures LLM (llama-server + Qwen 3.5 9B) and MCP server.
 
 ```bash
 # SSH in when deploy_to_ec2.sh finishes, then:
-cd marauder-scan
+cd patronai
 bash prereqs.sh
 ```
 
@@ -188,7 +193,7 @@ Three containers: `scanner` (PatronAI + Streamlit), `grafana`, `nginx`.
 ### Step 4 — Populate ENI metadata cache (run once)
 
 ```bash
-docker exec marauder-scan python3 scripts/refresh_eni_cache.py
+docker exec patronai python3 scripts/refresh_eni_cache.py
 ```
 
 ### Step 5 — Open the platform
@@ -212,7 +217,8 @@ bash teardown.sh   # removes EC2, S3, SNS, IAM, VPC Flow Log
 
 | Variable | Required | Default | Purpose |
 |---|---|---|---|
-| `MARAUDER_SCAN_BUCKET` | Yes | — | S3 bucket (single source of truth) |
+| `PATRONAI_BUCKET` | Yes | — | S3 bucket name (preferred name) |
+| `MARAUDER_SCAN_BUCKET` | Yes | — | Legacy alias for `PATRONAI_BUCKET`; accepted if `PATRONAI_BUCKET` is not set |
 | `COMPANY_NAME` | No | — | Shown in UI header |
 | `ADMIN_EMAILS` | Yes | — | Comma-separated admin emails |
 | `CLOUD_PROVIDER` | No | `aws` | `aws` / `gcp` / `azure` |
@@ -225,6 +231,10 @@ bash teardown.sh   # removes EC2, S3, SNS, IAM, VPC Flow Log
 | `INCLUDE_CLASSIFIER` | No | `0` | `1` bakes Qwen 3 1.7B GGUF (~1 GB) into the image |
 | `LLM_PROVIDER` | No | `openai_compat` | LLM backend for AI chat: `openai_compat` or `anthropic` |
 | `LLM_BASE_URL` | No | `http://localhost:8080` | Base URL for OpenAI-compatible LLM endpoint |
+
+> **Bucket variable:** `PATRONAI_BUCKET` is the canonical name going forward.
+> `MARAUDER_SCAN_BUCKET` is accepted as a backward-compatible alias (existing
+> deployments do not need to change). Both are passed through `docker-compose.yml`.
 
 All settings are also writable from the Streamlit **Settings** tab. Values persist
 to `s3://{bucket}/config/settings.json` and apply within one scan cycle.

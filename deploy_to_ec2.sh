@@ -8,7 +8,7 @@
 #          Creates EC2 if needed. Creates/attaches IAM instance
 #          profile so prereqs.sh can run from inside EC2 without
 #          access keys. Transfers code via rsync/scp.
-# USAGE:   bash deploy_to_ec2.sh   (from marauder-scan-complete/)
+# USAGE:   bash deploy_to_ec2.sh   (from patronai/)
 # REQUIRES: AWS CLI v2, admin credentials on this Mac
 # =============================================================
 
@@ -759,7 +759,7 @@ echo "  3. Start the scanner:"
 echo "     docker-compose up -d"
 echo ""
 echo "  4. Populate ENI metadata cache (run once after first boot):"
-echo "     docker exec marauder-scan python3 scripts/refresh_eni_cache.py"
+echo "     docker exec patronai python3 scripts/refresh_eni_cache.py"
 echo ""
 [[ -n "$INSTANCE_PROFILE_NAME" ]] && \
   echo -e "${YELLOW}NOTE:${NC} IAM role uses scoped policy — S3/SNS/IAM/EC2/CloudTrail only."

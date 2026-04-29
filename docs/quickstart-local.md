@@ -20,7 +20,7 @@ No AWS account, no API keys, no cloud required for local dev.
 ## Step 1 — Clone
 
 ```bash
-git clone https://github.com/giggso/patronai.git
+git clone https://github.com/giggsoinc/patronai.git
 cd patronai/ghost-ai-scanner
 ```
 
@@ -40,7 +40,7 @@ COMPANY_NAME=Acme Corp
 SECRET_KEY=any-random-string-here
 
 # ── Leave blank for local-only mode ───────────────
-MARAUDER_SCAN_BUCKET=
+PATRONAI_BUCKET=
 AWS_REGION=us-east-1
 AWS_ACCESS_KEY_ID=
 AWS_SECRET_ACCESS_KEY=
@@ -50,7 +50,7 @@ AWS_SECRET_ACCESS_KEY=
 LLAMA_SERVER_URL=http://localhost:8080
 ```
 
-> **Local mode**: with `MARAUDER_SCAN_BUCKET` blank the dashboard runs in
+> **Local mode**: with `PATRONAI_BUCKET` blank the dashboard runs in
 > demo/stub mode — you can browse the UI but findings are synthetic.
 > S3 is only needed for real agent data.
 

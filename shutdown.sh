@@ -7,7 +7,7 @@
 # PURPOSE: Clean shutdown of PatronAI on EC2.
 #          Stops all containers gracefully, shows final log
 #          summary, and optionally stops the EC2 instance.
-# USAGE:   bash shutdown.sh   (from marauder-scan-complete/)
+# USAGE:   bash shutdown.sh   (from patronai/)
 # =============================================================
 
 set -euo pipefail

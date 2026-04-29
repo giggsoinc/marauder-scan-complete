@@ -17,11 +17,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: marauder-scan
+    container_name: patronai
     restart: unless-stopped
     env_file: .env
     environment:
-      - MARAUDER_SCAN_BUCKET=${MARAUDER_SCAN_BUCKET}
+      # PATRONAI_BUCKET is preferred; MARAUDER_SCAN_BUCKET accepted as legacy alias.
+      - MARAUDER_SCAN_BUCKET=${PATRONAI_BUCKET:-${MARAUDER_SCAN_BUCKET:-}}
       - AWS_REGION=${AWS_REGION}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}

@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PatronAI Agent — Linux User Guide</title>
+<link rel="icon" type="image/png" href="../assets/branding/patronai-icon.png">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  background: #0D1117;
+  color: #C9D1D9;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+body { max-width: 1180px; margin: 0 auto; padding: 48px 36px 80px; }
+
+.hero { border-bottom: 1px solid #21262D; padding-bottom: 32px; margin-bottom: 40px; }
+.hero img.logo { max-width: 260px; filter: drop-shadow(0 4px 20px rgba(31,111,235,0.25)); margin-bottom: 18px; }
+.hero .eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.18em; color: #58A6FF; text-transform: uppercase; margin-bottom: 10px; }
+.hero h1 { font-size: 30px; font-weight: 600; color: #E6EDF3; margin-bottom: 8px; letter-spacing: -0.01em; }
+.hero .sub { font-size: 15px; color: #8B949E; max-width: 780px; }
+
+section { margin-bottom: 44px; }
+h2 { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #58A6FF; font-family: 'JetBrains Mono', monospace; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; }
+h2::before { content: ""; display: inline-block; width: 4px; height: 14px; background: #58A6FF; border-radius: 1px; }
+h3 { font-size: 17px; font-weight: 600; color: #E6EDF3; margin: 18px 0 10px; }
+p { margin-bottom: 12px; color: #C9D1D9; }
+p.intro { font-size: 15px; color: #C9D1D9; max-width: 880px; margin-bottom: 18px; }
+
+.card { background: #161B22; border: 1px solid #21262D; border-radius: 10px; padding: 22px 26px; margin-bottom: 14px; }
+.card.accent { border-left: 3px solid #58A6FF; }
+.card.warn   { border-left: 3px solid #D29922; }
+.card.good   { border-left: 3px solid #3FB950; }
+
+.kv { display: grid; grid-template-columns: 200px 1fr; gap: 6px 20px; font-size: 13px; }
+.kv .k { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #8B949E; align-self: center; }
+.kv .v { color: #C9D1D9; }
+
+table { width: 100%; border-collapse: collapse; background: #161B22; border: 1px solid #21262D; border-radius: 10px; overflow: hidden; margin: 10px 0; }
+th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #21262D; font-size: 13px; vertical-align: top; }
+th { background: #0D1117; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; color: #58A6FF; text-transform: uppercase; font-weight: 600; }
+tr:last-child td { border-bottom: none; }
+td code, td .mono { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #E6EDF3; background: #0D1117; padding: 2px 6px; border-radius: 3px; }
+
+.diagram { background: #0D1117; border: 1px solid #21262D; border-radius: 10px; padding: 26px; margin: 14px 0; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+.diagram .title { font-size: 10px; color: #8B949E; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 16px; }
+
+.blk { background: #161B22; border: 1px solid #30363D; border-radius: 6px; padding: 10px 14px; color: #E6EDF3; font-size: 12px; display: inline-block; }
+.blk.hi   { border-color: #58A6FF; box-shadow: 0 0 0 1px #58A6FF33 inset; }
+.blk.aws  { border-color: #F0883E; color: #F0883E; }
+.blk.warn { border-color: #D29922; color: #D29922; }
+.blk.good { border-color: #3FB950; color: #3FB950; }
+.blk .sub { display: block; font-size: 10px; color: #8B949E; margin-top: 3px; letter-spacing: 0.04em; }
+
+.row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+.arrow { color: #58A6FF; font-weight: 700; font-size: 14px; }
+.arrow.down { display: block; margin: 6px 0 6px 22px; }
+.col { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 12px; }
+
+pre { background: #0D1117; border: 1px solid #21262D; border-radius: 8px; padding: 14px 18px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #E6EDF3; overflow-x: auto; line-height: 1.75; margin: 8px 0 14px; }
+pre .cm { color: #8B949E; }
+pre .k  { color: #FF7B72; }
+pre .s  { color: #A5D6FF; }
+
+.pill { display: inline-block; padding: 3px 10px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; }
+.pill-blue  { background: #1F6FEB22; color: #58A6FF; border: 1px solid #58A6FF44; }
+.pill-green { background: #3FB95022; color: #3FB950; border: 1px solid #3FB95044; }
+.pill-amber { background: #D2992222; color: #D29922; border: 1px solid #D2992244; }
+.pill-red   { background: #F8514922; color: #F85149; border: 1px solid #F8514944; }
+
+.note { background: #1F6FEB11; border-left: 3px solid #58A6FF; padding: 12px 18px; border-radius: 4px; font-size: 13px; color: #C9D1D9; margin: 10px 0; }
+.warn-box { background: #D2992211; border-left: 3px solid #D29922; padding: 12px 18px; border-radius: 4px; font-size: 13px; color: #C9D1D9; margin: 10px 0; }
+
+ul.clean { list-style: none; padding: 0; margin: 8px 0 14px; }
+ul.clean li { padding: 6px 0 6px 22px; position: relative; font-size: 13px; color: #C9D1D9; }
+ul.clean li::before { content: "▸"; position: absolute; left: 4px; color: #58A6FF; font-size: 12px; }
+
+.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.compare .card h3 { margin-top: 0; }
+
+footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid #21262D; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #484F58; letter-spacing: 0.08em; display: flex; align-items: center; gap: 10px; }
+footer img { width: 16px; height: 16px; border-radius: 3px; opacity: 0.85; }
+
+.signals { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; margin: 12px 0; }
+.signal { background: #161B22; border: 1px solid #21262D; border-radius: 8px; padding: 14px 16px; }
+.signal .label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #58A6FF; text-transform: uppercase; margin-bottom: 6px; }
+.signal .name { font-size: 14px; font-weight: 600; color: #E6EDF3; margin-bottom: 4px; }
+.signal .desc { font-size: 12px; color: #8B949E; line-height: 1.5; }
+
+@media (max-width: 780px) {
+  .compare { grid-template-columns: 1fr; }
+  .kv { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ========= HERO ========= -->
+<div class="hero">
+  <img class="logo" src="../assets/branding/patronai-logo.png" alt="PatronAI" onerror="this.style.display='none'">
+  <div class="eyebrow">User Guide · Linux Edge Agent · v1.1</div>
+  <h1>PatronAI Agent for Linux</h1>
+  <p class="sub">A lightweight background agent that runs on Linux workstations and servers, detects unauthorised AI tool usage — n8n, Flowise, Langflow, Ollama, LM Studio, MCP servers, git commits with AI code — and reports findings to your company's PatronAI dashboard. Installs in a single bash command. No root required.</p>
+</div>
+
+<!-- ========= SECTION 1: WHAT IT DOES ========= -->
+<section>
+<h2>1. What the Agent Actually Does</h2>
+
+<p class="intro">Every 30 minutes the agent wakes up, scans what's installed and running on the Linux machine, compares against the company's approved AI tool list, and uploads a small JSON status file to your company's secure storage. A liveness heartbeat fires every 5 minutes. No continuous network capture, no keylogging, no reading your code.</p>
+
+<div class="diagram">
+<div class="title">Agent architecture · runs on your Linux machine</div>
+
+<div class="row">
+  <div class="blk hi" style="min-width:280px;">
+    PatronAI Agent (systemd user timer or cron)
+    <span class="sub">Heartbeat every 5 min · Scan every 30 min · CPU &lt; 1% average</span>
+  </div>
+</div>
+
+<div class="arrow down">↓ scans</div>
+
+<div class="col">
+  <div class="blk">Processes<span class="sub">ps -eo comm — n8n, flowise, ollama, langflow, cursor</span></div>
+  <div class="blk">Listening ports<span class="sub">ss -tlnp — 5678, 3000, 7860, 11434, 1234, 8080</span></div>
+  <div class="blk">Docker containers<span class="sub">docker ps — dify, flowise, langflow, ollama images</span></div>
+  <div class="blk">MCP configs<span class="sub">~/.config/Claude/, Cursor MCP JSON</span></div>
+  <div class="blk">Installed packages<span class="sub">pip list, conda list, npm ls -g</span></div>
+  <div class="blk">Git commits<span class="sub">pre-commit hook · fires only on git commit</span></div>
+</div>
+
+<div class="arrow down">↓ normalises to OCSF · uploads over HTTPS · presigned URL (no permanent credentials stored)</div>
+
+<div class="row">
+  <div class="blk aws" style="min-width:340px;">
+    s3://&lt;your-company&gt;/ocsf/agent/
+    <span class="sub">One JSON per device per cycle · ~2–5 KB each</span>
+  </div>
+</div>
+</div>
+
+<div class="note"><b>Why a periodic scan and not just git?</b> Data scientists and MLOps engineers run Ollama, Flowise, and n8n as local services — they never commit code for those. The periodic scan catches local services, Docker workflows, and installed packages that are invisible to git hooks alone.</div>
+
+</section>
+
+<!-- ========= SECTION 2: INSTALL PATHS ========= -->
+<section>
+<h2>2. Two Ways to Install</h2>
+
+<div class="compare">
+
+<div class="card accent">
+<h3><span class="pill pill-green">RECOMMENDED</span> Bash installer</h3>
+<ul class="clean">
+  <li><b>What ships:</b> <span class="mono">setup_agent.sh</span> — self-contained bash script, OTP-protected</li>
+  <li><b>How you get it:</b> Your IT admin sends a download link from Settings → Deploy Agents; unique to your email, expires in 7 days</li>
+  <li><b>How you run it:</b></li>
+</ul>
+<pre><span class="cm"># Download (link from IT admin email)</span>
+curl -fsSL "https://&lt;your-link&gt;" -o setup_agent.sh
+chmod +x setup_agent.sh
+bash setup_agent.sh</pre>
+<ul class="clean">
+  <li><b>What you see:</b> Terminal prompts for OTP → validates → installs agent → sets up cron/systemd timer</li>
+  <li><b>No sudo:</b> All files written to <span class="mono">~/.patronai/</span>; scheduler registered under your user account</li>
+</ul>
+</div>
+
+<div class="card warn">
+<h3><span class="pill pill-amber">ENTERPRISE</span> Ansible / Chef / Puppet</h3>
+<ul class="clean">
+  <li>The bash installer is idempotent — run it in your configuration management playbook</li>
+  <li>Pass OTP via environment variable: <span class="mono">PATRONAI_OTP=123456 bash setup_agent.sh</span> for non-interactive install</li>
+  <li>Agent state lives entirely in <span class="mono">~/.patronai/</span> — easy to manage, easy to remove</li>
+  <li>Systemd user unit preferred when available; falls back to crontab automatically</li>
+</ul>
+</div>
+
+</div>
+
+<div class="warn-box"><b>Python 3 and bcrypt are required.</b> The installer checks for both and installs bcrypt via pip if missing. If your machine blocks outbound pip, pre-install <span class="mono">bcrypt>=4.0.0</span> before running the script.</div>
+</section>
+
+<!-- ========= SECTION 3: INSTALL FLOW ========= -->
+<section>
+<h2>3. What You Actually Do — Step by Step</h2>
+
+<table>
+<thead><tr><th>Step</th><th>Command / action</th><th>What happens</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Open the download link from IT admin email</td><td>Downloads <span class="mono">setup_agent.sh</span> — unique to your email address</td></tr>
+<tr><td>2</td><td><span class="mono">bash setup_agent.sh</span></td><td>Script validates dependencies (curl, python3, bcrypt), prompts for OTP</td></tr>
+<tr><td>3</td><td>Enter the 6-digit OTP from the email</td><td>OTP validated against bcrypt hash from server — confirms package integrity and identity</td></tr>
+<tr><td>4</td><td>(automated) Agent files written</td><td><span class="mono">~/.patronai/config.json</span>, heartbeat script, scan script, pre-commit hook script created</td></tr>
+<tr><td>5</td><td>(automated) Scheduler configured</td><td>Systemd user timer preferred; falls back to crontab entries if systemd not available</td></tr>
+<tr><td>6</td><td>(automated) Git hooks installed</td><td>Pre-commit hook installed in all <span class="mono">.git/</span> directories found under <span class="mono">$HOME</span> (depth 4); init.templateDir set for future repos</td></tr>
+<tr><td>7</td><td>(automated) First scan runs</td><td>Scan fires immediately in the background in baseline (wide) mode</td></tr>
+</tbody>
+</table>
+
+<div class="note">No <span class="mono">sudo</span> is required at any step. Everything lives in your home directory. If systemd user services are available (<span class="mono">loginctl enable-linger</span> set), the agent persists even when you're logged out — useful for headless servers.</div>
+
+<h3>What the installer outputs</h3>
+<pre><span class="cm"># Example terminal output</span>
+PatronAI — Acme Corp · Jane Smith
+-------------------------------------------
+Enter your 6-digit OTP from the email: <span class="s">••••••</span>
+[patronai] OTP validated.
+[patronai] init.templateDir set — every new git init/clone gets the hook.
+[patronai] Pre-commit hook installed in 3 existing repositories.
+[patronai] Heartbeat timer configured (every 5 min).
+[patronai] Scan timer configured (every 30 min).
+[patronai] Installation complete.
+[patronai] First scan runs in baseline mode (wider walk); subsequent scans run lighter.</pre>
+</section>
+
+<!-- ========= SECTION 4: WHAT THE AGENT DETECTS ========= -->
+<section>
+<h2>4. The Six Signal Sources</h2>
+<p class="intro">The agent scans six places on every 30-minute cycle. Any signal beyond the authorised list is packaged into a JSON payload and uploaded to your company's PatronAI bucket.</p>
+
+<div class="signals">
+<div class="signal"><div class="label">1 · Processes</div><div class="name">Running binaries</div><div class="desc"><span class="mono">ps -eo comm</span> — matches n8n, flowise, langflow, ollama, lm-studio, dify, cursor, autogen, crewai process names</div></div>
+<div class="signal"><div class="label">2 · Ports</div><div class="name">Listening sockets</div><div class="desc"><span class="mono">ss -tlnp</span> (or <span class="mono">netstat -tlnp</span>) → 5678 n8n · 3000 flowise · 7860 langflow · 11434 ollama · 1234 lm studio · 8080 generic LLM</div></div>
+<div class="signal"><div class="label">3 · Docker</div><div class="name">AI containers</div><div class="desc"><span class="mono">docker ps --format</span> → flags <span class="mono">ollama/ollama</span>, <span class="mono">flowiseai/flowise</span>, <span class="mono">dify/*</span>, <span class="mono">langflow-ai/*</span> images; also checks Podman if present</div></div>
+<div class="signal"><div class="label">4 · MCP servers</div><div class="name">Desktop app configs</div><div class="desc">Reads <span class="mono">~/.config/Claude/claude_desktop_config.json</span> and Cursor MCP settings. Server name + command basename only — env variable values never transmitted.</div></div>
+<div class="signal"><div class="label">5 · Packages</div><div class="name">pip / conda / npm</div><div class="desc"><span class="mono">pip list --format=json</span>, <span class="mono">conda list</span> (if present), <span class="mono">npm ls -g</span> — flags langchain, openai, anthropic, llama-index, autogen, crewai, huggingface-hub</div></div>
+<div class="signal"><div class="label">6 · Git commits</div><div class="name">Pre-commit hook (async)</div><div class="desc">Installed in all existing repos under <span class="mono">$HOME</span>. Fires only on <span class="mono">git commit</span> when AI framework patterns are detected in the diff. Diff content hashed, not transmitted plaintext.</div></div>
+</div>
+
+<div class="card good">
+<b>What the agent never does</b>
+<ul class="clean" style="margin-top:6px;">
+  <li>No keystrokes, no screen capture, no clipboard, no browser history</li>
+  <li>No continuous network packet capture (that's a network-layer tool's job)</li>
+  <li>No file content upload — only names, paths, and pattern-match results</li>
+  <li>API key <b>values</b> hashed locally — only the hash and file path leave the device</li>
+  <li>MCP config argument values are never transmitted — only the server name and command basename</li>
+  <li>Source code is never read beyond counting AI decorator patterns</li>
+  <li>Does not walk above <span class="mono">$HOME</span>; skips <span class="mono">.venv</span>, <span class="mono">node_modules</span>, <span class="mono">__pycache__</span>, <span class="mono">.git/objects</span></li>
+</ul>
+</div>
+</section>
+
+<!-- ========= SECTION 5: SCHEDULING ========= -->
+<section>
+<h2>5. How the Agent Stays Running on Linux</h2>
+
+<p class="intro">The installer detects the available scheduler and uses the best option. Systemd user units are preferred — they survive reboots without any root configuration. Cron is the fallback.</p>
+
+<div class="compare">
+
+<div class="card accent">
+<h3><span class="pill pill-green">PREFERRED</span> systemd user timer</h3>
+<pre><span class="cm"># Check status</span>
+systemctl --user status patronai-heartbeat.timer
+systemctl --user status patronai-scan.timer
+
+<span class="cm"># View logs</span>
+journalctl --user -u patronai-heartbeat.service -n 20
+journalctl --user -u patronai-scan.service -n 20</pre>
+<ul class="clean">
+  <li>Survives reboots automatically when <span class="mono">linger</span> is enabled</li>
+  <li>Clean start/stop semantics, no zombie processes</li>
+  <li>Unit files written to <span class="mono">~/.config/systemd/user/</span></li>
+</ul>
+</div>
+
+<div class="card warn">
+<h3><span class="pill pill-amber">FALLBACK</span> crontab</h3>
+<pre><span class="cm"># View installed cron entries</span>
+crontab -l | grep patronai
+
+<span class="cm"># Expected entries:</span>
+<span class="s">*/5 * * * *  ~/.patronai/heartbeat.sh</span>
+<span class="s">*/30 * * * * ~/.patronai/scan.sh</span></pre>
+<ul class="clean">
+  <li>Used when systemd user sessions are not available</li>
+  <li>Works on all distributions including minimal/server installs</li>
+</ul>
+</div>
+
+</div>
+
+<table>
+<thead><tr><th>Script</th><th>Schedule</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td><span class="mono">~/.patronai/heartbeat.sh</span></td><td>Every 5 minutes</td><td>Liveness ping; refreshes presigned URLs from <span class="mono">urls_refresh_url</span>; backstops git hook coverage in any new repos cloned since last run</td></tr>
+<tr><td><span class="mono">~/.patronai/scan.sh</span></td><td>Every 30 minutes</td><td>Full 6-surface scan — processes, ports, Docker/Podman, MCP configs, packages, Phase 1A signals</td></tr>
+</tbody>
+</table>
+
+<div class="note">The heartbeat refreshes presigned PUT URLs on every 5-minute cycle by fetching a <span class="mono">urls.json</span> bundle from the server. This means the agent continues working long after install-time URLs expire — no reinstall needed when presigned URLs rotate.</div>
+</section>
+
+<!-- ========= SECTION 6: DASHBOARD ========= -->
+<section>
+<h2>6. How the Dashboard Shows Your Device</h2>
+
+<div class="diagram">
+<div class="title">Agent → S3 → EC2 → PatronAI dashboard · end-to-end path</div>
+
+<div class="row">
+  <div class="blk hi">Your Linux machine<span class="sub">heartbeat + scan every 5 / 30 min</span></div>
+  <span class="arrow">→</span>
+  <div class="blk aws">S3 bucket<br>ocsf/agent/<span class="sub">raw OCSF JSON · ~2–5 KB</span></div>
+</div>
+
+<div class="arrow down">↓</div>
+
+<div class="row">
+  <div class="blk">EC2 scanner thread<span class="sub">runs every SCAN_INTERVAL_SECS</span></div>
+  <span class="arrow">→</span>
+  <div class="blk">normalizer/agent.py<span class="sub">parses OCSF → flat rows</span></div>
+  <span class="arrow">→</span>
+  <div class="blk">matcher/code_engine.py<span class="sub">allow list first · deny list second</span></div>
+</div>
+
+<div class="arrow down">↓ if finding</div>
+
+<div class="row">
+  <div class="blk good">PatronAI Dashboard :8501<span class="sub">Exec · Manager · Support views</span></div>
+</div>
+</div>
+
+<table>
+<thead><tr><th>Dashboard view</th><th>Where your device appears</th></tr></thead>
+<tbody>
+<tr><td><b>Support → Agent Fleet</b></td><td>Row per device: hostname, last heartbeat, status <span class="pill pill-green">ONLINE</span> or <span class="pill pill-amber">STALE</span>, OS banner (Linux + distro)</td></tr>
+<tr><td><b>Manager → AI Inventory</b></td><td>Every unauthorised AI tool detected by your machine appears with tool name, user, and severity</td></tr>
+<tr><td><b>Exec view</b></td><td>Your device's findings roll into the critical/high/medium counters and provider usage chart</td></tr>
+<tr><td><b>Support → Logs</b></td><td>Raw OCSF JSON browser — filter by your hostname to see every heartbeat and scan result in the last 24 h</td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ========= SECTION 7: PHASE 1A SIGNALS ========= -->
+<section>
+<h2>7. Advanced Scan Signals (Phase 1A)</h2>
+
+<div class="card">
+<h3 style="margin:0 0 8px 0">Additional surfaces scanned on every 30-minute cycle</h3>
+<ul class="clean">
+  <li><b>MCP server inventory</b> — reads <span class="mono">~/.config/Claude/claude_desktop_config.json</span> and Cursor, Continue, Cline configs. Sends server name + command basename only. SHA-256 of config file shipped for change detection.</li>
+  <li><b>Agent workflow inventory</b> — detects <span class="mono">~/.n8n/workflows/</span>, <span class="mono">~/.flowise/</span>, <span class="mono">~/.langflow/flows/</span>. File path (home-redacted to <span class="mono">~</span>), size, and mtime only — workflow content never transmitted.</li>
+  <li><b>Scheduled-agent inventory</b> — parses <span class="mono">crontab -l</span> output and <span class="mono">~/.config/systemd/user/*.service</span> files for AI-related keywords. Schedule expression shipped; command arguments redacted.</li>
+  <li><b>Tool registration inventory</b> — walks git repos under <span class="mono">$HOME</span> (depth 4), counts <span class="mono">@tool</span> / <span class="mono">Tool()</span> / <span class="mono">@function_tool</span> decorators in <span class="mono">.py</span> files. Counts only — source code never transmitted. Time-capped at 60 s.</li>
+  <li><b>Vector DB inventory</b> — looks for Chroma, FAISS, LanceDB, Qdrant, Milvus, DuckDB-vector files in home caches and discovered repos. File name and size only.</li>
+  <li><b>Shell history scan</b> — one-time scan of <span class="mono">~/.bash_history</span>, <span class="mono">~/.zsh_history</span> for AI-related commands (ollama, langchain, openai, etc.). History is scanned, never uploaded — only the count and command categories are reported.</li>
+</ul>
+</div>
+
+<div class="card accent">
+<h3 style="margin:0 0 8px 0">Privacy gate — secrets never leave the device</h3>
+<p>Every finding passes through a redactor before upload. Strips:</p>
+<ul class="clean">
+  <li>OpenAI / Anthropic keys (<span class="mono">sk-...</span>, <span class="mono">sk-ant-...</span>)</li>
+  <li>HuggingFace tokens (<span class="mono">hf_...</span>)</li>
+  <li>AWS access keys (<span class="mono">AKIA...</span>)</li>
+  <li>Google API keys (<span class="mono">AIza...</span>)</li>
+  <li>GitHub PATs (<span class="mono">ghp_</span>, <span class="mono">ghs_</span>, <span class="mono">ghu_</span>)</li>
+  <li>Slack tokens (<span class="mono">xoxb-</span>)</li>
+  <li>JWTs (three-part dot-separated base64)</li>
+  <li>User home path replaced with <span class="mono">~</span></li>
+</ul>
+<p>If a finding still matches a secret pattern after redaction, <b>the entire finding is dropped</b>.</p>
+</div>
+</section>
+
+<!-- ========= SECTION 8: REINSTALL AND UNINSTALL ========= -->
+<section>
+<h2>8. Reinstall and Uninstall</h2>
+
+<div class="card">
+<h3 style="margin:0 0 8px 0">To reinstall (e.g. to pick up new scan modules)</h3>
+<ol style="margin:0;padding-left:20px;line-height:1.8;font-size:13px;">
+  <li>Your IT admin issues a new package from <b>Settings → Deploy Agents</b></li>
+  <li>You receive a new download link and a fresh 6-digit OTP</li>
+  <li>Uninstall the existing agent first: <span class="mono">bash ~/.patronai/uninstall.sh</span></li>
+  <li>Download and run the new installer</li>
+  <li>The first scan after install runs in <b>baseline mode</b> — a wider sweep. Subsequent 30-min scans run lighter.</li>
+</ol>
+</div>
+
+<div class="card warn">
+<h3 style="margin:0 0 8px 0">To uninstall completely</h3>
+<pre><span class="cm"># No sudo needed</span>
+bash ~/.patronai/uninstall.sh</pre>
+<p>The uninstaller stops and removes systemd user timers (or crontab entries), strips the <span class="mono">pre-commit</span> shim from all git repos under <span class="mono">$HOME</span>, restores any backed-up pre-commit hooks, clears <span class="mono">git config --global init.templateDir</span>, and removes the <span class="mono">~/.patronai/</span> directory entirely.</p>
+</div>
+
+<table>
+<thead><tr><th>File / resource</th><th>What it is</th><th>Removed on uninstall</th></tr></thead>
+<tbody>
+<tr><td><span class="mono">~/.patronai/config.json</span></td><td>Agent identity: token, email, device UUID, MAC</td><td>✅</td></tr>
+<tr><td><span class="mono">~/.patronai/heartbeat.sh</span></td><td>Heartbeat script</td><td>✅</td></tr>
+<tr><td><span class="mono">~/.patronai/scan.sh</span></td><td>30-min scan script</td><td>✅</td></tr>
+<tr><td><span class="mono">~/.patronai/pre_commit_hook.sh</span></td><td>Git pre-commit logic</td><td>✅</td></tr>
+<tr><td><span class="mono">~/.patronai/agent.log</span></td><td>Local action log (PUT results, hook installs)</td><td>✅</td></tr>
+<tr><td><span class="mono">~/.config/systemd/user/patronai-*.{service,timer}</span></td><td>Systemd user units</td><td>✅ stopped + removed</td></tr>
+<tr><td>Crontab entries for patronai scripts</td><td>Cron fallback entries</td><td>✅ removed via <span class="mono">crontab -l | grep -v patronai | crontab -</span></td></tr>
+<tr><td>Each repo's <span class="mono">.git/hooks/pre-commit</span></td><td>PatronAI shim (backup saved as <span class="mono">.pre-patronai-backup</span>)</td><td>✅ shim removed, backup restored</td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ========= SECTION 9: TROUBLESHOOTING ========= -->
+<section>
+<h2>9. Troubleshooting</h2>
+
+<table>
+<thead><tr><th>Symptom</th><th>Likely cause</th><th>Fix</th></tr></thead>
+<tbody>
+<tr><td>"OTP invalid"</td><td>Mis-typed, or package expired (&gt;7 days)</td><td>Re-type carefully — 6 digits, no spaces. Ask IT admin for a new package if expired.</td></tr>
+<tr><td><span class="mono">bcrypt not found</span></td><td>pip blocked by network policy</td><td>Pre-install: <span class="mono">pip install --user bcrypt>=4.0.0</span> or add to your venv before running the installer.</td></tr>
+<tr><td>Device shows OFFLINE in fleet</td><td>Timer not running</td><td>Check: <span class="mono">systemctl --user list-timers | grep patronai</span> or <span class="mono">crontab -l | grep patronai</span>. Re-run installer if missing.</td></tr>
+<tr><td>No findings after install</td><td>First scan still running, or no unauthorised tools present</td><td>Wait up to 30 min. Force a manual scan: <span class="mono">bash ~/.patronai/scan.sh</span></td></tr>
+<tr><td>HTTP 403 in agent.log</td><td>Presigned URL expired before heartbeat refreshed it</td><td>Wait for next 5-min heartbeat to rotate URLs. If persistent, reinstall.</td></tr>
+<tr><td>Git hooks not installed in some repos</td><td>Repos stored outside <span class="mono">$HOME</span> or deeper than depth 4</td><td>Install manually: <span class="mono">cp ~/.patronai/git-template/hooks/pre-commit /path/to/repo/.git/hooks/</span></td></tr>
+<tr><td>Agent not running after reboot (systemd path)</td><td><span class="mono">linger</span> not enabled for your user</td><td>Enable: <span class="mono">sudo loginctl enable-linger $USER</span> — allows systemd user units to run without an active session.</td></tr>
+</tbody>
+</table>
+
+<div class="card accent">
+<h3 style="margin:0 0 8px 0">Self-diagnose</h3>
+<p>The agent installs a <span class="mono">diagnose.sh</span> alongside itself. Run it any time to check timer status, last heartbeat, log tail, and hook coverage:</p>
+<pre>bash ~/.patronai/diagnose.sh</pre>
+</div>
+
+<div class="card">
+<h3 style="margin:0 0 8px 0">View the local action log</h3>
+<pre><span class="cm"># Last 20 entries (each line is a JSON object)</span>
+tail -20 ~/.patronai/agent.log | python3 -m json.tool
+
+<span class="cm"># Filter for failed uploads</span>
+grep '"http_status":4' ~/.patronai/agent.log | tail -10</pre>
+</div>
+</section>
+
+<footer>
+  <img src="../assets/branding/patronai-icon.png" alt="" onerror="this.style.display='none'">
+  PatronAI · Giggso Inc · Linux Agent User Guide v1.1 · 2026-04-29
+</footer>
+
+</body>
+</html>

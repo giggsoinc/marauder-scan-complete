@@ -9,7 +9,7 @@
 #          to reuse or create new. Generates .env, packetbeat.yml,
 #          agent/config.json, grafana datasource. Optionally SCPs
 #          all generated files to the EC2.
-# USAGE:   bash prereqs.sh   (run from marauder-scan-complete/)
+# USAGE:   bash prereqs.sh   (run from patronai/)
 # RUN ON:  Your Mac — not on the EC2
 # BEFORE:  Run deploy_to_ec2.sh first to get code onto EC2
 # AFTER:   SSH into EC2 and run docker-compose up -d
@@ -34,14 +34,14 @@ section() { echo -e "\n${BOLD}${BLUE}══════════════�
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Mac:  script lives in marauder-scan-complete/ alongside ghost-ai-scanner/
+# Mac:  script lives in patronai/ alongside ghost-ai-scanner/
 # EC2:  script lives inside the project root directly (deploy_to_ec2.sh copies contents, not folder)
 if [[ -d "$SCRIPT_DIR/ghost-ai-scanner" ]]; then
   REPO_DIR="$SCRIPT_DIR/ghost-ai-scanner"
 elif [[ -f "$SCRIPT_DIR/main.py" || -d "$SCRIPT_DIR/config" ]]; then
   REPO_DIR="$SCRIPT_DIR"
 else
-  err "Cannot find project root. Run from marauder-scan-complete/ (Mac) or marauder-scan/ (EC2)."
+  err "Cannot find project root. Run from patronai/ (Mac) or marauder-scan/ (EC2)."
 fi
 
 EC2_HOST=""; EC2_KEY=""; EC2_USER=""; EC2_REMOTE_DIR=""

@@ -1,25 +1,39 @@
-# GitHub Repository Metadata Recommendations
+# GitHub Repository — Manual Settings Checklist
 
-This file captures the recommended settings for the PatronAI GitHub repository.
-Apply these when the repo goes public.
+Complete these steps in the GitHub web UI **before making the repository public**.
 
 ---
 
-## Repository Description
+## 1. Rename repository
+
+**Action required in GitHub Settings → General → Repository name:**
 
 ```
-Open-source AI endpoint monitor — detect shadow AI, ghost AI, and unmanaged LLM
-usage across your organisation. Streamlit dashboard · Hook agents · MCP server.
+Rename to: patronai
 ```
 
-## Topics / Tags
-
+Full canonical URL after rename:
 ```
-ai-security  shadow-ai  llm-governance  endpoint-monitoring  streamlit
-python  docker  mcp-server  compliance  zero-trust  ai-risk
+https://github.com/giggsoinc/patronai
 ```
 
-## Website
+Until the rename is done, all clone URLs in docs that reference
+`https://github.com/giggsoinc/patronai.git` will 404. GitHub
+automatically redirects the old name after rename.
+
+---
+
+## 2. Repository description
+
+Set in **Settings → General → Description:**
+
+```
+Apache 2.0 AI endpoint monitoring for shadow AI, ghost AI assets, and unmanaged LLM usage.
+```
+
+---
+
+## 3. Repository website
 
 ```
 https://patronai.giggso.com
@@ -29,20 +43,45 @@ https://patronai.giggso.com
 
 ---
 
-## Social Preview Image
+## 4. Topics / Tags
 
-Use `assets/branding/patronai-logo.png` or commission a 1280×640 OG card showing:
+Add in **Settings → General → Topics:**
+
+```
+ai-security  shadow-ai  ghost-ai  llm-security  ai-governance
+endpoint-security  api-security  appsec  secops  cloud-security
+ocsf  mcp  secret-scanning  aws-security  localstack  docker
+python  monitoring  observability  compliance  self-hosted
+open-source  apache-2-0
+```
+
+---
+
+## 5. Social preview image
+
+Upload in **Settings → General → Social preview:**
+
+Use `assets/branding/patronai-logo.png` or a 1280×640 OG card with:
 - Dark navy background (#0A0F1F)
 - PatronAI wordmark + shield icon
 - Tagline: "See every AI tool your team is using"
 
 ---
 
-## Branch Protection (main)
+## 6. CODEOWNERS
+
+Update `.github/CODEOWNERS` — replace `@REPLACE_WITH_MAINTAINER_HANDLE`
+with the actual GitHub handle(s) of the maintainer(s).
+
+---
+
+## 7. Branch protection — main
+
+Configure in **Settings → Branches → Add branch protection rule** for `main`:
 
 | Setting | Value |
 |---------|-------|
-| Require PR before merging | ✅ |
+| Require pull request before merging | ✅ |
 | Required approvals | 1 |
 | Dismiss stale approvals on push | ✅ |
 | Require status checks | `unit-tests (3.12)`, `lint` |
@@ -52,19 +91,23 @@ Use `assets/branding/patronai-logo.png` or commission a 1280×640 OG card showin
 
 ---
 
-## Security Settings
+## 8. Security settings
+
+Configure in **Settings → Security:**
 
 | Setting | Value |
 |---------|-------|
-| Private vulnerability reporting | ✅ Enabled |
-| Dependabot alerts | ✅ Enabled |
-| Dependabot security updates | ✅ Enabled |
-| Secret scanning | ✅ Enabled |
-| Push protection | ✅ Enabled |
+| Private vulnerability reporting | ✅ Enable |
+| Dependabot alerts | ✅ Enable |
+| Dependabot security updates | ✅ Enable |
+| Secret scanning | ✅ Enable |
+| Push protection | ✅ Enable |
 
 ---
 
-## Labels to Create
+## 9. GitHub Labels
+
+Create in **Issues → Labels → New label:**
 
 | Name | Color | Description |
 |------|-------|-------------|
@@ -81,7 +124,9 @@ Use `assets/branding/patronai-logo.png` or commission a 1280×640 OG card showin
 
 ---
 
-## Milestones
+## 10. Milestones
+
+Create in **Issues → Milestones:**
 
 | Milestone | Goal |
 |-----------|------|
@@ -91,16 +136,33 @@ Use `assets/branding/patronai-logo.png` or commission a 1280×640 OG card showin
 
 ---
 
-## CODEOWNERS
+## 11. Release tag
 
-Create `.github/CODEOWNERS`:
+Create release `v1.1.0` in **Releases → Draft a new release** only when
+the version number in `ghost-ai-scanner/main.py` (or equivalent) is
+confirmed accurate. Do not create the release tag before confirming.
 
-```
-# Global owner — review required for all files
-* @giggso
+---
 
-# Detection rules need extra care
-ghost-ai-scanner/config/providers_deny.csv @giggso
-ghost-ai-scanner/config/providers_allow.csv @giggso
-ghost-ai-scanner/config/rules/ @giggso
-```
+## 12. Discussions
+
+Enable in **Settings → Features → Discussions**.
+
+After enabling, update `.github/PULL_REQUEST_TEMPLATE.md` and
+`CONTRIBUTING.md` to use the live Discussions URL:
+`https://github.com/giggsoinc/patronai/discussions`
+
+---
+
+## Summary checklist
+
+- [ ] Repository renamed to `patronai`
+- [ ] Description set
+- [ ] Topics added
+- [ ] Social preview uploaded
+- [ ] CODEOWNERS maintainer handles filled in
+- [ ] Branch protection on `main` configured
+- [ ] Security / secret scanning enabled
+- [ ] Labels created
+- [ ] Discussions enabled
+- [ ] Release tag created (only when version confirmed)
