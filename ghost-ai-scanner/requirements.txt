@@ -23,8 +23,8 @@ networkx>=3.1.0,<4.0.0         # BSD — graph layout for AI inventory mind map
 
 # ── PDF reporting ─────────────────────────────────────────────
 reportlab>=4.1.0,<5.0.0        # BSD — PDF generation
-weasyprint>=62.0,<63.0         # BSD — HTML→PDF for reports  (EC2: apt libpango-1.0-0 libcairo2)
-cairocffi>=1.6.1               # BSD — weasyprint dep; 1.5.x has 'super().transform' MRO bug on Py3.12+
+weasyprint>=63.0               # BSD — HTML→PDF for reports  (EC2: apt libpango-1.0-0 libcairo2); <63 has super().transform bug
+cairocffi>=1.6.1               # BSD — weasyprint dep; 1.5.x has MRO bug on Py3.12+
 
 # ── HTTP / alerting ───────────────────────────────────────────
 requests>=2.31.0,<3.0.0        # Apache 2.0 — Trinity webhook, LogAnalyzer referral, LLM transport
