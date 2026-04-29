@@ -65,13 +65,8 @@ def render(email: str, events: list = None, summary: dict = None) -> None:
     # ── Logo + tagline ─────────────────────────────────────────
     _, mid, _ = st.columns([1, 2, 1])
     with mid:
-        try:
-            st.image("assets/branding/patronai-logo.png", width=260)
-        except Exception:
-            st.markdown(
-                '<div style="font-family:JetBrains Mono;font-size:32px;'
-                'font-weight:700;color:#0D1117;">Patron<span style="color:'
-                '#1F6FEB;">AI</span></div>', unsafe_allow_html=True)
+        from .logo import home_html as _logo_html
+        st.markdown(_logo_html(220), unsafe_allow_html=True)
         st.markdown(
             '<div style="font-family:JetBrains Mono;font-size:13px;'
             'color:#57606A;text-align:center;margin-bottom:4px;">'

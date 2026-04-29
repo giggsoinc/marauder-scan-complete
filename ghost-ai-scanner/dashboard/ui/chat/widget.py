@@ -1,6 +1,6 @@
 # =============================================================
 # FILE: dashboard/ui/chat/widget.py
-# VERSION: 2.0.0
+# VERSION: 2.1.0
 # UPDATED: 2026-04-29
 # OWNER: Giggso Inc (Ravi Venugopal)
 # PURPOSE: PatronAI AI chat panel — rendered in a right-side column.
@@ -13,6 +13,9 @@
 #   v1.1.0  2026-04-29  Suggestion chips per tab; help queryable.
 #   v2.0.0  2026-04-29  Right-side panel (no expander). CLEAR button.
 #                       Suggestions shown once per session only.
+#   v2.1.0  2026-04-29  Fix CLEAR: keep _loaded_key=True to prevent S3
+#                       reload restoring cleared messages. Button label
+#                       changed to "✕" (tooltip: "Clear conversation").
 # =============================================================
 
 import os
@@ -84,11 +87,14 @@ def render_chat_panel(events: list, email: str, view: str) -> None:
         'color:#0969DA;font-weight:600;margin:0;padding:4px 0;">🤖  Ask PatronAI</p>',
         unsafe_allow_html=True,
     )
-    if c_clear.button("✕ Clear", key=f"_chat_clear_{view}",
-                      use_container_width=True):
+    if c_clear.button("✕", key=f"_chat_clear_{view}",
+                      use_container_width=True,
+                      help="Clear conversation"):
         st.session_state[_hist_key]   = []
-        st.session_state[_loaded_key] = False   # reload from S3 on next open
-        # NOTE: _sugg_key is intentionally NOT reset — suggestions shown once only
+        # Keep _loaded_key = True — do NOT reload from S3 (that would restore
+        # the messages we just cleared). History is empty in session_state now.
+        st.session_state[_loaded_key] = True
+        # _sugg_key intentionally NOT reset — suggestions appear once only
         st.rerun()
 
     st.markdown(

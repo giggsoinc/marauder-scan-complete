@@ -61,27 +61,9 @@ def render(email: str, role: str, is_admin: bool) -> str:
         default_idx = role_idx
 
     with st.sidebar:
-        # ── Logo tile — dark background matches brand PNG ─────
-        try:
-            import base64, pathlib
-            logo_path = pathlib.Path("assets/branding/patronai-logo.png")
-            if logo_path.exists():
-                b64 = base64.b64encode(logo_path.read_bytes()).decode()
-                st.markdown(
-                    f'<div style="background:#0A0F1F;border-radius:10px;'
-                    f'padding:14px 10px;text-align:center;margin-bottom:4px">'
-                    f'<img src="data:image/png;base64,{b64}" width="170"/>'
-                    f'</div>', unsafe_allow_html=True)
-            else:
-                raise FileNotFoundError
-        except Exception:
-            st.markdown(
-                '<div style="background:#0A0F1F;border-radius:10px;padding:16px;'
-                'text-align:center;margin-bottom:4px">'
-                '<span style="font-family:JetBrains Mono;font-size:20px;'
-                'font-weight:700;color:#FFFFFF">Patron'
-                '<span style="color:#1F6FEB">AI</span></span></div>',
-                unsafe_allow_html=True)
+        # ── Logo tile — SVG fallback, PNG preferred if present ─
+        from .logo import sidebar_html as _logo_html
+        st.markdown(_logo_html(), unsafe_allow_html=True)
 
         if _COMPANY:
             st.markdown(
