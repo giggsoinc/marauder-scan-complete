@@ -9,7 +9,9 @@
         "s3:PutObject",
         "s3:ListBucket",
         "s3:DeleteObject",
-        "s3:GetBucketLocation"
+        "s3:GetBucketLocation",
+        "s3:GetBucketLifecycleConfiguration",
+        "s3:PutBucketLifecycleConfiguration"
       ],
       "Resource": [
         "arn:aws:s3:::patronai",

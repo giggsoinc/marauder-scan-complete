@@ -53,8 +53,20 @@ services:
       - LLM_BASE_URL=${LLM_BASE_URL:-http://localhost:8080}
       - LLM_MODEL=${LLM_MODEL:-}
       - LLM_API_KEY=${LLM_API_KEY:-}
-      - LLM_MODEL_REPO=${LLM_MODEL_REPO:-unsloth/Qwen3-0.6B-GGUF}
-      - LLM_MODEL_FILE=${LLM_MODEL_FILE:-Qwen3-0.6B-Q4_K_M.gguf}
+      - LLM_MODEL_REPO=${LLM_MODEL_REPO:-LiquidAI/LFM2.5-1.2B-Thinking-GGUF}
+      # ── Chat data backend (S3 hourly rollups) ────────────────
+      # Hourly rollup job aggregates findings/.../jsonl into per-user
+      # and per-tenant dimension files for the chat tools to query.
+      - ROLLUP_HOURLY_OFFSET_MINUTES=${ROLLUP_HOURLY_OFFSET_MINUTES:-5}
+      # First-deploy backfill: when no rollups exist yet, process the last
+      # N days so chat has historical data to answer over from the start.
+      - ROLLUP_INITIAL_BACKFILL_DAYS=${ROLLUP_INITIAL_BACKFILL_DAYS:-7}
+      # LLM read timeout (seconds) — LFM2.5-Thinking emits long reasoning
+      # before tool calls, so 60s isn't enough for tool-call loops.
+      - LLM_READ_TIMEOUT_S=${LLM_READ_TIMEOUT_S:-180}
+      - LLM_MAX_TOKENS=${LLM_MAX_TOKENS:-1024}
+      # Chat conversation S3 retention (auto-expires keys under chat/).
+      - CHAT_HISTORY_RETENTION_DAYS=${CHAT_HISTORY_RETENTION_DAYS:-30}
     volumes:
       - patronai-models:/models
     ports:

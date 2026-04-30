@@ -1,7 +1,7 @@
 # =============================================================
 # FILE: dashboard/ui/chat/llm/openai_compat.py
-# VERSION: 1.1.0
-# UPDATED: 2026-04-29
+# VERSION: 1.3.0
+# UPDATED: 2026-04-30
 # OWNER: Giggso Inc (Ravi Venugopal)
 # PURPOSE: OpenAI-compatible LLM transport. Works with ANY
 #          endpoint that speaks /v1/chat/completions:
@@ -17,10 +17,16 @@
 #   v1.0.0  2026-04-28  Initial.
 #   v1.1.0  2026-04-29  Disable Qwen3 thinking mode for local servers;
 #                       fallback to reasoning_content if content empty.
+#   v1.2.0  2026-04-29  Remove Qwen3-specific chat_template_kwargs;
+#                       model switched to LFM2.5-1.2B-Thinking.
+#   v1.3.0  2026-04-30  Read timeout 60→180 (LFM2.5-Thinking emits long
+#                       reasoning before tool calls); add max_tokens cap
+#                       so a runaway response can't exceed the window.
 # =============================================================
 
 import json
 import logging
+import os
 
 import requests
 
@@ -28,7 +34,8 @@ from .base import LLMClient
 
 log = logging.getLogger("patronai.chat.llm.openai")
 
-_TIMEOUT = 60
+_TIMEOUT    = int(os.environ.get("LLM_READ_TIMEOUT_S", "180"))
+_MAX_TOKENS = int(os.environ.get("LLM_MAX_TOKENS", "1024"))
 
 
 class OpenAICompatClient(LLMClient):
@@ -55,18 +62,18 @@ class OpenAICompatClient(LLMClient):
         Raises requests.exceptions.ConnectionError if server is down
         (caught by engine.py for fallback logic).
         """
-        payload: dict = {"messages": messages, "temperature": 0}
+        payload: dict = {"messages": messages, "temperature": 0,
+                         "max_tokens": _MAX_TOKENS}
         if self._model:
             payload["model"] = self._model
         if tools:
             payload["tools"]       = tools
             payload["tool_choice"] = "auto"
-        # Disable Qwen3 thinking mode for local llama-server (no-op on cloud APIs).
-        if not self._headers.get("Authorization"):
-            payload["chat_template_kwargs"] = {"enable_thinking": False}
 
-        resp = requests.post(self._url, json=payload,
-                             headers=self._headers, timeout=_TIMEOUT)
+        resp = requests.post(self._url, json=payload, headers=self._headers,
+                             timeout=(10, _TIMEOUT))
+        if not resp.ok:
+            log.error("LLM %d: %s", resp.status_code, resp.text[:400])
         resp.raise_for_status()
         msg = resp.json()["choices"][0]["message"]
 

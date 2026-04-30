@@ -1,22 +1,28 @@
 # =============================================================
 # FILE: dashboard/ui/chat/engine.py
-# VERSION: 1.0.0
-# UPDATED: 2026-04-28
+# VERSION: 2.0.0
+# UPDATED: 2026-04-29
 # OWNER: Giggso Inc (Ravi Venugopal)
 # PURPOSE: PatronAI chat engine — transport-agnostic tool-call loop.
-#          Injects system prompt, calls LLMClient.complete(), executes
-#          tool functions from tools.py, loops until text or max rounds.
-#          The only LLM-aware logic is the loop; format details live in
-#          the transport (llm/openai_compat.py or llm/anthropic.py).
-# DEPENDS: chat/tools.py, chat/prompts.py, chat/llm/, chat/tools_schema.py
+#          v2: tools are rollup-backed and take (scope, scope_id) computed
+#          once per turn from the current view + email + company.
+#          The legacy `events` arg is accepted but ignored.
+# DEPENDS: chat/tools.py, chat/prompts.py, chat/llm/, chat/tools_schema.py,
+#          query.rollup_reader (for scope resolution)
 # AUDIT LOG:
-#   v1.0.0  2026-04-28  Initial.
+#   v1.0.0  2026-04-28  Initial — in-memory events list.
+#   v2.0.0  2026-04-29  Rollup-backed; scope/scope_id passed to tools.
 # =============================================================
 
 import json
 import logging
+import os
+import sys
 
 import requests
+
+# Make src/ importable from the dashboard package.
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..", "src"))
 
 from .tools        import (get_summary_stats, get_top_risky_users,
                             get_user_risk_profile, query_findings,
@@ -27,13 +33,17 @@ from .tools_schema import TOOLS_SCHEMA
 from .prompts      import build_system_prompt
 from .llm          import get_client
 
+from query.rollup_reader import scope_for_view, resolve_scope_id  # noqa: E402
+
 log = logging.getLogger("patronai.chat.engine")
 
 _MAX_ROUNDS = 5  # tool-call loop guard
 
+
 # ── Tool dispatch table ───────────────────────────────────────
 
-_TOOL_FNS = {
+# Tools that take (scope, scope_id, **kwargs).
+_SCOPED_TOOLS = {
     "get_summary_stats":     get_summary_stats,
     "get_top_risky_users":   get_top_risky_users,
     "get_user_risk_profile": get_user_risk_profile,
@@ -42,29 +52,44 @@ _TOOL_FNS = {
     "get_shadow_ai_census":  get_shadow_ai_census,
     "get_recent_activity":   get_recent_activity,
     "compare_periods":       compare_periods,
-    "get_help":              get_help,
+}
+
+# Tools that take **kwargs only (no scope).
+_UNSCOPED_TOOLS = {
+    "get_help": get_help,
 }
 
 
-def _run_tool(name: str, arguments: dict, events: list) -> str:
+def _run_tool(name: str, arguments: dict,
+              scope: str, scope_id: str) -> str:
     """Execute one tool and return its result as a JSON string.
-
-    The first positional argument to every tool function is `events`.
-    Extra kwargs from the LLM are passed as keyword arguments.
-    Returns a JSON error string on any failure so the LLM can report it.
-    """
-    fn = _TOOL_FNS.get(name)
-    if fn is None:
-        return json.dumps({"error": f"unknown tool: {name}"})
-    try:
-        result = fn(events, **arguments) if arguments else fn(events)
-        return json.dumps(result, default=str)
-    except Exception as exc:
-        log.warning("tool %s failed: %s", name, exc)
-        return json.dumps({"error": str(exc)})
+    Tools that need data context are passed (scope, scope_id) by the engine,
+    not by the LLM — those are derived from the current view + email + company."""
+    if name in _SCOPED_TOOLS:
+        fn = _SCOPED_TOOLS[name]
+        try:
+            args = dict(arguments) if arguments else {}
+            result = fn(scope, scope_id, **args)
+            return json.dumps(result, default=str)
+        except Exception as exc:
+            log.warning("scoped tool %s failed: %s", name, exc)
+            return json.dumps({"error": str(exc)})
+    if name in _UNSCOPED_TOOLS:
+        fn = _UNSCOPED_TOOLS[name]
+        try:
+            args = dict(arguments) if arguments else {}
+            # get_help historically takes (events, topic) — pass an empty list
+            # for backward compatibility; events is unused inside the function.
+            result = fn([], **args)
+            return json.dumps(result, default=str)
+        except Exception as exc:
+            log.warning("unscoped tool %s failed: %s", name, exc)
+            return json.dumps({"error": str(exc)})
+    return json.dumps({"error": f"unknown tool: {name}"})
 
 
 # ── Public API ────────────────────────────────────────────────
+
 
 def call_llm(messages: list, events: list, view: str,
              email: str, company: str) -> str:
@@ -74,16 +99,22 @@ def call_llm(messages: list, events: list, view: str,
     Args:
         messages: Conversation history — [{"role":..., "content":...}, ...]
                   Already includes the latest user message.
-        events:   Role-scoped event list (never leaves this process).
-        view:     "exec" | "manager" | "support"
+        events:   Legacy — accepted for signature compatibility, IGNORED.
+                  Tools now read from S3 rollups directly.
+        view:     "exec" | "manager" | "support" | "home"
         email:    Logged-in user email.
         company:  Company name for system prompt.
 
     Raises:
         RuntimeError: If no LLM provider is reachable or config is invalid.
     """
-    sys_msg  = {"role": "system",
-                "content": build_system_prompt(events, view, email, company)}
+    scope = scope_for_view(view)
+    scope_id = resolve_scope_id(view, email, company)
+    log.debug("chat scope: view=%s → scope=%s scope_id=%s",
+              view, scope, scope_id[:8])
+
+    sys_msg = {"role": "system",
+               "content": build_system_prompt(scope, scope_id, view, email, company)}
     # Keep last 20 messages to stay within the 8192-token context window.
     all_msgs = [sys_msg] + messages[-20:]
 
@@ -92,29 +123,43 @@ def call_llm(messages: list, events: list, view: str,
     except ValueError as exc:
         raise RuntimeError(str(exc)) from exc
 
+    # Pre-flight: check llama-server is ready before sending a full request.
+    _base = os.environ.get("LLM_BASE_URL", "http://localhost:8080").rstrip("/")
+    try:
+        hc = requests.get(f"{_base}/health", timeout=4)
+        status = hc.json().get("status", "")
+        if status != "ok":
+            raise RuntimeError(
+                "LLM is still loading the model — please wait a moment and try again.")
+    except requests.exceptions.ConnectionError:
+        raise RuntimeError(
+            "LLM server is starting up — please wait a moment and try again.")
+    except RuntimeError:
+        raise
+    except Exception:
+        pass  # health endpoint absent (cloud API) — proceed
+
     try:
         for _round in range(_MAX_ROUNDS):
             result = client.complete(all_msgs, TOOLS_SCHEMA)
 
             if result["tool_calls"]:
-                # Append the assistant's tool_call message
                 all_msgs.append(result["raw_msg"])
-                # Execute each requested tool
                 for tc in result["tool_calls"]:
-                    output = _run_tool(tc["name"], tc["arguments"], events)
+                    output = _run_tool(tc["name"], tc["arguments"],
+                                       scope, scope_id)
                     log.debug("tool %s → %d chars", tc["name"], len(output))
                     all_msgs.append(
                         client.tool_result_msg(tc["id"], tc["name"], output))
                 continue  # loop — LLM will now summarise tool results
 
-            # Plain text response — done
             return result["content"] or "(empty response)"
 
         return "I reached the tool-call limit — please rephrase your question."
 
     except requests.exceptions.ConnectionError as exc:
         raise RuntimeError(
-            "LLM server is unreachable. "
-            "Start llama-server, Ollama, or check LLM_BASE_URL.") from exc
+            "LLM server is unreachable — check LLM_BASE_URL.") from exc
     except Exception as exc:
+        log.error("LLM call failed: %s", exc)
         raise RuntimeError(f"LLM error: {exc}") from exc

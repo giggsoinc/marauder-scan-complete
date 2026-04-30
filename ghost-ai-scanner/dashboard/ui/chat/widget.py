@@ -1,12 +1,13 @@
 # =============================================================
 # FILE: dashboard/ui/chat/widget.py
-# VERSION: 2.1.0
-# UPDATED: 2026-04-29
+# VERSION: 2.2.0
+# UPDATED: 2026-04-30
 # OWNER: Giggso Inc (Ravi Venugopal)
 # PURPOSE: PatronAI AI chat panel — rendered in a right-side column.
 #          No expander wrapper; always visible as a side panel.
 #          Suggestions shown only on first-ever open (not after clear).
-#          CLEAR button wipes history but keeps suggestions suppressed.
+#          CLEAR button wipes history (with confirmation modal showing
+#          the S3 path that will be deleted).
 # DEPENDS: streamlit, chat/engine.py, chat/history.py
 # AUDIT LOG:
 #   v1.0.0  2026-04-28  Initial.
@@ -14,19 +15,62 @@
 #   v2.0.0  2026-04-29  Right-side panel (no expander). CLEAR button.
 #                       Suggestions shown once per session only.
 #   v2.1.0  2026-04-29  Fix CLEAR: keep _loaded_key=True to prevent S3
-#                       reload restoring cleared messages. Button label
-#                       changed to "✕" (tooltip: "Clear conversation").
+#                       reload restoring cleared messages.
+#   v2.2.0  2026-04-30  CLEAR now opens a confirmation dialog showing
+#                       the exact S3 path; OK actually deletes from S3.
 # =============================================================
 
+import hashlib
 import os
 from datetime import datetime, timezone
 
 import streamlit as st
 
 from .engine  import call_llm
-from .history import load_history, append_history
+from .history import load_history, append_history, clear_history
 
 _COMPANY = os.environ.get("COMPANY_NAME", "PatronAI")
+_BUCKET  = os.environ.get("MARAUDER_SCAN_BUCKET", "")
+
+
+def _s3_chat_path(email: str, view: str) -> str:
+    """Render the exact S3 prefix the user's chat history lives under.
+    Mirrors history._prefix() but rebuilt here to avoid leaking a private
+    helper across modules."""
+    h = hashlib.sha256((email or "").lower().encode()).hexdigest()[:16]
+    bucket = _BUCKET or "<bucket-not-set>"
+    return f"s3://{bucket}/chat/{h}/{view}/"
+
+
+@st.dialog("Clear conversation?")
+def _confirm_clear(email: str, view: str) -> None:
+    """Modal: show the exact S3 location, ask for confirmation."""
+    path = _s3_chat_path(email, view)
+    st.markdown(
+        "**This will permanently delete your chat history at:**\n\n"
+        f"```\n{path}\n```\n\n"
+        "Other users' conversations are not affected. "
+        "Local browser session will reset to a fresh chat."
+    )
+    col_ok, col_cancel = st.columns(2)
+    if col_ok.button("OK, clear it", type="primary",
+                     use_container_width=True, key=f"_clear_ok_{view}"):
+        ok, n = clear_history(email, view)
+        # Reset in-memory chat state so the UI shows a fresh panel.
+        st.session_state[f"_chat_hist_{view}"]   = []
+        st.session_state[f"_chat_loaded_{view}"] = True
+        if ok:
+            st.session_state["_clear_toast"] = (
+                f"Conversation cleared. {n} S3 file(s) removed from "
+                f"{path}", "🧹")
+        else:
+            st.session_state["_clear_toast"] = (
+                "Cleared locally — S3 delete failed (will expire via "
+                "lifecycle policy).", "⚠")
+        st.rerun()
+    if col_cancel.button("Cancel", use_container_width=True,
+                          key=f"_clear_cancel_{view}"):
+        st.rerun()
 
 # ── Per-view suggested queries ─────────────────────────────────
 _SUGGESTIONS: dict[str, list[str]] = {
@@ -87,15 +131,17 @@ def render_chat_panel(events: list, email: str, view: str) -> None:
         'color:#0969DA;font-weight:600;margin:0;padding:4px 0;">🤖  Ask PatronAI</p>',
         unsafe_allow_html=True,
     )
+    # Surface any toast queued by the confirmation dialog from the previous run.
+    queued_toast = st.session_state.pop("_clear_toast", None)
+    if queued_toast:
+        msg, icon = queued_toast
+        st.toast(msg, icon=icon)
+
     if c_clear.button("✕", key=f"_chat_clear_{view}",
                       use_container_width=True,
-                      help="Clear conversation"):
-        st.session_state[_hist_key]   = []
-        # Keep _loaded_key = True — do NOT reload from S3 (that would restore
-        # the messages we just cleared). History is empty in session_state now.
-        st.session_state[_loaded_key] = True
-        # _sugg_key intentionally NOT reset — suggestions appear once only
-        st.rerun()
+                      help="Clear conversation (asks for confirmation)"):
+        _confirm_clear(email, view)
+        return  # dialog will rerun after the user picks OK/Cancel
 
     st.markdown(
         '<hr style="margin:4px 0 8px 0;border:none;border-top:1px solid #D0D7DE"/>',

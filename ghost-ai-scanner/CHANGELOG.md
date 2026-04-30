@@ -2,6 +2,69 @@
 
 ## [Unreleased]
 
+### Phase 1C — Hourly S3 rollups for chat + data citations + chat-history lifecycle — 2026-04-30
+
+**Problem.** Three failures observed against a real tenant (1098 historical findings on a single device):
+
+1. **The chat answered nonsense.** "Which AI tools does my team use most?" returned generic boilerplate ("the team primarily utilizes tools associated with high-severity findings"). Trace: the 8 chat tools at `dashboard/ui/chat/tools.py` filtered an in-memory `events` list loaded by `dashboard/ui/data.py:load_data()`. That loader walked back 7 days, capped at 500 rows per day, and **returned the first non-empty day and stopped** — so the chat saw at most ~500 rows from a single day. The LFM2.5-1.2B-Thinking model with no real data hallucinated from the tool definitions instead of calling them.
+2. **No citations.** Even when the LLM did call a tool, the response had no source attribution — the user couldn't tell whether it pulled real data or made it up.
+3. **The CLEAR ✕ on the chat panel only wiped browser session_state.** S3 chat history under `chat/{sha256(email)[:16]}/{view}/YYYY-MM-DD.jsonl` accumulated forever — no lifecycle, no on-press delete.
+4. **60-second LLM read timeout** killed multi-step tool-call queries because the Thinking model emits long reasoning traces before each call.
+
+**Fix.**
+
+#### Hourly S3 rollups — chat data backend
+
+- **`src/jobs/hourly_rollup.py`** *(new, 296 LOC)* — `compute_hourly_rollup(window)` runs once an hour at `:05`, S3-Selects the previous hour out of `findings/YYYY/MM/DD/{severity}.jsonl`, groups by `owner` AND by `company`, writes **two parallel trees** of small gzipped dimension files:
+  - `s3://{bucket}/users/{sha256(email)[:16]}/rollup/YYYY/MM/DD/HH/by_{provider,severity,device,category}.json` *(per-person — exec view reads from here)*
+  - `s3://{bucket}/tenants/{sha256(company)[:16]}/rollup/YYYY/MM/DD/HH/by_{provider,user,severity,device,category}.json` *(team-wide — manager/support/home views read from here)*
+  - Plus `_meta.json` per hour with row count, run timing, scope identity.
+  - Volume-independent: rollup file size is bounded by dimension cardinality (providers × users × …), not raw event count. 30 days × 24 hours = 720 small files merged at query time.
+  - On a fresh deploy with no existing rollups, `catch_up_rollups()` backfills the last `ROLLUP_INITIAL_BACKFILL_DAYS` days (default 7) so chat has historical data from boot.
+  - CLI: `python -m src.jobs.hourly_rollup --catch-up | --backfill --start ... --end ... | --hour ...`.
+- **`src/normalizer/provider_names.py`** *(new, 144 LOC)* — `normalize_provider(category, raw_provider)` maps raw rows from `agent_explode.py` to human AI-tool names: `claude.ai → "Anthropic Direct"`, `github.copilot → "GitHub Copilot"`, `pip:openai → "OpenAI SDK"`, `chatgpt.com → "OpenAI ChatGPT"`, etc. `unauthorized.csv` takes precedence over the built-in dict for browser-domain mapping (tenant-curated overrides). Unknown raw providers pass through as-is and get logged to `s3://{bucket}/rollup-meta/unknown_providers.jsonl` so the dictionary can grow over time.
+- **`src/query/rollup_reader.py`** *(new, 220 LOC)* — `read_dimension_range(scope, scope_id, dim, start, end)` parallel-fetches all hourly rollup files for the window (16-worker thread pool, gzip-decoded), merges per-dimension (set-union for distinct user/device counts), 5-minute in-memory LRU.
+- **`main.py`** v1.2.0 — adds `rollup_scheduler` daemon thread alongside the existing scanner / alerter / url_refresh threads. Watchdog auto-restarts container if rollup thread dies.
+
+#### Chat tools rewritten on top of rollups
+
+- **`dashboard/ui/chat/tools.py`** v2.0.0 — every tool is now a thin wrapper around `read_dimension_range`. Signature changed to `(scope, scope_id, **kwargs)`. The legacy `events` arg is dropped from the tool surface entirely; `engine.py` derives `(scope, scope_id)` once per turn from `view + email + company`:
+  - `view == "exec"` → `scope="user"`, `scope_id=hash16(email)`
+  - `view in {"manager", "support", "home"}` → `scope="tenant"`, `scope_id=hash16(company)`
+- **Citation in every tool result.** Each successful tool returns a `_citation` block: `{source: "S3 hourly rollups", scope, scope_id (truncated), window: {start, end}, dimensions, rows_aggregated, s3_path_pattern}`. The system prompt mandates the LLM end every answer with a `**Sources:**` section listing the `s3_path_pattern` from each tool call.
+- **`no_data` envelope.** When rollups are empty for the requested scope/window, tools return `{no_data: true, _message, _citation}` so the LLM tells the user honestly instead of fabricating numbers.
+- **`dashboard/ui/chat/prompts.py`** v2.0.0 — system prompt mandates tool calls (never describes them in prose), routes specific question patterns to specific tools, requires the **Sources:** footer, instructs honest "no data" responses.
+- **`dashboard/ui/chat/tools_schema.py`** v2.0.0 — every tool exposes `days_back` so the LLM can widen/narrow the window.
+- **`dashboard/ui/chat/engine.py`** v2.0.0 — dispatch table split into `_SCOPED_TOOLS` (need data context) and `_UNSCOPED_TOOLS` (`get_help`); engine resolves scope once per turn.
+
+#### Chat history lifecycle + Clear confirmation modal
+
+- **`dashboard/ui/chat/history.py`** v1.1.0:
+  - `clear_history(email, view)` — `list_objects_v2` + batched `delete_objects` under the user's `chat/{hash16}/{view}/` prefix. Other users' data untouched.
+  - `ensure_lifecycle_policy(retention_days=30)` — applies an idempotent S3 lifecycle rule on prefix `chat/`. **Merges** with existing rules — never overwrites them. Called once at startup from `main.py`.
+- **`dashboard/ui/chat/widget.py`** v2.2.0 — CLEAR ✕ now opens a `@st.dialog("Clear conversation?")` modal showing the **exact S3 path** that will be deleted (e.g. `s3://patronai/chat/9f5d5df9e012e769/manager/`) with OK / Cancel. OK actually deletes from S3 + queues a toast confirming N files removed.
+
+#### LLM transport — timeout + max tokens
+
+- **`dashboard/ui/chat/llm/openai_compat.py`** v1.3.0 — read timeout `60 → 180s` (env-tunable via `LLM_READ_TIMEOUT_S`); connect timeout split off at 10s so an unreachable server fails fast; `max_tokens=1024` cap (env-tunable via `LLM_MAX_TOKENS`) to prevent runaway thinking-model output.
+
+#### Infra — IAM + env vars
+
+- **`iam-policy.json`** — added `s3:GetBucketLifecycleConfiguration` and `s3:PutBucketLifecycleConfiguration` to the `TenantStorage` statement so `ensure_lifecycle_policy()` can apply on first boot. **Deploy step required: re-attach IAM policy to the existing role.**
+- **`docker-compose.yml`** — new env vars (all optional with sane defaults):
+  - `ROLLUP_HOURLY_OFFSET_MINUTES=5` — minute past each hour to fire the rollup job.
+  - `ROLLUP_INITIAL_BACKFILL_DAYS=7` — first-deploy backfill window.
+  - `CHAT_HISTORY_RETENTION_DAYS=30` — lifecycle expiry for `chat/`.
+  - `LLM_READ_TIMEOUT_S=180`, `LLM_MAX_TOKENS=1024`.
+
+#### Tests
+
+- **`tests/unit/test_chat_tools.py`** v2.0.0 — 18 tests, all rewritten. Mock `read_dimension_range` (the seam between tools and S3); assert tools shape rollup payloads correctly, citations present, `no_data` envelope returned when rollups are empty, provider names are human-form, severity ranking is correct.
+
+**Result.** 356 unit tests pass. Chat tools no longer require an in-memory event list — they read what they need at query time from per-user / per-tenant rollups in S3. Volume scales without changing the chat path. Every answer carries a citation showing the S3 location. Chat history bounded by both clear-button-deletes-S3 and a 30-day lifecycle.
+
+---
+
 ### Phase 1B — RBAC, time format, per-grid search — 2026-04-26
 
 **Problem.** Three rough edges that were making the dashboard "navigation hell" once Phase 1A's data started landing:

@@ -6,7 +6,7 @@
 # PURPOSE: PatronAI scanner + Streamlit container.
 #          Python 3.12 slim base. Minimal attack surface.
 #          Runs main.py which starts scanner threads + Streamlit.
-#          Bundles Marauder Scan code layer (llama.cpp + Gemma 4 E4B).
+#          Bundles llama.cpp binaries; model downloaded at runtime via --hf-repo.
 # PORT: 8501 (Streamlit settings UI)
 # =============================================================
 
@@ -72,11 +72,10 @@ USER scanner
 
 EXPOSE 8501
 
-# ── Marauder Scan — llama.cpp + Qwen 3 1.7B classifier ───────
-# Build llama.cpp binary used to run the AMBIGUOUS-snippet classifier.
+# ── Marauder Scan — llama.cpp binaries ───────────────────────
+# Build llama-cli and llama-server from source.
 # Pinned to a release tag rather than HEAD for deterministic builds.
-# To bump: confirm the new tag still supports Qwen 3 architecture, then update
-# LLAMA_CPP_TAG. Qwen 3 architecture support landed in b5000; do not use b4939 or earlier.
+# To bump: update LLAMA_CPP_TAG and verify the new build produces both binaries.
 USER root
 ARG LLAMA_CPP_TAG=b8960
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -96,24 +95,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
 
-# Qwen 3 1.7B classifier — bake when INCLUDE_CLASSIFIER=1 (adds ~1 GB).
-# Default: skip the bake. Three runtime options when skipped:
-#   1. Mount the GGUF at /models from the EC2 host (-v /opt/patronai/models:/models).
-#   2. Provide CODE_ANALYSER_MODEL=s3://… and download on first start.
-#   3. Do nothing — code_fallback.regex_fallback() classifies AMBIGUOUS hits.
-# With the regex fallback present, the system stays fully functional whether or
-# not the classifier is reachable — it simply increases classification fidelity.
-# Why Qwen 3 1.7B: Apache 2.0, native function-calling, ~3× smaller than Gemma 4 E4B,
-# stronger JSON-mode reliability. Verify the official Qwen GGUF repo at build time;
-# if missing, replace QWEN_GGUF_REPO with a community quantizer
-# (e.g. bartowski/Qwen3-1.7B-GGUF) and rebuild.
+# LFM2.5-1.2B-Thinking classifier — bake when INCLUDE_CLASSIFIER=1 (adds ~1 GB).
+# Default: skip the bake. The chat LLM (llama-server) downloads via --hf-repo at runtime.
+# With INCLUDE_CLASSIFIER=0, code_fallback.regex_fallback() classifies AMBIGUOUS hits.
 ARG INCLUDE_CLASSIFIER=0
-ARG QWEN_GGUF_REPO=Qwen/Qwen3-1.7B-GGUF
+ARG LFM_GGUF_REPO=LiquidAI/LFM2.5-1.2B-Thinking-GGUF
 RUN mkdir -p /models && \
     if [ "$INCLUDE_CLASSIFIER" = "1" ]; then \
-        llama-cli -hf "${QWEN_GGUF_REPO}:Q4_K_M" \
+        llama-cli -hf "${LFM_GGUF_REPO}:Q4_K_M" \
             --n-predict 1 --log-disable && \
-        cp /root/.cache/llama.cpp/Qwen3-1.7B*.gguf /models/qwen3-1.7b-q4_k_m.gguf; \
+        cp /root/.cache/llama.cpp/LFM2.5*.gguf /models/lfm2.5-1.2b-thinking-q4_k_m.gguf; \
     fi
 
 RUN chown -R scanner:scanner /usr/local/bin/llama-cli /usr/local/bin/llama-server /etc/llama /models 2>/dev/null || true

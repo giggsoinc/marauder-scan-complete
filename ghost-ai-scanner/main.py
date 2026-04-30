@@ -1,11 +1,18 @@
 # =============================================================
 # FILE: main.py
-# VERSION: 1.0.0
-# UPDATED: 2026-04-18
+# VERSION: 1.2.0
+# UPDATED: 2026-04-29
 # OWNER: Giggso Inc
 # PURPOSE: Container entrypoint. Wires bootstrap and threads.
 #          Watchdog restarts container if any thread dies.
 # USAGE: python main.py
+# AUDIT LOG:
+#   v1.0.0  2026-04-18  Initial.
+#   v1.1.0  2026-04-29  Switch LLM to LFM2.5-1.2B-Thinking via --hf-repo.
+#                       Remove curl download logic; llama-server handles it.
+#                       LLAMA_CACHE=/models routes HF cache to named volume.
+#   v1.2.0  2026-04-29  Hourly S3 rollup scheduler (per-user + per-tenant
+#                       trees) + chat-history S3 lifecycle policy at startup.
 # =============================================================
 
 import glob
@@ -28,37 +35,25 @@ sys.path.insert(0, "src")
 from bootstrap   import validate_env, build_store, load_settings, build_resolver, maybe_backfill, seed_config_files
 from rule_health  import self_check_rules
 from threads      import scanner_loop, alerter_backlog, url_refresh_loop, streamlit_proc
+from jobs.hourly_rollup import scheduler_loop as rollup_scheduler_loop
 
-_MODEL_REPO = os.environ.get("LLM_MODEL_REPO", "unsloth/Qwen3-0.6B-GGUF")
-_MODEL_FILE = os.environ.get("LLM_MODEL_FILE", "Qwen3-0.6B-Q4_K_M.gguf")
-_MODEL_PATH = os.environ.get("LLM_MODEL_PATH", f"/models/{_MODEL_FILE.lower()}")
-_MODEL_URL  = os.environ.get("LLM_MODEL_URL",
-    f"https://huggingface.co/{_MODEL_REPO}/resolve/main/{{_MODEL_FILE}}")
-_LLM_PORT   = int(os.environ.get("LLM_SERVER_PORT", "8080"))
+_HF_REPO  = os.environ.get("LLM_MODEL_REPO", "LiquidAI/LFM2.5-1.2B-Thinking-GGUF")
+_LLM_PORT = int(os.environ.get("LLM_SERVER_PORT", "8080"))
+_ROLLUP_OFFSET_MIN = int(os.environ.get("ROLLUP_HOURLY_OFFSET_MINUTES", "5"))
+_CHAT_RETENTION_DAYS = int(os.environ.get("CHAT_HISTORY_RETENTION_DAYS", "30"))
 
 
 def _llama_server_thread() -> None:
-    """Background daemon: download GGUF model via curl if absent, then run llama-server."""
-    if not os.path.exists(_MODEL_PATH):
-        url = _MODEL_URL.format(_MODEL_FILE=_MODEL_FILE)
-        log.info("llama-server: model absent — downloading from %s (~1 GB, first boot)...", url)
-        try:
-            os.makedirs(os.path.dirname(_MODEL_PATH), exist_ok=True)
-            subprocess.run(
-                ["curl", "-fsSL", "-o", _MODEL_PATH, url],
-                check=True, timeout=7200,
-            )
-            log.info("llama-server: model ready at %s", _MODEL_PATH)
-        except Exception as exc:
-            log.warning("llama-server: model download failed (%s) — chat unavailable", exc)
-            return
-
-    log.info("llama-server: starting on :%d with %s", _LLM_PORT, _MODEL_PATH)
+    """Background daemon: run llama-server; downloads model from HuggingFace on first boot."""
+    log.info("llama-server: starting on :%d — repo: %s", _LLM_PORT, _HF_REPO)
+    # LLAMA_CACHE=/models routes the HuggingFace download to the named Docker volume.
     subprocess.Popen(
-        ["llama-server", "--model", _MODEL_PATH,
+        ["llama-server",
+         "--hf-repo", _HF_REPO,
          "--port", str(_LLM_PORT), "--host", "127.0.0.1",
          "--ctx-size", "8192"],
-        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL, stderr=None,
+        env={**os.environ, "LLAMA_CACHE": "/models"},
     )
     log.info("llama-server: process launched on :%d", _LLM_PORT)
 
@@ -74,6 +69,14 @@ def main():
     resolver = build_resolver(store, settings)
     maybe_backfill(store)
 
+    # Apply the chat-history lifecycle rule once per boot (idempotent).
+    try:
+        sys.path.insert(0, "dashboard")
+        from ui.chat.history import ensure_lifecycle_policy
+        ensure_lifecycle_policy(_CHAT_RETENTION_DAYS)
+    except Exception as exc:
+        log.warning("ensure_lifecycle_policy failed (non-fatal): %s", exc)
+
     stop = threading.Event()
 
     # llama-server runs independently — downloads model on first boot then serves on :8080
@@ -81,10 +84,11 @@ def main():
     log.info("Started: llama_server (background)")
 
     threads = [
-        threading.Thread(target=scanner_loop,     args=(store, resolver, settings, stop), name="scanner",     daemon=True),
-        threading.Thread(target=alerter_backlog,  args=(store, resolver, settings, stop), name="alerter",     daemon=True),
-        threading.Thread(target=url_refresh_loop, args=(store, stop),                     name="url_refresh", daemon=True),
-        threading.Thread(target=streamlit_proc,   args=(stop,),                           name="streamlit",   daemon=True),
+        threading.Thread(target=scanner_loop,        args=(store, resolver, settings, stop), name="scanner",        daemon=True),
+        threading.Thread(target=alerter_backlog,     args=(store, resolver, settings, stop), name="alerter",        daemon=True),
+        threading.Thread(target=url_refresh_loop,    args=(store, stop),                     name="url_refresh",    daemon=True),
+        threading.Thread(target=rollup_scheduler_loop, args=(stop, _ROLLUP_OFFSET_MIN),      name="rollup_scheduler", daemon=True),
+        threading.Thread(target=streamlit_proc,      args=(stop,),                           name="streamlit",      daemon=True),
     ]
 
     for t in threads:

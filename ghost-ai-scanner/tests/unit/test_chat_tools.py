@@ -1,21 +1,25 @@
 # =============================================================
 # FILE: tests/unit/test_chat_tools.py
 # PROJECT: PatronAI — Marauder Scan
-# VERSION: 1.0.0
-# UPDATED: 2026-04-28
+# VERSION: 2.0.0
+# UPDATED: 2026-04-30
 # OWNER: Giggso Inc (Ravi Venugopal)
-# PURPOSE: Unit tests for 8 pure-analytics chat tool functions.
-#          No Streamlit, AWS, or LLM — stdlib only.
+# PURPOSE: Unit tests for rollup-backed chat tools. Mocks the
+#          read_dimension_range seam — no S3, no LLM, stdlib only.
 # AUDIT LOG:
-#   v1.0.0  2026-04-28  Initial.
+#   v1.0.0  2026-04-28  Initial — in-memory events list.
+#   v2.0.0  2026-04-30  Rewritten for rollup-backed tools.
 # =============================================================
 
+from __future__ import annotations
+
 import sys
-from datetime import datetime, timezone, timedelta
 from pathlib import Path
+from unittest.mock import patch
 
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "dashboard"))
+sys.path.insert(0, str(REPO / "src"))
 
 from ui.chat.tools import (  # noqa: E402
     get_summary_stats, get_top_risky_users, get_user_risk_profile,
@@ -23,125 +27,238 @@ from ui.chat.tools import (  # noqa: E402
     get_recent_activity, compare_periods,
 )
 
-OLD = "2020-01-01T00:00:00+00:00"   # guaranteed > 24 h ago
-# RECENT is always 1 hour ago — avoids hardcoded dates that age out
-_RECENT = (datetime.now(timezone.utc) - timedelta(hours=1)).strftime(
-    "%Y-%m-%dT%H:%M:%S+00:00")
+
+# Canned rollup payloads matching the shape produced by hourly_rollup.py.
+
+_BY_PROVIDER = {
+    "OpenAI ChatGPT":  {"hits": 47, "users": ["alice@x.com", "bob@x.com"],
+                        "user_count": 2, "device_count": 2,
+                        "categories": {"browser": 47},
+                        "by_severity": {"HIGH": 47},
+                        "first_seen": "2026-04-01T00:00:00+00:00",
+                        "last_seen":  "2026-04-29T00:00:00+00:00"},
+    "GitHub Copilot":  {"hits": 12, "users": ["alice@x.com"],
+                        "user_count": 1, "device_count": 1,
+                        "categories": {"ide_plugin": 12},
+                        "by_severity": {"MEDIUM": 12},
+                        "first_seen": "2026-04-05T00:00:00+00:00",
+                        "last_seen":  "2026-04-28T00:00:00+00:00"},
+}
+
+_BY_USER = {
+    "alice@x.com": {"hits": 30, "providers": ["OpenAI ChatGPT", "GitHub Copilot"],
+                    "provider_count": 2, "device_count": 1,
+                    "categories": {"browser": 25, "ide_plugin": 5},
+                    "by_severity": {"HIGH": 25, "MEDIUM": 5},
+                    "total_risk": 82.5, "first_seen": "2026-04-01T00:00:00+00:00",
+                    "last_seen":  "2026-04-29T00:00:00+00:00"},
+    "bob@x.com":   {"hits": 15, "providers": ["OpenAI ChatGPT"],
+                    "provider_count": 1, "device_count": 1,
+                    "categories": {"browser": 15},
+                    "by_severity": {"HIGH": 15},
+                    "total_risk": 45.0, "first_seen": "2026-04-10T00:00:00+00:00",
+                    "last_seen":  "2026-04-28T00:00:00+00:00"},
+}
+
+_BY_SEVERITY = {"HIGH": 47, "MEDIUM": 12}
+
+_BY_DEVICE = {
+    "alice-mbp": {"hits": 30, "user_count": 1, "device_count": 0,
+                  "by_severity": {"HIGH": 25, "MEDIUM": 5}},
+    "bob-mbp":   {"hits": 15, "user_count": 1, "device_count": 0,
+                  "by_severity": {"HIGH": 15}},
+}
+
+_BY_CATEGORY = {
+    "browser":    {"hits": 40, "user_count": 2, "device_count": 0,
+                   "by_severity": {"HIGH": 40}},
+    "ide_plugin": {"hits": 5,  "user_count": 1, "device_count": 0,
+                   "by_severity": {"MEDIUM": 5}},
+}
 
 
-def _ev(outcome="ENDPOINT_FINDING", severity="HIGH", email="alice@x.com",
-        host="alice-mbp", provider="mcp:cf:fs", category="mcp_server",
-        ts: str = "") -> dict:
-    if not ts:
-        ts = _RECENT
-    return {"outcome": outcome, "severity": severity, "email": email,
-            "src_hostname": host, "provider": provider,
-            "category": category, "timestamp": ts}
+def _fake_reader(scope, scope_id, dimension, start, end, max_workers=None):
+    """Mock — returns canned dim payloads regardless of window."""
+    return {
+        "provider": _BY_PROVIDER,
+        "user":     _BY_USER,
+        "severity": _BY_SEVERITY,
+        "device":   _BY_DEVICE,
+        "category": _BY_CATEGORY,
+    }.get(dimension, {})
 
 
-# ── Tool 1 ─────────────────────────────────────────────────────
-def test_summary_stats_empty():
-    r = get_summary_stats([])
-    assert r["total_findings"] == 0 and r["unique_users"] == 0
-
-def test_summary_stats_single_finding():
-    r = get_summary_stats([_ev()])
-    assert r["total_findings"] == 1 and r["severities"] == {"HIGH": 1}
-
-def test_summary_stats_ignores_non_findings():
-    r = get_summary_stats([_ev(), _ev(outcome="HEARTBEAT")])
-    assert r["total_findings"] == 1 and r["total_events"] == 2
+def _fake_empty_reader(*a, **kw):
+    return {}
 
 
-# ── Tool 2 ─────────────────────────────────────────────────────
-def test_top_risky_users_empty():
-    assert get_top_risky_users([]) == []
-
-def test_top_risky_users_n_caps_results():
-    evs = [_ev(email="alice@x.com"), _ev(email="bob@x.com"), _ev(email="carol@x.com")]
-    assert len(get_top_risky_users(evs, n=2)) == 2
-
-def test_top_risky_users_max_severity():
-    evs = [_ev(email="alice@x.com", severity="LOW"),
-           _ev(email="alice@x.com", severity="CRITICAL")]
-    assert get_top_risky_users(evs)[0]["max_severity"] == "CRITICAL"
+# ── Tool 1: get_summary_stats ───────────────────────────────────
 
 
-# ── Tool 3 ─────────────────────────────────────────────────────
-def test_user_risk_profile_empty():
-    r = get_user_risk_profile([], "nobody@x.com")
-    assert r["total_findings"] == 0 and r["providers"] == []
+def test_summary_stats_tenant_scope():
+    with patch("ui.chat.tools.read_dimension_range", side_effect=_fake_reader):
+        r = get_summary_stats("tenant", "abc1234567890def", days_back=30)
+    assert r["total_findings"] == 47 + 12
+    assert r["severities"] == {"HIGH": 47, "MEDIUM": 12}
+    assert r["unique_users"] == 2
+    assert r["unique_providers"] == 2
+    assert r["window_days"] == 30
+    assert r["scope"] == "tenant"
 
-def test_user_risk_profile_scopes_to_user():
-    evs = [_ev(email="alice@x.com"), _ev(email="bob@x.com")]
-    r = get_user_risk_profile(evs, "alice@x.com")
-    assert r["total_findings"] == 1 and "alice-mbp" in r["devices"]
+
+def test_summary_stats_user_scope_unique_users_is_one():
+    with patch("ui.chat.tools.read_dimension_range", side_effect=_fake_reader):
+        r = get_summary_stats("user", "abc1234567890def")
+    assert r["unique_users"] == 1   # user-scope = themselves
 
 
-# ── Tool 4 ─────────────────────────────────────────────────────
-def test_query_findings_empty():
-    assert query_findings([]) == []
+def test_summary_stats_empty_rollup_returns_no_data_envelope():
+    """When nothing has been rolled up, tool returns the no_data envelope
+    so the LLM can say so honestly instead of fabricating."""
+    with patch("ui.chat.tools.read_dimension_range", side_effect=_fake_empty_reader):
+        r = get_summary_stats("tenant", "abc")
+    assert r.get("no_data") is True
+    assert "_citation" in r
+
+
+# ── Tool 2: get_top_risky_users ─────────────────────────────────
+
+
+def test_top_risky_users_sorted_by_total_risk():
+    with patch("ui.chat.tools.read_dimension_range", side_effect=_fake_reader):
+        r = get_top_risky_users("tenant", "abc", n=5)
+    rows = r["users"]
+    assert rows[0]["user"] == "alice@x.com"
+    assert rows[0]["total_risk"] == 82.5
+    assert rows[1]["user"] == "bob@x.com"
+    assert "_citation" in r and r["_citation"]["scope"] == "tenant"
+
+
+def test_top_risky_users_caps_n():
+    with patch("ui.chat.tools.read_dimension_range", side_effect=_fake_reader):
+        r = get_top_risky_users("tenant", "abc", n=1)
+    assert len(r["users"]) == 1
+
+
+def test_top_risky_users_no_data():
+    with patch("ui.chat.tools.read_dimension_range", side_effect=_fake_empty_reader):
+        r = get_top_risky_users("tenant", "abc")
+    assert r.get("no_data") is True
+    assert "_citation" in r
+
+
+# ── Tool 3: get_user_risk_profile ───────────────────────────────
+
+
+def test_user_risk_profile_tenant_lookup_hits():
+    with patch("ui.chat.tools.read_dimension_range", side_effect=_fake_reader):
+        r = get_user_risk_profile("tenant", "abc", "alice@x.com")
+    assert r["found"] is True
+    assert r["total_findings"] == 30
+    assert "OpenAI ChatGPT" in r["providers"]
+
+
+def test_user_risk_profile_tenant_lookup_miss():
+    with patch("ui.chat.tools.read_dimension_range", side_effect=_fake_reader):
+        r = get_user_risk_profile("tenant", "abc", "nobody@x.com")
+    assert r["found"] is False
+
+
+def test_user_risk_profile_user_scope_uses_severity_dim():
+    with patch("ui.chat.tools.read_dimension_range", side_effect=_fake_reader):
+        r = get_user_risk_profile("user", "abc", "alice@x.com")
+    assert r["found"] is True
+    assert r["total_findings"] == 47 + 12   # sum of severity counts
+
+
+# ── Tool 4: query_findings ──────────────────────────────────────
+
 
 def test_query_findings_severity_filter():
-    evs = [_ev(severity="HIGH"), _ev(severity="LOW")]
-    r = query_findings(evs, severity="HIGH")
-    assert len(r) == 1 and r[0]["severity"] == "HIGH"
+    with patch("ui.chat.tools.read_dimension_range", side_effect=_fake_reader):
+        r = query_findings("tenant", "abc", severity="HIGH")
+    matches = r["matches"]
+    # OpenAI ChatGPT has 47 HIGH; Copilot has 0 HIGH so excluded.
+    assert any(m["provider"] == "OpenAI ChatGPT" for m in matches)
+    assert not any(m["provider"] == "GitHub Copilot" for m in matches)
+
+
+def test_query_findings_no_filters_returns_all():
+    with patch("ui.chat.tools.read_dimension_range", side_effect=_fake_reader):
+        r = query_findings("tenant", "abc")
+    assert r["match_count"] == 2
+
 
 def test_query_findings_user_filter():
-    evs = [_ev(email="alice@x.com"), _ev(email="bob@x.com")]
-    r = query_findings(evs, user="alice@x.com")
-    assert len(r) == 1 and r[0]["user"] == "alice@x.com"
-
-def test_query_findings_only_endpoint_findings():
-    assert len(query_findings([_ev(), _ev(outcome="HEARTBEAT")])) == 1
+    with patch("ui.chat.tools.read_dimension_range", side_effect=_fake_reader):
+        r = query_findings("tenant", "abc", user="bob@x.com")
+    # Only OpenAI ChatGPT has bob@x.com.
+    assert {m["provider"] for m in r["matches"]} == {"OpenAI ChatGPT"}
 
 
-# ── Tool 5 ─────────────────────────────────────────────────────
-def test_fleet_status_empty():
-    r = get_fleet_status([])
-    assert r["total_devices"] == 0 and r["silent_24h"] == 0
-
-def test_fleet_status_recent_not_silent():
-    r = get_fleet_status([_ev()])
-    assert r["total_devices"] == 1 and r["silent_24h"] == 0
-
-def test_fleet_status_old_device_is_silent():
-    r = get_fleet_status([_ev(ts=OLD, host="ghost-box")])
-    assert r["silent_24h"] == 1 and "ghost-box" in r["silent_hosts"]
+# ── Tool 5: get_fleet_status ────────────────────────────────────
 
 
-# ── Tool 6 ─────────────────────────────────────────────────────
-def test_shadow_ai_census_empty():
-    assert get_shadow_ai_census([]) == []
-
-def test_shadow_ai_census_sorted_by_users_desc():
-    evs = [_ev(provider="p1", email="alice@x.com"),
-           _ev(provider="p2", email="alice@x.com"),
-           _ev(provider="p2", email="bob@x.com")]
-    r = get_shadow_ai_census(evs)
-    assert r[0]["provider"] == "p2" and r[0]["users"] == 2
+def test_fleet_status_counts_devices():
+    with patch("ui.chat.tools.read_dimension_range", side_effect=_fake_reader):
+        r = get_fleet_status("tenant", "abc")
+    assert r["total_devices"] == 2
+    assert r["top_devices"][0]["device"] == "alice-mbp"
 
 
-# ── Tool 7 ─────────────────────────────────────────────────────
-def test_recent_activity_empty():
-    assert get_recent_activity([]) == []
-
-def test_recent_activity_excludes_old():
-    evs = [_ev(), _ev(ts=OLD, email="ghost@x.com")]
-    users = [row["user"] for row in get_recent_activity(evs, hours=24)]
-    assert "ghost@x.com" not in users
+# ── Tool 6: get_shadow_ai_census (the headline) ─────────────────
 
 
-# ── Tool 8 ─────────────────────────────────────────────────────
-def test_compare_periods_empty():
-    r = compare_periods([], "2026-04-01", "2026-04-15", "2026-04-16", "2026-04-30")
-    assert r["delta_findings"] == 0 and r["new_providers"] == []
+def test_shadow_ai_census_sorted_by_hits_desc():
+    with patch("ui.chat.tools.read_dimension_range", side_effect=_fake_reader):
+        r = get_shadow_ai_census("tenant", "abc")
+    provs = r["providers"]
+    assert provs[0]["provider"] == "OpenAI ChatGPT"
+    assert provs[0]["hits"] == 47
+    assert provs[0]["user_count"] == 2
+    assert provs[1]["provider"] == "GitHub Copilot"
+    assert "_citation" in r
+    assert r["_citation"]["source"] == "S3 hourly rollups"
 
-def test_compare_periods_delta_and_new_users():
-    p1e = _ev(ts="2026-04-05T00:00:00+00:00", email="alice@x.com", provider="p1")
-    p2e = _ev(ts="2026-04-20T00:00:00+00:00", email="bob@x.com",   provider="p2")
-    r = compare_periods([p1e, p2e],
-                        "2026-04-01", "2026-04-15",
-                        "2026-04-16", "2026-04-30")
-    assert r["delta_findings"] == 0   # 1 each period
-    assert "p2" in r["new_providers"] and "bob@x.com" in r["new_users"]
+
+def test_shadow_ai_census_human_names_preserved():
+    """Critical: provider names must already be human (normalised at rollup time)."""
+    with patch("ui.chat.tools.read_dimension_range", side_effect=_fake_reader):
+        names = [p["provider"]
+                 for p in get_shadow_ai_census("tenant", "abc")["providers"]]
+    assert "claude.ai" not in names
+    assert "github.copilot" not in names
+    assert "OpenAI ChatGPT" in names
+    assert "GitHub Copilot" in names
+
+
+def test_shadow_ai_census_no_data():
+    with patch("ui.chat.tools.read_dimension_range", side_effect=_fake_empty_reader):
+        r = get_shadow_ai_census("tenant", "abc")
+    assert r.get("no_data") is True
+    assert "_citation" in r
+
+
+# ── Tool 7: get_recent_activity ─────────────────────────────────
+
+
+def test_recent_activity_returns_severity_breakdown():
+    with patch("ui.chat.tools.read_dimension_range", side_effect=_fake_reader):
+        r = get_recent_activity("tenant", "abc", hours=24)
+    assert r["window_hours"] == 24
+    assert r["total_findings"] == 47 + 12
+    assert r["by_severity"] == {"HIGH": 47, "MEDIUM": 12}
+
+
+# ── Tool 8: compare_periods ─────────────────────────────────────
+
+
+def test_compare_periods_zero_when_identical():
+    with patch("ui.chat.tools.read_dimension_range", side_effect=_fake_reader):
+        r = compare_periods("tenant", "abc",
+                            "2026-04-01", "2026-04-14",
+                            "2026-04-15", "2026-04-29")
+    # Same canned data both windows → delta = 0.
+    assert r["delta_findings"] == 0
+    assert r["new_providers"] == []
+    assert r["new_users"] == []
