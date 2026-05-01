@@ -1,18 +1,37 @@
 # =============================================================
 # FILE: src/store/base_store.py
-# VERSION: 1.0.0
-# UPDATED: 2026-04-18
+# VERSION: 1.1.0
+# UPDATED: 2026-05-01
 # PURPOSE: Shared base class for all store modules.
 #          Initialises boto3 S3 client and bucket reference once.
 #          Every store inherits this — no repeated setup code.
 # OWNER: Ravi Venugopal, Giggso Inc
 # DEPENDS: boto3
+# AUDIT LOG:
+#   v1.0.0  2026-04-18  Initial.
+#   v1.1.0  2026-05-01  Force SigV4 (signature_version='s3v4') on every
+#                       store's S3 client. boto3 may default to deprecated
+#                       SigV2 in some configs; SigV2 only works for
+#                       us-east-1 buckets, fails under SSE-KMS, and is
+#                       being phased out by AWS. Fixes presigned-URL
+#                       SignatureDoesNotMatch errors on agent DMG/EXE
+#                       downloads.
 # =============================================================
 
 import logging
 import boto3
+from botocore.config import Config
 
 log = logging.getLogger("marauder-scan.store")
+
+# All S3 clients share this config so presigned URLs are SigV4-signed.
+# Path-style (vs virtual-hosted) is irrelevant to signing but s3v4 + the
+# explicit region matters for cross-region buckets.
+_S3_CLIENT_CONFIG = Config(
+    signature_version="s3v4",
+    s3={"addressing_style": "virtual"},
+    retries={"max_attempts": 3, "mode": "standard"},
+)
 
 
 class BaseStore:
@@ -23,9 +42,11 @@ class BaseStore:
     """
 
     def __init__(self, bucket: str, region: str = "us-east-1"):
-        # Single S3 client shared across all methods in the subclass
+        # Single S3 client shared across all methods in the subclass.
+        # SigV4 forced via _S3_CLIENT_CONFIG (see module docstring).
         self.bucket = bucket
-        self.s3 = boto3.client("s3", region_name=region)
+        self.s3 = boto3.client("s3", region_name=region,
+                                config=_S3_CLIENT_CONFIG)
         self.region = region
 
     def _get(self, key: str) -> bytes:

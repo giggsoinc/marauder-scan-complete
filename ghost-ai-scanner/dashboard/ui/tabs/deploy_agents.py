@@ -143,11 +143,29 @@ def _generate(name: str, email: str, os_type: str,
         st.code(curl_cmd, language="bash")
         st.caption("Run in Terminal — saves to your current directory and prints the path.")
 
-    if result.get("dmg_url"):
-        st.markdown("**macOS DMG** (auto-built on EC2)")
+    # One-click artifact link — only show the one matching the chosen
+    # target platform. Both DMG and EXE are still BUILT (negligible cost,
+    # ~10s) so the cross-platform link can be surfaced on demand below.
+    show_dmg = os_type in ("mac", "linux") and result.get("dmg_url")
+    show_exe = os_type == "windows" and result.get("exe_url")
+
+    if show_dmg:
+        st.markdown("**macOS one-click installer (DMG)** (auto-built on EC2)")
         st.markdown(f"[Download DMG]({result['dmg_url']})")
-    if result.get("exe_url"):
-        st.markdown("**Windows EXE** (auto-built on EC2)")
+    elif show_exe:
+        st.markdown("**Windows one-click installer (EXE)** (auto-built on EC2)")
         st.markdown(f"[Download EXE]({result['exe_url']})")
+
+    # Cross-platform fallback — collapsed by default so the primary
+    # surface stays clean. Still useful when a recipient asks for the
+    # other format after the package is generated.
+    other_dmg = os_type == "windows" and result.get("dmg_url")
+    other_exe = os_type in ("mac", "linux") and result.get("exe_url")
+    if other_dmg or other_exe:
+        with st.expander("Need the other platform?", expanded=False):
+            if other_dmg:
+                st.markdown(f"[Download DMG (Mac)]({result['dmg_url']})")
+            if other_exe:
+                st.markdown(f"[Download EXE (Windows)]({result['exe_url']})")
 
 
