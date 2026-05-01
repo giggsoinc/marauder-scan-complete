@@ -127,10 +127,17 @@ ask "Dedup window minutes [60]:"
 read -r DEDUP_WINDOW_MINUTES
 DEDUP_WINDOW_MINUTES="${DEDUP_WINDOW_MINUTES:-60}"
 
-ask "Grafana admin password [change-me-before-demo]:"
+ask "Grafana admin password [press Enter to auto-generate]:"
 read -r -s GF_ADMIN_PASSWORD
-GF_ADMIN_PASSWORD="${GF_ADMIN_PASSWORD:-change-me-before-demo}"
 echo ""
+if [ -z "$GF_ADMIN_PASSWORD" ]; then
+    # 32-char URL-safe random — no known-default password ever ends up in .env.
+    GF_ADMIN_PASSWORD="$(openssl rand -base64 24 | tr -d '/+=' | cut -c1-32)"
+    echo -e "${YELLOW}Generated random Grafana admin password — save it now:${NC}"
+    echo "  ${BOLD}${GF_ADMIN_PASSWORD}${NC}"
+    echo "  (also written to .env as GF_SECURITY_ADMIN_PASSWORD; chmod 600)"
+    echo ""
+fi
 
 echo ""
 echo -e "${BOLD}VPC Flow Logs${NC}"
