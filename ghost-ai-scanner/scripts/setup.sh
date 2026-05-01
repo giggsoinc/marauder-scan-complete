@@ -103,6 +103,42 @@ ask "Alert email for SNS subscription:"
 read -r ALERT_EMAIL
 [ -z "$ALERT_EMAIL" ] && err "Alert email required"
 
+# ── SES configuration (sender for OTP / welcome / alert email) ─
+echo ""
+echo -e "${BOLD}SES (Simple Email Service) — for OTP, welcome, alert mail${NC}"
+echo "--------------------------------------------------"
+echo "PatronAI uses SES to send agent-installer OTPs and user welcome"
+echo "emails. The SENDER address (or its domain) must be verified in SES."
+echo ""
+
+# Default SES region = AWS_REGION (most common). Override only if SES is set
+# up in a different region.
+ask "SES region [${AWS_REGION}]:"
+read -r SES_REGION
+SES_REGION="${SES_REGION:-${AWS_REGION}}"
+
+# Suggest the first ADMIN_EMAILS entry as the default sender — likely
+# already verified or easy for the admin to verify (their own inbox).
+DEFAULT_SES_SENDER=$(echo "$ADMIN_EMAILS" | cut -d',' -f1 | tr -d ' ')
+ask "SES sender email [${DEFAULT_SES_SENDER}]:"
+read -r SES_SENDER_EMAIL
+SES_SENDER_EMAIL="${SES_SENDER_EMAIL:-${DEFAULT_SES_SENDER}}"
+[ -z "$SES_SENDER_EMAIL" ] && err "SES sender email required"
+
+# Single-email vs domain (DKIM):
+# - Single: one click-to-verify email per address. Fine for a 1-2-user pilot.
+# - Domain: one set of DKIM CNAME records, then ANY address @yourdomain works.
+#   Strongly recommended for >5 users.
+SES_SENDER_DOMAIN=$(echo "$SES_SENDER_EMAIL" | awk -F'@' '{print $2}')
+echo ""
+echo "Verification mode:"
+echo "  1) Single email — verify just ${SES_SENDER_EMAIL} (good for testing)"
+echo "  2) Whole domain (DKIM) — verify ${SES_SENDER_DOMAIN}, then any"
+echo "     address @${SES_SENDER_DOMAIN} works (recommended for >5 users)"
+ask "Mode [2]:"
+read -r SES_VERIFY_MODE
+SES_VERIFY_MODE="${SES_VERIFY_MODE:-2}"
+
 echo ""
 echo -e "${BOLD}Alerting (press Enter to skip optional fields)${NC}"
 echo "--------------------------------------------------"
@@ -330,6 +366,96 @@ aws sns subscribe \
   --region "$AWS_REGION" >/dev/null
 ok "Subscription created — check $ALERT_EMAIL to confirm"
 
+# ── STEP 9b: SES sender verification ──────────────────────────
+step 9b "Configuring SES sender identity (region: $SES_REGION)"
+
+if [ "$SES_VERIFY_MODE" = "1" ]; then
+    # ── Single-email verification ───────────────────────────────
+    echo "  Verifying single email: $SES_SENDER_EMAIL"
+    SES_VERIFIED_STATUS=$(aws ses get-identity-verification-attributes \
+        --identities "$SES_SENDER_EMAIL" \
+        --region "$SES_REGION" \
+        --query "VerificationAttributes.\"$SES_SENDER_EMAIL\".VerificationStatus" \
+        --output text 2>/dev/null || echo "NotStarted")
+
+    if [ "$SES_VERIFIED_STATUS" = "Success" ]; then
+        ok "Sender already verified — no action needed"
+    else
+        aws ses verify-email-identity \
+            --email-address "$SES_SENDER_EMAIL" \
+            --region "$SES_REGION" >/dev/null
+        ok "Verification email sent to $SES_SENDER_EMAIL"
+        echo -e "  ${YELLOW}ACTION REQUIRED:${NC} open that inbox, click the AWS verification"
+        echo "  link before sending any OTP / welcome email."
+    fi
+else
+    # ── Domain (DKIM) verification ─────────────────────────────
+    echo "  Verifying domain: $SES_SENDER_DOMAIN"
+    DOMAIN_STATUS=$(aws ses get-identity-verification-attributes \
+        --identities "$SES_SENDER_DOMAIN" \
+        --region "$SES_REGION" \
+        --query "VerificationAttributes.\"$SES_SENDER_DOMAIN\".VerificationStatus" \
+        --output text 2>/dev/null || echo "NotStarted")
+
+    if [ "$DOMAIN_STATUS" != "Success" ]; then
+        aws ses verify-domain-identity \
+            --domain "$SES_SENDER_DOMAIN" \
+            --region "$SES_REGION" >/dev/null
+    fi
+
+    # Get DKIM tokens (3 CNAMEs the user must add to DNS)
+    DKIM_TOKENS=$(aws ses verify-domain-dkim \
+        --domain "$SES_SENDER_DOMAIN" \
+        --region "$SES_REGION" \
+        --query 'DkimTokens' \
+        --output text 2>/dev/null || echo "")
+
+    if [ -n "$DKIM_TOKENS" ]; then
+        echo -e "  ${YELLOW}ACTION REQUIRED:${NC} add these 3 CNAME records to DNS for"
+        echo "  $SES_SENDER_DOMAIN — then SES will auto-verify within ~72h"
+        echo "  (usually <1h). Until then, sending will fail silently."
+        echo ""
+        for token in $DKIM_TOKENS; do
+            echo "    Type:  CNAME"
+            echo "    Name:  ${token}._domainkey.${SES_SENDER_DOMAIN}"
+            echo "    Value: ${token}.dkim.amazonses.com"
+            echo ""
+        done
+    fi
+
+    if [ "$DOMAIN_STATUS" = "Success" ]; then
+        ok "Domain $SES_SENDER_DOMAIN already verified — DKIM CNAMEs above"
+        ok "are still required for production sending; verify they exist."
+    else
+        ok "Domain verification initiated for $SES_SENDER_DOMAIN"
+    fi
+fi
+
+# ── Sandbox detection ──────────────────────────────────────────
+QUOTA_MAX=$(aws ses get-send-quota \
+    --region "$SES_REGION" \
+    --query 'Max24HourSend' \
+    --output text 2>/dev/null || echo "0")
+QUOTA_INT=${QUOTA_MAX%.*}    # strip decimals — bash int comparison
+
+if [ "$QUOTA_INT" -le "200" ]; then
+    echo ""
+    echo -e "  ${YELLOW}⚠ SES is in SANDBOX MODE${NC} (cap: ${QUOTA_MAX} emails / 24h,"
+    echo "  recipients must be verified). To send to your team:"
+    echo ""
+    echo "    1. Open the SES console:"
+    echo "       https://${SES_REGION}.console.aws.amazon.com/ses/home?region=${SES_REGION}#/account"
+    echo "    2. Click 'Request production access'"
+    echo "    3. Fill the use-case form — typical approval is ~24h"
+    echo ""
+    echo "  Until production access is granted, you can only send to verified"
+    echo "  addresses. Verify your test recipients now via:"
+    echo "    aws ses verify-email-identity --email <addr> --region $SES_REGION"
+    echo ""
+else
+    ok "SES production access active (quota: ${QUOTA_MAX}/24h)"
+fi
+
 # ── STEP 10: VPC Flow Logs ────────────────────────────────────
 step 10 "Enabling VPC Flow Logs"
 if [ "$VPC_IDS" != "skip" ] && [ -n "$VPC_IDS" ]; then
@@ -408,16 +534,23 @@ PUBLIC_HOST=${EC2_PUBLIC_IP}
 # Takes precedence over PUBLIC_HOST. Must be reachable from the user's browser.
 GRAFANA_URL=${EC2_PUBLIC_IP:+http://${EC2_PUBLIC_IP}/grafana}
 
-# SES_SENDER_EMAIL — verified SES address for agent install emails.
-# Required only if agent delivery email feature is enabled.
-SES_SENDER_EMAIL=
+# ── SES (email) ───────────────────────────────────────────────
+# SES sender identity. Verified by setup.sh via aws ses verify-*-identity.
+# - Single-email mode: SES_SENDER_EMAIL must be the exact verified address.
+# - Domain mode (DKIM): SES_SENDER_EMAIL can be any address @verified-domain.
+SES_SENDER_EMAIL=${SES_SENDER_EMAIL}
+# SES region — usually equals AWS_REGION; override only if SES is set up
+# in a different region.
+SES_REGION=${SES_REGION}
+# Used by alerter as the From: header for SES-routed alert emails.
+# Must resolve to an SES-verified identity in SES_REGION.
+PATRONAI_FROM_EMAIL=${SES_SENDER_EMAIL}
 
 STREAMLIT_PORT=8501
 GRAFANA_PORT=3000
 
 # Set ALERT_RECIPIENTS to comma-separated emails for SNS/SES alerts
 ALERT_RECIPIENTS=
-PATRONAI_FROM_EMAIL=noreply@patronai.ai
 EOF
 chmod 600 "$REPO_DIR/.env"
 ok ".env generated (chmod 600)"

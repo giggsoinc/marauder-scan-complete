@@ -223,10 +223,17 @@ def _send_email(
     installer_url: str,
     company: str,
 ) -> bool:
-    """Send OTP + download link via SES. Returns True on success."""
+    """Send OTP + download link via SES. Returns True on success.
+    SES region defaults to SES_REGION env var, falling back to AWS_REGION
+    so a deployment can put SES in a different region than the app."""
     import boto3
-    region = os.environ.get("AWS_REGION", "us-east-1")
-    sender = os.environ.get("SES_SENDER_EMAIL", f"patronai@{company.lower()}.com")
+    region = (os.environ.get("SES_REGION")
+              or os.environ.get("AWS_REGION", "us-east-1"))
+    sender = (os.environ.get("SES_SENDER_EMAIL")
+              or f"patronai@{company.lower()}.com")
+    if not os.environ.get("SES_SENDER_EMAIL"):
+        log.warning("SES_SENDER_EMAIL not set; using fallback %s — verify "
+                    "this address in SES or set SES_SENDER_EMAIL", sender)
 
     subject = "PatronAI Agent — Your Installation Package"
     body = (
@@ -256,5 +263,11 @@ def _send_email(
         log.info("Install email sent to %s", recipient_email)
         return True
     except Exception as e:
-        log.error("SES send failed for %s: %s", recipient_email, e)
+        # Surface boto3's error code (MessageRejected, MailFromDomainNotVerified,
+        # etc.) so the operator can act on it rather than guessing.
+        err_code = getattr(getattr(e, "response", {}), "get",
+                           lambda *_: {})("Error", {}).get("Code", "")
+        log.error("SES send failed for %s — sender=%s region=%s "
+                  "code=%s message=%s", recipient_email, sender, region,
+                  err_code or type(e).__name__, e)
         return False

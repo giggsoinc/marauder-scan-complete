@@ -67,7 +67,12 @@
       "Action": [
         "ses:SendEmail",
         "ses:SendRawEmail",
-        "ses:GetIdentityVerificationAttributes"
+        "ses:GetIdentityVerificationAttributes",
+        "ses:GetIdentityDkimAttributes",
+        "ses:VerifyEmailIdentity",
+        "ses:VerifyDomainIdentity",
+        "ses:VerifyDomainDkim",
+        "ses:GetSendQuota"
       ],
       "Resource": "*"
     }

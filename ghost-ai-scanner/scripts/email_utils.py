@@ -44,9 +44,15 @@ def send_welcome_email(
     import boto3
 
     company  = company or os.environ.get("COMPANY_NAME", "PatronAI")
-    region   = os.environ.get("AWS_REGION", "us-east-1")
-    sender   = os.environ.get("SES_SENDER_EMAIL",
-                               f"patronai@{company.lower()}.com")
+    # SES region defaults to SES_REGION env var (set by setup.sh), falling
+    # back to AWS_REGION so cross-region SES setups Just Work.
+    region   = (os.environ.get("SES_REGION")
+                or os.environ.get("AWS_REGION", "us-east-1"))
+    sender   = (os.environ.get("SES_SENDER_EMAIL")
+                or f"patronai@{company.lower()}.com")
+    if not os.environ.get("SES_SENDER_EMAIL"):
+        log.warning("SES_SENDER_EMAIL not set; using fallback %s — verify "
+                    "this address in SES or set SES_SENDER_EMAIL", sender)
     dashboard_url = os.environ.get("PATRONAI_DASHBOARD_URL",
                                     "https://your-patronai-dashboard")
 
@@ -80,5 +86,12 @@ def send_welcome_email(
                  recipient_email, role, added_by)
         return True
     except Exception as exc:
-        log.error("SES welcome email failed for %s: %s", recipient_email, exc)
+        # Surface boto3's error code (MessageRejected, MailFromDomainNotVerified,
+        # ConfigurationSetDoesNotExist, etc.) so the operator can act on it
+        # rather than guessing what went wrong.
+        err_code = getattr(getattr(exc, "response", {}), "get",
+                           lambda *_: {})("Error", {}).get("Code", "")
+        log.error("SES welcome email failed for %s — sender=%s region=%s "
+                  "code=%s message=%s", recipient_email, sender, region,
+                  err_code or type(exc).__name__, exc)
         return False
