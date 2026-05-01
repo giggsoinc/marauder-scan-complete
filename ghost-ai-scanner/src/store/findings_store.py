@@ -120,7 +120,10 @@ class FindingsStore(BaseStore):
             if provider:
                 conditions.append(f"s.provider = '{self._sql_escape(provider)}'")
             where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
-            expr = f"SELECT * FROM s3object s {where} LIMIT {int(limit)}"
+            # nosec B608 — owner/provider are quote-escaped via _sql_escape();
+            # limit is integer-clamped above. S3 Select has no bind-parameter
+            # API, so escape-and-build is the only mechanism available.
+            expr = f"SELECT * FROM s3object s {where} LIMIT {int(limit)}"  # nosec B608
 
             try:
                 resp = self.s3.select_object_content(

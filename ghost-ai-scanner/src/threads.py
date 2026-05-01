@@ -110,7 +110,12 @@ def streamlit_proc(stop: threading.Event):
     cmd = [
         sys.executable, "-m", "streamlit", "run", script,
         "--server.port",              str(STREAMLIT_PORT),
-        "--server.address",           "0.0.0.0",
+        # nosec B104 — bind to all interfaces is required INSIDE the
+        # container so the nginx reverse proxy in the same docker network
+        # can reach Streamlit. The container only publishes :8501 via
+        # docker-compose port mappings; in production those mappings
+        # should be removed and only nginx (:80/:443) exposed externally.
+        "--server.address",           "0.0.0.0",  # nosec B104
         "--server.headless",          "true",
         "--browser.gatherUsageStats", "false",
         "--server.fileWatcherType",   "none",

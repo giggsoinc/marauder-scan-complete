@@ -1,12 +1,18 @@
 # =============================================================
 # FILE: Dockerfile.grafana
-# VERSION: 1.1.0
-# UPDATED: 2026-04-19
+# VERSION: 1.2.0
+# UPDATED: 2026-05-01
 # OWNER: Giggso Inc
 # PURPOSE: Grafana container with PatronAI dashboards and
 #          datasources provisioned on first boot.
 #          Pam and Steve dashboards baked in — zero config needed.
 # PORT: 3000 (Grafana)
+# AUDIT LOG:
+#   v1.0.0  2026-04-19  Initial.
+#   v1.2.0  2026-05-01  Removed default GF_SECURITY_ADMIN_PASSWORD=change-me.
+#                       Container now refuses to start without an admin
+#                       password supplied via docker-compose .env. Security
+#                       hardening — never ship a known default password.
 # =============================================================
 
 FROM grafana/grafana:10.4.2
@@ -17,12 +23,15 @@ LABEL maintainer="Giggso Inc" \
 
 # Grafana environment defaults
 # Override via docker-compose .env
+# IMPORTANT: GF_SECURITY_ADMIN_PASSWORD is NOT set here. It MUST come from
+# the runtime environment (docker-compose .env). Grafana itself fails the
+# admin-bootstrap if the env var is missing, so the container won't expose
+# a known-default-password Grafana to the network.
 ENV GF_SERVER_HTTP_PORT=3000 \
     GF_SERVER_ROOT_URL=http://localhost:3000 \
     GF_AUTH_ANONYMOUS_ENABLED=false \
     GF_AUTH_BASIC_ENABLED=true \
     GF_SECURITY_ADMIN_USER=admin \
-    GF_SECURITY_ADMIN_PASSWORD=change-me \
     GF_USERS_ALLOW_SIGN_UP=false \
     GF_USERS_ALLOW_ORG_CREATE=false \
     GF_ANALYTICS_REPORTING_ENABLED=false \

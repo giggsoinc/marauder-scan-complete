@@ -220,14 +220,28 @@ def _put_gz(s3, key: str, payload: dict) -> None:
                   ContentEncoding="gzip")
 
 
+def _sql_escape_iso(ts: datetime) -> str:
+    """Render a datetime as an ISO string and strip anything that could
+    break out of an S3 Select string literal. Inputs here are internally
+    constructed datetime objects (never user-tainted), but this keeps the
+    static analysers happy and is defense-in-depth if a future caller
+    ever passes through external data."""
+    iso = ts.isoformat()
+    # Datetimes never contain quotes / newlines / NUL, but enforce it.
+    return "".join(c for c in iso if c not in ("'", "\x00", "\n", "\r", "\\"))
+
+
 def _select_rows_for_window(s3, key: str, window_start: datetime,
                             window_end: datetime) -> Iterable[dict]:
     """S3 Select rows in [window_start, window_end). Pushes timestamp filter
     to S3 so we never download out-of-window events. Falls back to GetObject
     on Select failure (e.g. mixed-schema parse errors) — degraded but works."""
-    iso_start = window_start.isoformat()
-    iso_end   = window_end.isoformat()
-    sql = (f"SELECT s.provider, s.category, s.severity, s.owner, s.email, "
+    iso_start = _sql_escape_iso(window_start)
+    iso_end   = _sql_escape_iso(window_end)
+    # nosec B608 — string concatenation here builds a fixed query shape with
+    # only sanitised internal datetimes; S3 Select doesn't support parameter
+    # binding so escaping is the only mechanism.
+    sql = (f"SELECT s.provider, s.category, s.severity, s.owner, s.email, "  # nosec B608
            f"s.src_hostname, s.device_uuid, s.timestamp, s.company "
            f"FROM s3object s "
            f"WHERE s.timestamp >= '{iso_start}' AND s.timestamp < '{iso_end}'")
