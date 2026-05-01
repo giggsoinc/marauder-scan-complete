@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # =============================================================
 # FILE: scripts/patronai_mcp_server.py
-# VERSION: 1.0.0
-# UPDATED: 2026-04-28
+# VERSION: 2.0.0
+# UPDATED: 2026-05-01
 # OWNER: Giggso Inc (Ravi Venugopal)
 # PURPOSE: PatronAI as an MCP server — exposes the same 8 analytics
 #          tools to any MCP client (Claude Desktop, Cursor, etc.).
-#          Loads live data from S3 at each tool call (no stale cache).
+#          Reads from per-tenant hourly S3 rollups (same backend as
+#          the dashboard chat panel).
 #          stdout = MCP JSON-RPC only. All diagnostics → stderr.
 #
 # ── V1 SECURITY: SSH stdio only ──────────────────────────────
@@ -27,9 +28,12 @@
 #   "args": ["-i","~/.ssh/patronai-ec2.pem","-o",
 #            "StrictHostKeyChecking=yes","ec2-user@<EC2_IP>",
 #            "python /app/scripts/patronai_mcp_server.py"]
-# DEPENDS: fastmcp, boto3
+# DEPENDS: fastmcp>=3.2.0, boto3
 # AUDIT LOG:
 #   v1.0.0  2026-04-28  Initial. SSH-only, V2 risks documented.
+#   v2.0.0  2026-05-01  Migrated chat tools to (scope, scope_id, **kwargs).
+#                       Tenant scope hash derived from COMPANY_NAME env var.
+#                       fastmcp pin bumped to ≥3.2.0 (CVE remediation).
 # =============================================================
 
 import json
@@ -53,25 +57,19 @@ from ui.chat.tools import (
     query_findings, get_fleet_status, get_shadow_ai_census,
     get_recent_activity, compare_periods,
 )
+from query.rollup_reader import hash_company  # type: ignore
 
 mcp = FastMCP("PatronAI Security Intelligence")
 
-_BUCKET = os.environ.get("MARAUDER_SCAN_BUCKET", "")
-_REGION = os.environ.get("AWS_REGION", "us-east-1")
+_BUCKET  = os.environ.get("MARAUDER_SCAN_BUCKET", "")
+_REGION  = os.environ.get("AWS_REGION", "us-east-1")
+_COMPANY = os.environ.get("COMPANY_NAME", "")
 
-
-def _load_events() -> list:
-    """Fetch the latest events from S3 via BlobIndexStore."""
-    if not _BUCKET:
-        log.error("MARAUDER_SCAN_BUCKET not set")
-        return []
-    try:
-        from blob_index_store import BlobIndexStore  # type: ignore
-        store = BlobIndexStore(_BUCKET, _REGION)
-        return store.events.read() or []
-    except Exception as exc:
-        log.error("S3 load failed: %s", exc)
-        return []
+# MCP runs at tenant scope — exposes the whole company's data to the
+# authenticated SSH user. Per-user (exec-view) scoping isn't applicable
+# here because there's no per-call user identity in V1 stdio transport.
+_SCOPE    = "tenant"
+_SCOPE_ID = hash_company(_COMPANY) if _COMPANY else ""
 
 
 def _j(obj) -> str:
@@ -79,62 +77,100 @@ def _j(obj) -> str:
     return json.dumps(obj, default=str, indent=2)
 
 
+def _ready() -> bool:
+    if not _BUCKET:
+        log.error("MARAUDER_SCAN_BUCKET not set")
+        return False
+    if not _COMPANY:
+        log.error("COMPANY_NAME not set — cannot derive tenant scope_id")
+        return False
+    return True
+
+
 # ── MCP tool registrations ────────────────────────────────────
 
 @mcp.tool()
-def summary_stats() -> str:
-    """Overall AI security posture: total findings, severity breakdown,
-    unique users monitored, and unique AI providers detected."""
-    return _j(get_summary_stats(_load_events()))
+def summary_stats(days_back: int = 30) -> str:
+    """Overall AI security posture in the window: total findings, severity
+    breakdown, unique users monitored, unique AI providers detected."""
+    if not _ready():
+        return _j({"error": "MCP server not configured (bucket/company)"})
+    return _j(get_summary_stats(_SCOPE, _SCOPE_ID, days_back=days_back))
 
 
 @mcp.tool()
-def top_risky_users(n: int = 5) -> str:
-    """Top N users ranked by AI security finding count with max severity."""
-    return _j(get_top_risky_users(_load_events(), n))
+def top_risky_users(n: int = 5, days_back: int = 30) -> str:
+    """Top N users ranked by total weighted risk in the window."""
+    if not _ready():
+        return _j({"error": "MCP server not configured"})
+    return _j(get_top_risky_users(_SCOPE, _SCOPE_ID, n=n, days_back=days_back))
 
 
 @mcp.tool()
-def user_risk_profile(email: str) -> str:
-    """Full risk profile for one user: providers, devices, severities."""
-    return _j(get_user_risk_profile(_load_events(), email))
+def user_risk_profile(email: str, days_back: int = 90) -> str:
+    """Full risk profile for one user in the window: providers, devices,
+    severities, categories, first/last seen."""
+    if not _ready():
+        return _j({"error": "MCP server not configured"})
+    return _j(get_user_risk_profile(_SCOPE, _SCOPE_ID,
+                                     email=email, days_back=days_back))
 
 
 @mcp.tool()
 def findings(severity: str = "", user: str = "", category: str = "",
-             d_from: str = "", d_to: str = "", limit: int = 20) -> str:
-    """Filtered findings list. All parameters optional.
-    severity: CRITICAL|HIGH|MEDIUM|LOW. d_from/d_to: YYYY-MM-DD."""
-    return _j(query_findings(_load_events(), severity=severity, user=user,
-                             category=category, d_from=d_from,
-                             d_to=d_to, limit=limit))
+             days_back: int = 30, limit: int = 20) -> str:
+    """Aggregated findings filtered by severity / user / category. Returns
+    matching providers ranked by count from hourly rollups."""
+    if not _ready():
+        return _j({"error": "MCP server not configured"})
+    return _j(query_findings(_SCOPE, _SCOPE_ID,
+                             severity=severity, user=user,
+                             category=category, days_back=days_back,
+                             limit=limit))
 
 
 @mcp.tool()
-def fleet_status() -> str:
-    """Fleet heartbeat summary: total devices, silent hosts (>24 h)."""
-    return _j(get_fleet_status(_load_events()))
+def fleet_status(days_back: int = 7) -> str:
+    """Device activity summary in the window: total devices, top devices
+    by finding count."""
+    if not _ready():
+        return _j({"error": "MCP server not configured"})
+    return _j(get_fleet_status(_SCOPE, _SCOPE_ID, days_back=days_back))
 
 
 @mcp.tool()
-def shadow_ai_census() -> str:
-    """Per-provider statistics: unique users, devices, first/last seen."""
-    return _j(get_shadow_ai_census(_load_events()))
+def shadow_ai_census(days_back: int = 90, limit: int = 20) -> str:
+    """Top AI providers in the window with hits, user count, severities,
+    first/last seen. Names are pre-normalised to human form."""
+    if not _ready():
+        return _j({"error": "MCP server not configured"})
+    return _j(get_shadow_ai_census(_SCOPE, _SCOPE_ID,
+                                    days_back=days_back, limit=limit))
 
 
 @mcp.tool()
 def recent_activity(hours: int = 24) -> str:
-    """All AI security findings observed in the last N hours."""
-    return _j(get_recent_activity(_load_events(), hours))
+    """Findings observed in the last N hours: severity breakdown +
+    top providers."""
+    if not _ready():
+        return _j({"error": "MCP server not configured"})
+    return _j(get_recent_activity(_SCOPE, _SCOPE_ID, hours=hours))
 
 
 @mcp.tool()
 def compare_date_periods(d1f: str, d1t: str, d2f: str, d2t: str) -> str:
     """Compare two date ranges (YYYY-MM-DD). Returns delta in finding count,
-    new providers, and new users appearing in the second period."""
-    return _j(compare_periods(_load_events(), d1f, d1t, d2f, d2t))
+    new providers, and new users appearing only in the second period."""
+    if not _ready():
+        return _j({"error": "MCP server not configured"})
+    return _j(compare_periods(_SCOPE, _SCOPE_ID,
+                              d1f=d1f, d1t=d1t, d2f=d2f, d2t=d2t))
 
 
 if __name__ == "__main__":
-    log.info("PatronAI MCP server starting (bucket=%s)", _BUCKET or "NOT SET")
+    log.info("PatronAI MCP server starting "
+             "(bucket=%s, company=%s, scope_id=%s)",
+             _BUCKET or "NOT SET",
+             _COMPANY or "NOT SET",
+             (_SCOPE_ID[:8] + "…") if _SCOPE_ID else "NOT SET")
     mcp.run()

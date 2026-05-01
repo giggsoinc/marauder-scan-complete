@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+# =============================================================
+# FILE: scripts/git-hooks/pre-commit
+# VERSION: 1.0.0
+# UPDATED: 2026-05-01
+# OWNER: Giggso Inc (Ravi Venugopal)
+# PURPOSE: Block commits that contain AWS access keys, presigned-URL
+#          fragments, or generated agent installers. Runs locally on
+#          every `git commit`. Defense-in-depth: even if .gitignore is
+#          bypassed, this catches the actual content.
+#
+#          INSTALL: bash scripts/git-hooks/install.sh
+#                   (or copy this file to .git/hooks/pre-commit + chmod +x)
+#
+#          BYPASS (rarely justified): git commit --no-verify
+#          Don't bypass — fix the underlying issue. CI test will catch
+#          it later anyway (tests/unit/test_secret_patterns.py).
+# =============================================================
+
+set -e
+
+RED=$'\033[31m'; YEL=$'\033[33m'; NC=$'\033[0m'
+
+# Get list of staged files (Added, Copied, Modified, Renamed) — skip deletions.
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+
+if [ -z "$staged" ]; then
+    exit 0
+fi
+
+violations=0
+
+for f in $staged; do
+    # Skip binary files (git diff would have warned us anyway).
+    if file "$f" 2>/dev/null | grep -q "binary"; then
+        continue
+    fi
+
+    # 1. AWS Access Key ID (real keys, not test fixtures).
+    #    AKIAIOSFODNN7EXAMPLE is the official AWS docs example — allowed.
+    bad_keys=$(grep -onE 'AKIA[A-Z0-9]{16}' "$f" 2>/dev/null \
+              | grep -v 'AKIAIOSFODNN7EXAMPLE' || true)
+    if [ -n "$bad_keys" ]; then
+        echo "${RED}[pre-commit] AWS access key in $f:${NC}"
+        echo "$bad_keys" | head -5
+        violations=$((violations + 1))
+    fi
+
+    # 2. AWS temporary session token (ASIA prefix).
+    bad_tmp=$(grep -onE 'ASIA[A-Z0-9]{16}' "$f" 2>/dev/null || true)
+    if [ -n "$bad_tmp" ]; then
+        echo "${RED}[pre-commit] AWS session token in $f:${NC}"
+        echo "$bad_tmp" | head -5
+        violations=$((violations + 1))
+    fi
+
+    # 3. AWS presigned URL signature param (catches whole leaked URLs
+    #    even if the key got renamed since).
+    bad_sig=$(grep -on 'AWSAccessKeyId=AKIA' "$f" 2>/dev/null || true)
+    if [ -n "$bad_sig" ]; then
+        echo "${RED}[pre-commit] presigned-URL fragment in $f:${NC}"
+        echo "$bad_sig" | head -5
+        violations=$((violations + 1))
+    fi
+
+    # 4. Common AWS secret-access-key shape (40 chars base64-ish on a line
+    #    that names it). Tight enough to avoid false positives.
+    bad_secret=$(grep -onE \
+        '(AWS_SECRET_ACCESS_KEY|aws_secret_access_key)[[:space:]]*[:=][[:space:]]*[A-Za-z0-9/+=]{40}' \
+        "$f" 2>/dev/null || true)
+    if [ -n "$bad_secret" ]; then
+        echo "${RED}[pre-commit] AWS secret access key in $f:${NC}"
+        echo "$bad_secret" | head -3
+        violations=$((violations + 1))
+    fi
+done
+
+# 5. Block staging the generated installers themselves.
+for f in $staged; do
+    case "$f" in
+        ghost-ai-scanner/agent/install/setup_agent.sh|\
+        ghost-ai-scanner/agent/install/setup_agent.ps1|\
+        agent/install/setup_agent.sh|\
+        agent/install/setup_agent.ps1)
+            echo "${RED}[pre-commit] $f is a generated installer — must not be committed.${NC}"
+            echo "${YEL}  Templates ($f.template) are the only files that belong in git.${NC}"
+            violations=$((violations + 1))
+            ;;
+    esac
+done
+
+if [ "$violations" -gt 0 ]; then
+    echo
+    echo "${RED}REJECTED: $violations secret-pattern violation(s) in staged content.${NC}"
+    echo "${YEL}Fix the file(s), unstage with 'git restore --staged <file>', then re-commit.${NC}"
+    echo "${YEL}If you genuinely need to bypass (e.g. test fixture using AKIAIOSFODNN7EXAMPLE),${NC}"
+    echo "${YEL}adjust the hook in scripts/git-hooks/pre-commit; do NOT use --no-verify in CI.${NC}"
+    exit 1
+fi
+
+exit 0

@@ -1,12 +1,18 @@
 # =============================================================
 # FILE: src/store/findings_store.py
-# VERSION: 1.0.1
-# UPDATED: 2026-04-27
+# VERSION: 1.0.2
+# UPDATED: 2026-05-01
 # PURPOSE: Write findings to partitioned JSONL files in S3.
 #          Read findings back using S3 Select push-down filtering.
 #          Polars for lazy dataframe construction — never loads full file.
 # OWNER: Ravi Venugopal, Giggso Inc
 # DEPENDS: store.base_store, polars, boto3 S3 Select
+# AUDIT LOG:
+#   v1.0.0  2026-04-18  Initial.
+#   v1.0.1  2026-04-27  Severity-aware partitioning.
+#   v1.0.2  2026-05-01  Quote-escape owner/provider in S3 Select SQL;
+#                       clamp limit to int range. Fixes potential SQL
+#                       injection via tainted owner/provider strings.
 # =============================================================
 
 import json
@@ -53,6 +59,21 @@ class FindingsStore(BaseStore):
             log.error(f"Failed to write finding: {e}")
             return False
 
+    @staticmethod
+    def _sql_escape(value: str) -> str:
+        """Escape a string literal for inclusion in an S3 Select SQL query.
+        Doubles single quotes (the only escape S3 Select recognises) and
+        strips characters that would break the query (NUL, newlines,
+        backslash). Inputs are application-controlled today, but this
+        defends against future tainted call paths. Cheap belt-and-braces."""
+        if value is None:
+            return ""
+        # Reject NUL / newlines / backslash outright — none belong in a
+        # legitimate owner email or provider domain.
+        cleaned = "".join(c for c in str(value)
+                          if c not in ("\x00", "\n", "\r", "\\"))
+        return cleaned.replace("'", "''")
+
     def read(
         self,
         target_date: str,
@@ -66,9 +87,20 @@ class FindingsStore(BaseStore):
         Filters pushed to S3 — never loads full file into memory.
         Returns Polars DataFrame. Empty DataFrame on error or no data.
         """
+        # Clamp limit to a sane integer range so a tainted caller can't
+        # smuggle SQL via the limit field, and can't issue a runaway scan.
+        try:
+            limit = max(1, min(int(limit), 10_000))
+        except (TypeError, ValueError):
+            limit = 500
+
         # Determine which severity files to read
         if severity and severity.upper() != "ALL":
-            targets = [severity.lower()]
+            sev_norm = str(severity).strip().lower()
+            if sev_norm in self.SEVERITY_FILES:
+                targets = [sev_norm]
+            else:
+                targets = self.SEVERITY_FILES
         else:
             targets = self.SEVERITY_FILES
 
@@ -79,14 +111,16 @@ class FindingsStore(BaseStore):
             if not self._exists(key):
                 continue
 
-            # Build S3 Select SQL with optional filters
+            # Build S3 Select SQL with optional filters. Quote-escape user
+            # input — S3 Select uses single-quoted string literals; doubled
+            # single-quotes are the documented escape.
             conditions = []
             if owner:
-                conditions.append(f"s.owner = '{owner}'")
+                conditions.append(f"s.owner = '{self._sql_escape(owner)}'")
             if provider:
-                conditions.append(f"s.provider = '{provider}'")
+                conditions.append(f"s.provider = '{self._sql_escape(provider)}'")
             where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
-            expr = f"SELECT * FROM s3object s {where} LIMIT {limit}"
+            expr = f"SELECT * FROM s3object s {where} LIMIT {int(limit)}"
 
             try:
                 resp = self.s3.select_object_content(

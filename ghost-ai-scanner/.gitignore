@@ -4,9 +4,23 @@
 
 # ── Credentials and generated configs — NEVER commit ─────────
 .env
+.env.*
+!.env.example
 packetbeat.yml
 agent/config.json
 grafana/datasources/s3.json
+
+# ── Generated agent installers — NEVER commit ────────────────
+# These are rendered per-recipient by scripts/render_agent_package.py
+# and contain presigned S3 URLs + AWS access key IDs in query strings.
+# The templates are .template; the rendered output (.sh / .ps1 without
+# the suffix) is recipient-specific and goes only to S3, never to git.
+agent/install/setup_agent.sh
+agent/install/setup_agent.ps1
+# Allow the templates explicitly (defensive — git-ignore is path-based,
+# not extension-based, but make intent unambiguous):
+!agent/install/setup_agent.sh.template
+!agent/install/setup_agent.ps1.template
 
 # ── Python ───────────────────────────────────────────────────
 __pycache__/

@@ -30,7 +30,10 @@ cairocffi>=1.6.1               # BSD — weasyprint dep; 1.5.x has MRO bug on Py
 requests>=2.31.0,<3.0.0        # Apache 2.0 — Trinity webhook, LogAnalyzer referral, LLM transport
 
 # ── AI Chat / MCP ─────────────────────────────────────────────
-fastmcp>=0.1.0,<1.0.0          # MIT — PatronAI MCP server (scripts/patronai_mcp_server.py)
+# Was <1.0.0; bumped 2026-05-01 to remediate 6 CVEs in fastmcp 0.x
+# (CVE-2025-62800/62801/64340/69196, GHSA-rcfx-77hg-w2wv, CVE-2026-27124).
+# Surface used here is just FastMCP(name) + @mcp.tool() + .run(); stable across 2.x and 3.x.
+fastmcp>=3.2.0,<4.0.0          # MIT — PatronAI MCP server (scripts/patronai_mcp_server.py)
 
 # ── Identity resolution ───────────────────────────────────────
 ldap3>=2.9.1,<3.0.0            # LGPL — Active Directory LDAP lookup (optional source)
