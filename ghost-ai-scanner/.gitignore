@@ -40,3 +40,5 @@ reports/regression-*.html
 
 # ── macOS ────────────────────────────────────────────────────
 .DS_Store
+
+.codex-security-venv/
