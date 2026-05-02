@@ -428,12 +428,13 @@ LLM_MODEL_VAL=""
 if [[ "$LLM_DETECT" == "llama" ]]; then
   ok "llama-server found on EC2 (port 8080)"
   LLM_BASE_URL_VAL="http://localhost:8080"
-  # Search for Qwen 3.5 9B Q4 GGUF first, then any .gguf fallback
+  # Search for the LFM2.5-1.2B-Thinking GGUF first, then any .gguf fallback.
+  # Path patterns cover both bake-time copies (/models/lfm2*) and runtime
+  # downloads via `llama-server --hf-repo` (HuggingFace cache layout).
   LLM_MODEL_PATH=$(ssh -i "$EC2_KEY" -o StrictHostKeyChecking=no \
     "${EC2_USER}@${EC2_HOST}" \
-    'find /models -name "qwen3.5*9b*q4*.gguf" \
-                  -o -name "qwen3.5*9b*Q4*.gguf" \
-                  -o -name "qwen*3.5*9b*.gguf" \
+    'find /models -iname "lfm2*1.2b*thinking*.gguf" \
+                  -o -iname "lfm2.5*.gguf" \
      2>/dev/null | head -1' \
     2>/dev/null || echo "")
   # Fallback to any .gguf present on the box
@@ -450,7 +451,7 @@ if [[ "$LLM_DETECT" == "llama" ]]; then
       LLAMA_BIN=\$(which llama-server)
       sudo tee /etc/systemd/system/llama-server.service > /dev/null <<EOF
 [Unit]
-Description=llama.cpp server — Qwen 3.5 9B
+Description=llama.cpp server — LFM2.5-1.2B-Thinking
 After=network.target
 [Service]
 ExecStart=\${LLAMA_BIN} --model ${LLM_MODEL_PATH} --port 8080 --ctx-size 4096
@@ -466,7 +467,7 @@ EOF
     "
     ok "llama-server systemd service installed and started"
   else
-    warn "No .gguf found — expected at /models/qwen3.5-9b-q4_k_m.gguf"
+    warn "No .gguf found — expected at /models/lfm2.5-1.2b-thinking-q4_k_m.gguf or downloadable via --hf-repo"
     warn "Upload the model to EC2 then re-deploy to activate chat."
     LLM_DETECT="none"
   fi
@@ -475,10 +476,12 @@ elif [[ "$LLM_DETECT" == "ollama" ]]; then
   ok "Ollama found on EC2"
   LLM_BASE_URL_VAL="http://localhost:11434"
 
-  # Pick model — default qwen3:8b (Qwen 3 8B Q4, ~5.2 GB, tool-capable)
-  ask "Ollama model to use [qwen3:8b]  (other options: qwen3:14b, llama3.2, gemma3:4b):"
+  # Pick model — default lfm2:1b (matches our llama-server default family;
+  # ~750 MB, tool-capable, fits a t3.large CPU). Larger options stay
+  # available for hosts with more RAM / GPU.
+  ask "Ollama model to use [lfm2:1b]  (alternatives: qwen3:8b ~5.2GB, qwen3:14b, llama3.2):"
   read -r OLLAMA_MODEL
-  OLLAMA_MODEL="${OLLAMA_MODEL:-qwen3:8b}"
+  OLLAMA_MODEL="${OLLAMA_MODEL:-lfm2:1b}"
   LLM_MODEL_VAL="$OLLAMA_MODEL"
 
   info "Pulling model $OLLAMA_MODEL (may take a few minutes)..."
@@ -508,9 +511,9 @@ else
       && ok "Ollama installed" \
       || err "Ollama install failed — check EC2 internet access"
 
-    ask "Model to pull [qwen3:8b]  (~5.2 GB Q4, or qwen3:14b for ~8.5 GB):"
+    ask "Model to pull [lfm2:1b]  (~750 MB; or qwen3:8b ~5.2 GB if you need a bigger model):"
     read -r OLLAMA_MODEL
-    OLLAMA_MODEL="${OLLAMA_MODEL:-qwen3:8b}"
+    OLLAMA_MODEL="${OLLAMA_MODEL:-lfm2:1b}"
     LLM_MODEL_VAL="$OLLAMA_MODEL"
     LLM_BASE_URL_VAL="http://localhost:11434"
     LLM_DETECT="ollama"
@@ -526,7 +529,7 @@ else
        nohup ollama serve >> /tmp/ollama.log 2>&1 &"
   else
     warn "Skipping LLM setup — chat widget will show 'LLM server unreachable'."
-    warn "Place model at /models/qwen3.5-9b-q4_k_m.gguf and re-deploy to activate chat."
+    warn "Place model at /models/lfm2.5-1.2b-thinking-q4_k_m.gguf and re-deploy to activate chat."
   fi
 fi
 
@@ -567,7 +570,7 @@ if [[ "$LLM_DETECT" != "none" ]]; then
   if [[ "$LLM_OK" == OK* ]]; then
     ok "LLM ready — $LLM_OK"
   else
-    warn "LLM not yet answering — model may still be loading (Qwen 3.5 9B takes ~30 s)."
+    warn "LLM not yet answering — model may still be loading (LFM2.5-1.2B-Thinking takes ~10-20 s on CPU)."
     warn "Check on EC2:  curl ${LLM_BASE_URL_VAL}/v1/models"
     warn "  or tail log:  journalctl -u llama-server -f"
   fi

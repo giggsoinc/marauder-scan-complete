@@ -23,9 +23,9 @@ Read these before starting — they prevent the most common surprises:
 | | What to know |
 |---|---|
 | 🔑 **Email-only login** | PatronAI has **no password field**. Add your email to `ALLOWED_EMAILS` in `.env` — that is your login credential. There is no `admin@local / patronai` default. |
-| ⬇️ **LLM download on first start** | `docker compose up` triggers a background download of Qwen3-0.6B (~500 MB) into the `patronai-models` Docker volume. The dashboard opens immediately; the **🤖 Ask AI** chat tab activates once the download finishes (~2 min on a fast connection). |
+| ⬇️ **LLM download on first start** | `docker compose up` triggers a background download of LFM2.5-1.2B-Thinking (~750 MB Q4_K_M) into the `patronai-models` Docker volume via `llama-server --hf-repo`. The dashboard opens immediately; the persistent **🤖 Ask PatronAI** side panel activates once the download finishes (~3-5 min). |
 | 📧 **SNS confirmation email** | If you ran `prereqs.sh`, AWS sent a subscription confirmation to `ADMIN_EMAILS`. You **must click that link** — if you skip it, alert emails are silently dropped with no error logged. |
-| 🔒 **Grafana default password** | Grafana starts with `admin / admin`. Change the password on first login at `http://localhost/grafana` before exposing to any network. |
+| 🔒 **Grafana password is required** | `GF_SECURITY_ADMIN_PASSWORD` must be set in `.env` (compose refuses to start without it). `setup.sh` auto-generates a 32-char random one if you press Enter at the prompt; otherwise paste your own. **No `admin/admin` default ships any more.** |
 
 ---
 
@@ -110,22 +110,30 @@ Expected: **353 tests pass**, ~40 seconds, no network required.
 
 ## Step 6 — AI chat
 
-AI chat is on by default — no action needed. PatronAI downloads Qwen3-0.6B
-(~500 MB) into the `patronai-models` Docker volume on first start. Once done,
-open any dashboard view → scroll to bottom → **🤖 Ask AI** expander.
+AI chat is on by default — no action needed. PatronAI downloads
+[LiquidAI LFM2.5-1.2B-Thinking](https://huggingface.co/LiquidAI/LFM2.5-1.2B-Thinking-GGUF)
+(~750 MB Q4_K_M) into the `patronai-models` Docker volume on first start.
+Once ready, every dashboard view shows a persistent **🤖 Ask PatronAI**
+side panel. Answers cite real S3 paths from per-tenant hourly rollups,
+and how-to questions are answered from BM25-indexed HTML+MD docs.
 
 **To use Ollama instead** (if you have it running locally):
 
 ```dotenv
 # In .env:
 LLM_BASE_URL=http://host.docker.internal:11434/v1
-LLM_MODEL=gemma3:4b
+LLM_MODEL=lfm2:1b
 ```
 
 ```bash
-ollama pull gemma3:4b
+ollama pull lfm2:1b           # or any tool-calling capable model
 docker compose restart patronai
 ```
+
+**Refreshing docs after edits.** When you change any file under `docs/`
+or `ghost-ai-scanner/docs/`, ask the chat *"refresh docs"* (it calls
+`refresh_docs()`) or wait up to 5 min for the auto-refresh daemon —
+the BM25 index rebuilds when any indexed file's mtime advances.
 
 ---
 

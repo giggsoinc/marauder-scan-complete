@@ -652,7 +652,7 @@
         <ul>
           <li>Process: <code>llama-server</code> on EC2</li>
           <li>Endpoint: <code>http://localhost:8080/v1/chat/completions</code></li>
-          <li>Model: Qwen 3.5 9B Q4_K_M GGUF</li>
+          <li>Model: LFM2.5-1.2B-Thinking Q4_K_M GGUF (LiquidAI)</li>
           <li>Provider constant: <code>openai_compat</code></li>
           <li>Zero config — defaults are built into <code>llm/__init__.py</code></li>
           <li>No outbound HTTPS calls, no API billing</li>
@@ -679,7 +679,7 @@
 
 <span class="c-comment"># Same chain for each config key:</span>
 <span class="c-var">LLM_BASE_URL</span>   → SSM <span class="c-path">/patronai/llm/base_url</span>   → <span class="c-string">"http://localhost:8080"</span>
-<span class="c-var">LLM_MODEL</span>      → SSM <span class="c-path">/patronai/llm/model</span>      → <span class="c-string">"qwen3.5-9b-q4"</span>
+<span class="c-var">LLM_MODEL</span>      → SSM <span class="c-path">/patronai/llm/model</span>      → <span class="c-string">"lfm2.5-1.2b-thinking"</span>
 <span class="c-var">LLM_API_KEY</span>    → SSM <span class="c-path">/patronai/llm/api_key</span>    → <span class="c-string">""</span>  <span class="c-comment">(empty — not needed for local)</span></code></pre>
 
     <h3>Supported Provider Values</h3>
@@ -889,7 +889,7 @@ result = tools.<span class="c-fn">get_severity_breakdown</span>(events)
       <div class="flow-step">
         <span class="step-num">4</span>
         <div class="step-content">
-          <span class="step-component">llama-server (Qwen 3.5 9B)</span>
+          <span class="step-component">llama-server (LFM2.5-1.2B-Thinking)</span>
           <span class="step-action"> — Returns a response. If it contains </span><code>tool_calls</code><span class="step-action">, engine.py extracts the tool name and arguments.</span>
         </div>
       </div>
@@ -1026,7 +1026,7 @@ Claude Desktop  ──stdio──►  patronai_mcp_server.py
           </tr>
           <tr>
             <td>LLM_MODEL</td>
-            <td><span class="default-val">qwen3.5-9b-q4</span></td>
+            <td><span class="default-val">lfm2.5-1.2b-thinking</span></td>
             <td><span class="optional-badge">OPTIONAL</span></td>
             <td>Model identifier passed in the <code>model</code> field of every API request. Ignored by llama-server (server determines model at startup), but required for cloud endpoints.</td>
           </tr>
@@ -1070,7 +1070,7 @@ Claude Desktop  ──stdio──►  patronai_mcp_server.py
 
 /patronai/llm/provider     → <span class="c-string">"openai_compat"</span>
 /patronai/llm/base_url     → <span class="c-string">"http://localhost:8080"</span>
-/patronai/llm/model        → <span class="c-string">"qwen3.5-9b-q4"</span>
+/patronai/llm/model        → <span class="c-string">"lfm2.5-1.2b-thinking"</span>
 /patronai/llm/api_key      → <span class="c-string">""</span>  <span class="c-comment">(SecureString)</span>
 /patronai/llm/max_tokens   → <span class="c-string">"2048"</span></code></pre>
 

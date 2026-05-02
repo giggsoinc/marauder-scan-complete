@@ -166,7 +166,7 @@ Log in with any email you added to `ALLOWED_EMAILS`. No password required.
 ```bash
 pip install -r requirements.txt
 cd .. && pytest ghost-ai-scanner/tests/unit/ -q
-# → 353 passed
+# → 380 passed
 ```
 
 Full local guide: [`docs/quickstart-local.md`](docs/quickstart-local.md)
@@ -386,7 +386,7 @@ Supports tool calls for 10 analytics + help functions:
 OpenAI-compatible endpoint (Ollama, Groq, Together AI, LM Studio). API keys
 read from env vars or AWS Parameter Store (`/patronai/llm/*`).
 
-**MCP server** (`scripts/patronai_mcp_server.py`) — exposes the same 9 tools to
+**MCP server** (`scripts/patronai_mcp_server.py`) — exposes the same 8 analytics tools to
 Claude Desktop and any MCP-compatible agent over SSH stdio (V1, no HTTP port).
 
 ---
@@ -397,14 +397,14 @@ Claude Desktop and any MCP-compatible agent over SSH stdio (V1, no HTTP port).
 # Unit tests only (~40 seconds, no Docker/LocalStack needed)
 cd ghost-ai-scanner
 pytest tests/unit/ -q
-# → 353 passed
+# → 380 passed
 
 # Full suite including integration
 bash scripts/run_regression.sh          # unit + integration + docker build
 bash scripts/run_regression.sh --unit-only
 ```
 
-**353 tests across 36 files** covering normaliser, matcher, alerter, code engine,
+**380 tests across 38 files** covering normaliser, matcher, alerter, code engine,
 agent delivery, endpoint scan, fleet heartbeat, chat tools, pipeline health, and more.
 
 ---

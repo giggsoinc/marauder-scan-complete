@@ -859,7 +859,7 @@
 
     <div class="callout callout-note">
       <div class="callout-title">Note — Privacy</div>
-      <p>The Ask AI feature uses Qwen 3.5 9B running locally on your EC2 instance via Ollama. Your organisation's data does not leave the server. No queries are sent to external AI services.</p>
+      <p>The Ask AI feature uses LFM2.5-1.2B-Thinking running locally on your EC2 instance via llama.cpp. Your organisation's data does not leave the server. No queries are sent to external AI services.</p>
     </div>
 
     <h3>Opening the chat</h3>
@@ -1075,7 +1075,7 @@
     <p>Your role determines which tabs are visible. Refer to the <a href="#roles">Roles &amp; Access table</a>. If you believe you need access to a tab not shown for your role, ask your admin to update your role in Settings → Users.</p>
 
     <h3>The Ask AI chat is not responding — what should I check?</h3>
-    <p>The chat depends on the local LLM service (Ollama + Qwen 3.5 9B) running on the EC2 instance. If the chat shows a service error, contact your admin to check the LLM service health in <a href="#support-tabs">Support → Health</a>.</p>
+    <p>The chat depends on the local LLM service (llama-server + LFM2.5-1.2B-Thinking) running on the EC2 instance. If the chat shows a service error, contact your admin to check the LLM service health in <a href="#support-tabs">Support → Health</a>.</p>
 
     <h3>An agent shows as offline — is this a problem?</h3>
     <p>An offline agent means that endpoint is no longer reporting data. AI usage on that device is invisible until the agent is restored. Check <a href="#support-tabs">Support → Agent Fleet</a> for details and share the hostname with your admin for remediation.</p>
@@ -1084,7 +1084,7 @@
     <p>Admin users can upload a logo at <a href="#settings-branding">Settings → Branding</a>. Once saved, it appears in all subsequent PDF report downloads.</p>
 
     <h3>Does PatronAI send my data to external services?</h3>
-    <p>No. PatronAI runs entirely on your EC2 instance. The AI chat LLM is local (Qwen 3.5 9B via Ollama). Your organisation's data does not leave your EC2 instance unless you explicitly export a report PDF.</p>
+    <p>No. PatronAI runs entirely on your EC2 instance. The AI chat LLM is local (LFM2.5-1.2B-Thinking via llama.cpp). Your organisation's data does not leave your EC2 instance unless you explicitly export a report PDF.</p>
 
     <h3>Can I schedule reports to be sent automatically?</h3>
     <p>Scheduled report delivery is on the PatronAI roadmap. In the current version (v1.0.0), reports are generated on demand. You can generate and download PDFs from the <a href="#reports">Reports section</a> at any time.</p>
