@@ -1,5 +1,5 @@
 # =============================================================
-# FILE: dashboard/ui/chat/llm/openai_compat.py
+# FILE: src/chat/llm/openai_compat.py
 # VERSION: 1.3.0
 # UPDATED: 2026-04-30
 # OWNER: Giggso Inc (Ravi Venugopal)

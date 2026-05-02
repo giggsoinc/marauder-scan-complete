@@ -1,5 +1,5 @@
 # =============================================================
-# FILE: dashboard/ui/chat/help.py
+# FILE: src/chat/help.py
 # VERSION: 2.0.0
 # UPDATED: 2026-05-02
 # OWNER: Giggso Inc (Ravi Venugopal)

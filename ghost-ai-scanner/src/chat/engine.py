@@ -1,28 +1,26 @@
 # =============================================================
-# FILE: dashboard/ui/chat/engine.py
-# VERSION: 2.0.0
-# UPDATED: 2026-04-29
+# FILE: src/chat/engine.py
+# VERSION: 2.1.0
+# UPDATED: 2026-05-02
 # OWNER: Giggso Inc (Ravi Venugopal)
 # PURPOSE: PatronAI chat engine — transport-agnostic tool-call loop.
-#          v2: tools are rollup-backed and take (scope, scope_id) computed
+#          Tools are rollup-backed and take (scope, scope_id) computed
 #          once per turn from the current view + email + company.
 #          The legacy `events` arg is accepted but ignored.
-# DEPENDS: chat/tools.py, chat/prompts.py, chat/llm/, chat/tools_schema.py,
+# DEPENDS: chat.tools, chat.prompts, chat.llm, chat.tools_schema,
 #          query.rollup_reader (for scope resolution)
 # AUDIT LOG:
 #   v1.0.0  2026-04-28  Initial — in-memory events list.
 #   v2.0.0  2026-04-29  Rollup-backed; scope/scope_id passed to tools.
+#   v2.1.0  2026-05-02  Moved from dashboard/ui/chat/ to src/chat/.
+#                       sys.path hack dropped — query/ is sibling.
 # =============================================================
 
 import json
 import logging
 import os
-import sys
 
 import requests
-
-# Make src/ importable from the dashboard package.
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..", "src"))
 
 from .tools        import (get_summary_stats, get_top_risky_users,
                             get_user_risk_profile, query_findings,

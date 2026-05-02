@@ -19,9 +19,9 @@ from pathlib import Path
 import pytest
 
 REPO = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(REPO / "dashboard"))
+# (removed: chat now lives under src/)
 
-from ui.chat.docs_index import (  # noqa: E402
+from chat.docs_index import (  # noqa: E402
     DocsIndex, _html_to_text, _chunks, _tokenise, reset_index,
 )
 
@@ -132,7 +132,7 @@ def synthetic_index(tmp_path, monkeypatch):
         "Then launchctl unload that plist file.</p></body></html>"
     )
     # Override the doc roots
-    monkeypatch.setattr("ui.chat.docs_index._DOC_ROOTS", [docs])
+    monkeypatch.setattr("chat.docs_index._DOC_ROOTS", [docs])
     reset_index()
     idx = DocsIndex()
     n = idx.load()
@@ -206,7 +206,7 @@ def test_get_help_query_path():
     """Confirm get_help(query=...) uses BM25 and returns the citation
     block."""
     reset_index()
-    from ui.chat.help import get_help
+    from chat.help import get_help
     r = get_help([], query="how to uninstall the agent on mac")
     if "error" in r:
         pytest.skip("rank_bm25 not installed in this env")
@@ -220,14 +220,14 @@ def test_get_help_query_path():
 def test_get_help_topic_path_still_works():
     """Backward compat: existing topic= calls still return the curated
     dict content."""
-    from ui.chat.help import get_help, _HELP
+    from chat.help import get_help, _HELP
     r = get_help([], topic="severity")
     assert r["topic"] == "severity"
     assert r["content"] == _HELP["severity"]
 
 
 def test_get_help_empty_returns_topic_catalogue():
-    from ui.chat.help import get_help
+    from chat.help import get_help
     r = get_help([])
     assert "topics" in r
     assert "severity" in r["topics"]
@@ -248,7 +248,7 @@ def test_refresh_initial_load_then_no_change_then_reindex(synthetic_index):
     # Touch a file to bump its mtime → next refresh should reindex.
     import time
     from pathlib import Path
-    docs_dir = next(p for p in __import__("ui.chat.docs_index",
+    docs_dir = next(p for p in __import__("chat.docs_index",
                                             fromlist=["_DOC_ROOTS"])._DOC_ROOTS)
     target = next(Path(docs_dir).iterdir())
     # Set mtime explicitly to "now+10" to defeat any mtime resolution issues.
@@ -271,8 +271,8 @@ def test_refresh_force_rebuilds_unconditionally(synthetic_index):
 
 def test_refresh_docs_chat_tool_returns_action():
     """Smoke test the chat-callable refresh_docs() wrapper."""
-    from ui.chat.help import refresh_docs
-    from ui.chat.docs_index import reset_index
+    from chat.help import refresh_docs
+    from chat.docs_index import reset_index
     reset_index()
     r = refresh_docs([])
     # Result must always include 'action' so the LLM can report what

@@ -443,7 +443,7 @@
 <header>
   <div class="eyebrow">PatronAI · Internal Architecture Reference · V1.0</div>
   <h1>AI Chat Widget &amp; MCP Server</h1>
-  <div class="subtitle">dashboard/ui/chat/ · scripts/patronai_mcp_server.py</div>
+  <div class="subtitle">src/chat/ (brain) · dashboard/ui/chat/widget.py (UI) · scripts/patronai_mcp_server.py</div>
   <div class="meta">
     <div class="meta-item">
       <span class="label">Product</span>
@@ -523,7 +523,7 @@
 
     <div class="callout callout-blue">
       <strong>Design Principle</strong>
-      Tools in <code>dashboard/ui/chat/tools.py</code> are pure functions — no LLM calls,
+      Tools in <code>src/chat/tools.py</code> are pure functions — no LLM calls,
       no I/O, no side effects. Both the Streamlit chat engine and the MCP server call the
       same functions. The LLM is always outside the data layer.
     </div>
@@ -535,19 +535,24 @@
     <h2><span class="section-num">2</span> Package Structure</h2>
 
     <div class="file-tree">
-<span class="dir">dashboard/ui/chat/</span>
-<span class="tree-line">├── </span><span class="file">__init__.py</span>       <span class="desc"># re-exports render_chat — single public surface</span>
-<span class="tree-line">├── </span><span class="file">tools.py</span>          <span class="desc"># 8 pure analytics functions — no LLM, no I/O</span>
-<span class="tree-line">├── </span><span class="file">tools_schema.py</span>   <span class="desc"># OpenAI-format JSON schema for the 8 tools</span>
-<span class="tree-line">├── </span><span class="file">prompts.py</span>        <span class="desc"># system prompt builder — view-scoped, live snapshot</span>
-<span class="tree-line">├── </span><span class="file">history.py</span>        <span class="desc"># S3 JSONL read/write (path below)</span>
-<span class="tree-line">├── </span><span class="file">engine.py</span>         <span class="desc"># tool-call loop — transport-agnostic</span>
-<span class="tree-line">├── </span><span class="file">widget.py</span>         <span class="desc"># Streamlit expander UI — collapsed by default</span>
+<span class="dir">src/chat/</span>                     <span class="desc"># the chat brain — no Streamlit, no UI</span>
+<span class="tree-line">├── </span><span class="file">__init__.py</span>       <span class="desc"># package marker</span>
+<span class="tree-line">├── </span><span class="file">tools.py</span>          <span class="desc"># 8 analytics functions backed by hourly S3 rollups</span>
+<span class="tree-line">├── </span><span class="file">tools_schema.py</span>   <span class="desc"># OpenAI-format JSON schema for the 8 tools + get_help + refresh_docs</span>
+<span class="tree-line">├── </span><span class="file">prompts.py</span>        <span class="desc"># system prompt builder — view-scoped, live snapshot, citation-mandated</span>
+<span class="tree-line">├── </span><span class="file">history.py</span>        <span class="desc"># S3 JSONL read/write + clear_history + ensure_lifecycle_policy</span>
+<span class="tree-line">├── </span><span class="file">engine.py</span>         <span class="desc"># tool-call loop — transport-agnostic, scope/scope_id resolution</span>
+<span class="tree-line">├── </span><span class="file">help.py</span>           <span class="desc"># get_help (BM25 query + curated topic) + refresh_docs</span>
+<span class="tree-line">├── </span><span class="file">docs_index.py</span>     <span class="desc"># BM25 index over docs/**/*.{md,html} (lazy, mtime-tracked)</span>
 <span class="tree-line">└── </span><span class="dir">llm/</span>
 <span class="tree-line">    ├── </span><span class="file">__init__.py</span>   <span class="desc"># factory: get_client() reads LLM_PROVIDER env → SSM fallback</span>
 <span class="tree-line">    ├── </span><span class="file">base.py</span>       <span class="desc"># LLMClient ABC: complete(messages, tools) + tool_result_msg()</span>
 <span class="tree-line">    ├── </span><span class="file">openai_compat.py</span>  <span class="desc"># covers llama.cpp / Ollama / OpenAI / Groq</span>
 <span class="tree-line">    └── </span><span class="file">anthropic.py</span>  <span class="desc"># Anthropic Messages API (different tool format, converts internally)</span>
+
+<span class="dir">dashboard/ui/chat/</span>            <span class="desc"># the UI face — Streamlit-only, very thin</span>
+<span class="tree-line">├── </span><span class="file">__init__.py</span>       <span class="desc"># re-exports render_chat_panel from widget.py</span>
+<span class="tree-line">└── </span><span class="file">widget.py</span>         <span class="desc"># right-side chat panel: messages, suggestions, Clear modal</span>
     </div>
 
     <h3>Module Responsibilities</h3>

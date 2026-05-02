@@ -362,14 +362,13 @@ ssh -i "$EC2_KEY" -o StrictHostKeyChecking=no \
 info "Smoke-testing MCP server import..."
 MCP_SMOKE=$(ssh -i "$EC2_KEY" -o StrictHostKeyChecking=no \
   "${EC2_USER}@${EC2_HOST}" \
-  "cd '${EC2_REMOTE_DIR}/dashboard' && \
+  "cd '${EC2_REMOTE_DIR}' && \
    python -c \"
-import sys, os
-sys.path.insert(0, os.path.join('..','src'))
-sys.path.insert(0, '.')
+import sys
+sys.path.insert(0, 'src')
 from fastmcp import FastMCP
-from ui.chat.tools import get_summary_stats
-from ui.chat.tools_schema import TOOLS_SCHEMA
+from chat.tools import get_summary_stats
+from chat.tools_schema import TOOLS_SCHEMA
 print('OK tools=%d' % len(TOOLS_SCHEMA))
 \" 2>&1" || echo "FAIL")
 

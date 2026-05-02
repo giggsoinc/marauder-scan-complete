@@ -71,9 +71,9 @@ def main():
     maybe_backfill(store)
 
     # Apply the chat-history lifecycle rule once per boot (idempotent).
+    # chat.history lives in src/chat/ — sys.path already has src/.
     try:
-        sys.path.insert(0, "dashboard")
-        from ui.chat.history import ensure_lifecycle_policy
+        from chat.history import ensure_lifecycle_policy
         ensure_lifecycle_policy(_CHAT_RETENTION_DAYS)
     except Exception as exc:
         log.warning("ensure_lifecycle_policy failed (non-fatal): %s", exc)

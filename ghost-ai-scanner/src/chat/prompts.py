@@ -1,5 +1,5 @@
 # =============================================================
-# FILE: dashboard/ui/chat/prompts.py
+# FILE: src/chat/prompts.py
 # VERSION: 2.0.0
 # UPDATED: 2026-04-29
 # OWNER: Giggso Inc (Ravi Venugopal)

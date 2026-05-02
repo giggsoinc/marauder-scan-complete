@@ -37,13 +37,10 @@ def docs_refresh_loop(stop_event: threading.Event,
                                             interval_s)))
     log.info("docs_refresh_loop: starting (interval=%ds)", interval)
 
-    # Lazy import — the dashboard module path may not be on sys.path yet
-    # when this module is imported in main.py before bootstrap finishes.
+    # chat.docs_index is a sibling package of jobs/ (both under src/);
+    # bootstrap.py / main.py ensure src/ is on sys.path before this loop runs.
     try:
-        import sys
-        sys.path.insert(0, os.path.join(os.path.dirname(__file__),
-                                         "..", "..", "dashboard"))
-        from ui.chat.docs_index import get_index
+        from chat.docs_index import get_index
     except Exception as exc:
         log.error("docs_refresh_loop: failed to import docs_index — "
                   "thread exiting (this disables auto-refresh; manual "

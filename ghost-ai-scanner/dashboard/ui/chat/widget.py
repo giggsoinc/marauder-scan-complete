@@ -22,12 +22,17 @@
 
 import hashlib
 import os
+import sys
 from datetime import datetime, timezone
 
 import streamlit as st
 
-from .engine  import call_llm
-from .history import load_history, append_history, clear_history
+# Chat brain (engine, tools, prompts, llm transport, history) lives in
+# src/chat/ — this widget is the only Streamlit-coupled piece left.
+sys.path.insert(0, os.path.join(os.path.dirname(__file__),
+                                  "..", "..", "..", "src"))
+from chat.engine  import call_llm                                # noqa: E402
+from chat.history import load_history, append_history, clear_history  # noqa: E402
 
 _COMPANY = os.environ.get("COMPANY_NAME", "PatronAI")
 _BUCKET  = os.environ.get("MARAUDER_SCAN_BUCKET", "")

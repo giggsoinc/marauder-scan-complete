@@ -1,6 +1,6 @@
 # =============================================================
-# FILE: dashboard/ui/chat/docs_index.py
-# VERSION: 1.0.0
+# FILE: src/chat/docs_index.py
+# VERSION: 1.1.0
 # UPDATED: 2026-05-02
 # OWNER: Giggso Inc (Ravi Venugopal)
 # PURPOSE: BM25-backed retrieval over PatronAI's HTML + Markdown
@@ -13,6 +13,12 @@
 #          Pure stdlib + rank_bm25 (one tiny dep, no native libs).
 #          No embeddings, no vector DB, no external services.
 # DEPENDS: rank_bm25 (>=0.2.2), html.parser (stdlib)
+# AUDIT LOG:
+#   v1.0.0  2026-05-02  Initial — built in dashboard/ui/chat/.
+#   v1.1.0  2026-05-02  Moved to src/chat/. _DOC_ROOTS depth adjusted
+#                       (parents[4] → parents[2]) since this file is
+#                       now ghost-ai-scanner/src/chat/docs_index.py
+#                       instead of ghost-ai-scanner/dashboard/ui/chat/...
 # =============================================================
 
 from __future__ import annotations
@@ -28,9 +34,16 @@ log = logging.getLogger("patronai.chat.docs_index")
 
 # Roots where docs live. First match wins per relative path. Archive
 # included so historic guides (e.g. Mac agent uninstall) stay reachable.
+# This file is at <repo>/ghost-ai-scanner/src/chat/docs_index.py:
+#   parents[0] = src/chat/
+#   parents[1] = src/
+#   parents[2] = ghost-ai-scanner/
+#   parents[3] = <repo>/
+_GAS_ROOT = Path(__file__).resolve().parents[2]            # ghost-ai-scanner/
+_REPO_ROOT = _GAS_ROOT.parent                                # repo root
 _DOC_ROOTS = [
-    Path(__file__).resolve().parents[4] / "ghost-ai-scanner" / "docs",
-    Path(__file__).resolve().parents[4] / "docs",
+    _GAS_ROOT  / "docs",
+    _REPO_ROOT / "docs",
 ]
 _ALLOWED_EXT = {".md", ".html", ".htm"}
 _MAX_CHUNK_CHARS = 1500   # ~300-400 tokens per chunk
