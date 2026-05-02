@@ -1,7 +1,7 @@
 # =============================================================
 # FILE: dashboard/ui/home_view.py
-# VERSION: 1.0.0
-# UPDATED: 2026-04-29
+# VERSION: 1.1.0
+# UPDATED: 2026-05-02
 # OWNER: Giggso Inc (Ravi Venugopal)
 # PURPOSE: Post-login welcome home page. Shown to every user on
 #          first visit. Explains PatronAI, links to inline docs,
@@ -10,6 +10,7 @@
 # DEPENDS: streamlit, chat/widget.py, docs/ HTML files
 # AUDIT LOG:
 #   v1.0.0  2026-04-29  Initial.
+#   v1.1.0  2026-05-02  Add 2-line product description + GitHub contribute line.
 # =============================================================
 
 import os
@@ -73,8 +74,21 @@ def render(email: str, events: list = None, summary: dict = None) -> None:
             'AI Security Intelligence</div>', unsafe_allow_html=True)
         st.markdown(
             f'<div style="font-family:JetBrains Mono;font-size:11px;'
-            f'color:#8B949E;text-align:center;margin-bottom:24px;">'
+            f'color:#8B949E;text-align:center;margin-bottom:12px;">'
             f'{_CO}</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div style="font-family:JetBrains Mono;font-size:12px;'
+            'color:#1F2328;text-align:center;line-height:1.7;margin-bottom:6px;">'
+            'PatronAI discovers shadow AI, ghost AI, and unmanaged model usage across your organisation.<br>'
+            'It monitors endpoints, code commits, and network traffic to surface AI risk in real time.'
+            '</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div style="font-family:JetBrains Mono;font-size:11px;'
+            'color:#57606A;text-align:center;margin-bottom:24px;">'
+            'Open-source · Apache 2.0 · '
+            '<a href="https://github.com/giggsoinc/PatronAI" target="_blank" '
+            'style="color:#0969DA;text-decoration:none;">Contribute on GitHub ↗</a>'
+            '</div>', unsafe_allow_html=True)
 
     # ── How it works ───────────────────────────────────────────
     st.markdown("#### How PatronAI works")
