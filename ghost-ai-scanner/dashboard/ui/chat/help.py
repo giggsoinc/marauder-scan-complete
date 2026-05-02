@@ -1,15 +1,25 @@
 # =============================================================
 # FILE: dashboard/ui/chat/help.py
-# VERSION: 1.0.0
-# UPDATED: 2026-04-29
+# VERSION: 2.0.0
+# UPDATED: 2026-05-02
 # OWNER: Giggso Inc (Ravi Venugopal)
-# PURPOSE: PatronAI product help content + get_help tool function.
-#          Called by the LLM when a user asks "how does X work?"
-#          or "what is PatronAI?". Returns markdown-formatted text.
-#          Dispatched via engine.py like any other tool — events arg
-#          is accepted but unused (uniform dispatch signature).
+# PURPOSE: PatronAI product help — two retrieval modes:
+#          1. topic="agents" / "severity" / etc. → curated dict lookup
+#             (backward compatible; the 6 hand-written sections stay
+#              authoritative for high-level overviews).
+#          2. query="how to uninstall on mac" → BM25 search over the
+#             real HTML + MD docs in ghost-ai-scanner/docs/ and docs/.
+#             Returns top 3 self-contained chunks. See docs_index.py.
+#          Dispatched via engine.py like any other tool. The first
+#          positional arg (events) is unused — kept for uniform dispatch.
+# DEPENDS: docs_index (lazy-loaded BM25 over docs/**/*.{md,html})
 # AUDIT LOG:
 #   v1.0.0  2026-04-29  Initial — help queryable via chat.
+#   v2.0.0  2026-05-02  Add `query=` path: BM25 search over the real
+#                       product docs. The dashboard chat can now answer
+#                       "how do I uninstall the agent on mac" etc.
+#                       without hallucinating, because the doc text
+#                       comes back as tool result.
 # =============================================================
 
 _HELP: dict[str, str] = {
@@ -80,19 +90,59 @@ _HELP: dict[str, str] = {
 _ALL_TOPICS = list(_HELP.keys())
 
 
-def get_help(events: list, topic: str = "") -> dict:
-    """Return PatronAI product documentation for a topic.
+def get_help(events: list, topic: str = "", query: str = "") -> dict:
+    """Return PatronAI product documentation.
+
+    Two modes:
+    - `query="..."` → BM25 search over real HTML + MD docs (preferred).
+      Returns top 3 chunks with source filenames so the LLM can cite.
+    - `topic="agents"` etc. → legacy curated dict lookup. Kept for
+      backward compat with the 6 high-level sections.
+
+    Empty / both empty → returns the topic catalogue (so the LLM can
+    explain what topics exist).
 
     Args:
         events: Unused — present for uniform tool dispatch signature.
         topic:  overview | severity | agents | reports | mcp | faq.
-                Empty or unrecognised value returns all sections.
+        query:  Free-text search query. When set, takes precedence
+                over `topic` and triggers BM25 retrieval.
     """
-    t = topic.lower().strip()
+    q = (query or "").strip()
+    if q:
+        try:
+            from .docs_index import get_index
+            hits = get_index().query(q, top_k=3)
+        except Exception as exc:
+            return {"query": q, "error": f"docs index unavailable: {exc}",
+                    "topics": _ALL_TOPICS}
+        if not hits:
+            return {
+                "query": q,
+                "matches": [],
+                "_message": (f"No doc chunks matched '{q}'. Available "
+                             f"high-level topics: {', '.join(_ALL_TOPICS)}. "
+                             "Try a more specific phrase, or call "
+                             "get_help(topic=<one of those>) for an overview."),
+            }
+        return {
+            "query": q,
+            "matches": hits,
+            "_citation": {
+                "source": "PatronAI docs (HTML + Markdown, BM25)",
+                "files": sorted({h["source"] for h in hits}),
+            },
+        }
+
+    # Legacy topic path.
+    t = (topic or "").lower().strip()
     if t in _HELP:
         return {"topic": t, "content": _HELP[t]}
     return {
         "topics":  _ALL_TOPICS,
         "content": "\n\n---\n\n".join(
             f"## {k}\n{v}" for k, v in _HELP.items()),
+        "_hint": ("For specific how-to questions, prefer calling "
+                  "get_help(query='...') instead of topic= — it searches "
+                  "the full product documentation."),
     }
