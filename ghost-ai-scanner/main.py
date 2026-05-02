@@ -36,6 +36,7 @@ from bootstrap   import validate_env, build_store, load_settings, build_resolver
 from rule_health  import self_check_rules
 from threads      import scanner_loop, alerter_backlog, url_refresh_loop, streamlit_proc
 from jobs.hourly_rollup import scheduler_loop as rollup_scheduler_loop
+from jobs.docs_refresh  import docs_refresh_loop
 
 _HF_REPO  = os.environ.get("LLM_MODEL_REPO", "LiquidAI/LFM2.5-1.2B-Thinking-GGUF")
 _LLM_PORT = int(os.environ.get("LLM_SERVER_PORT", "8080"))
@@ -88,6 +89,7 @@ def main():
         threading.Thread(target=alerter_backlog,     args=(store, resolver, settings, stop), name="alerter",        daemon=True),
         threading.Thread(target=url_refresh_loop,    args=(store, stop),                     name="url_refresh",    daemon=True),
         threading.Thread(target=rollup_scheduler_loop, args=(stop, _ROLLUP_OFFSET_MIN),      name="rollup_scheduler", daemon=True),
+        threading.Thread(target=docs_refresh_loop,   args=(stop,),                           name="docs_refresh",   daemon=True),
         threading.Thread(target=streamlit_proc,      args=(stop,),                           name="streamlit",      daemon=True),
     ]
 

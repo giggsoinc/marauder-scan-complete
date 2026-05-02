@@ -146,3 +146,24 @@ def get_help(events: list, topic: str = "", query: str = "") -> dict:
                   "get_help(query='...') instead of topic= — it searches "
                   "the full product documentation."),
     }
+
+
+def refresh_docs(events: list, force: bool = False) -> dict:
+    """Rebuild the docs RAG index if any doc file's mtime has advanced
+    since the last index build. Idempotent — calling repeatedly is cheap
+    when nothing has changed (only stats() the files, no re-reads).
+
+    Triggered by:
+      - The user typing 'refresh docs' in the chat panel (LLM tool call).
+      - The docs_refresh_loop daemon thread every 5 minutes.
+      - Manual ops invocation via Streamlit admin or CLI.
+
+    Args:
+        events: Unused — uniform tool dispatch signature.
+        force:  Skip the mtime check and rebuild unconditionally.
+    """
+    try:
+        from .docs_index import get_index
+        return get_index().refresh(force=bool(force))
+    except Exception as exc:
+        return {"action": "error", "error": f"{type(exc).__name__}: {exc}"}

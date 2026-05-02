@@ -231,3 +231,52 @@ def test_get_help_empty_returns_topic_catalogue():
     r = get_help([])
     assert "topics" in r
     assert "severity" in r["topics"]
+
+
+# ── Refresh — mtime tracking ─────────────────────────────────────
+
+
+def test_refresh_initial_load_then_no_change_then_reindex(synthetic_index):
+    """End-to-end: refresh() reports the right action transitions when
+    docs change vs. don't change."""
+    idx, n = synthetic_index
+    # Already loaded by the fixture, so refresh() = no_change.
+    r1 = idx.refresh()
+    assert r1["action"] == "no_change"
+    assert r1["chunks"] == n
+
+    # Touch a file to bump its mtime → next refresh should reindex.
+    import time
+    from pathlib import Path
+    docs_dir = next(p for p in __import__("ui.chat.docs_index",
+                                            fromlist=["_DOC_ROOTS"])._DOC_ROOTS)
+    target = next(Path(docs_dir).iterdir())
+    # Set mtime explicitly to "now+10" to defeat any mtime resolution issues.
+    future = time.time() + 10
+    os_path = str(target)
+    import os as _os
+    _os.utime(os_path, (future, future))
+
+    r2 = idx.refresh()
+    assert r2["action"] == "reindexed"
+    assert r2["chunks_before"] == n
+    assert r2["chunks_after"] == n   # content unchanged, count stable
+
+
+def test_refresh_force_rebuilds_unconditionally(synthetic_index):
+    idx, _ = synthetic_index
+    r = idx.refresh(force=True)
+    assert r["action"] == "force_reload"
+
+
+def test_refresh_docs_chat_tool_returns_action():
+    """Smoke test the chat-callable refresh_docs() wrapper."""
+    from ui.chat.help import refresh_docs
+    from ui.chat.docs_index import reset_index
+    reset_index()
+    r = refresh_docs([])
+    # Result must always include 'action' so the LLM can report what
+    # happened. Either initial_load (first call) or no_change.
+    if "error" in r:
+        pytest.skip("rank_bm25 not installed")
+    assert r["action"] in ("initial_load", "no_change", "reindexed", "force_reload")

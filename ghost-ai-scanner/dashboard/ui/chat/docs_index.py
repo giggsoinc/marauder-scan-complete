@@ -135,12 +135,20 @@ def _tokenise(text: str) -> list[str]:
 
 class DocsIndex:
     """In-memory BM25 over HTML+MD docs. One instance per process.
-    Idempotent rebuild via load(); lazy on first query."""
+    Idempotent rebuild via load(); lazy on first query.
+
+    refresh() is the cheap "has anything changed?" entry point — used
+    by the chat refresh_docs tool and the docs_refresh_loop daemon.
+    """
 
     def __init__(self) -> None:
         self.chunks: list[dict] = []   # [{path, title, text, tokens}]
         self.bm25 = None               # rank_bm25.BM25Okapi
         self._loaded = False
+        # Latest mtime among files indexed at last load(). 0 = never loaded.
+        self._last_indexed_mtime: float = 0.0
+        self._last_indexed_at: float = 0.0
+        self._last_indexed_files: int = 0
 
     # ── Loading ─────────────────────────────────────────────────
 
@@ -188,13 +196,25 @@ class DocsIndex:
             self._loaded = False
             return 0
 
+        import time as _time
         self.chunks = []
+        max_mtime = 0.0
+        files_seen: set[str] = set()
         for path in self._walk():
+            try:
+                mtime = path.stat().st_mtime
+            except OSError:
+                mtime = 0.0
             text = self._read_one(path)
             if not text:
                 continue
             title = self._title_for(path, text)
-            for chunk in _chunks(text):
+            file_chunks = _chunks(text)
+            if file_chunks:
+                files_seen.add(str(path.name))
+                if mtime > max_mtime:
+                    max_mtime = mtime
+            for chunk in file_chunks:
                 self.chunks.append({
                     "path": str(path.name),
                     "title": title,
@@ -205,13 +225,80 @@ class DocsIndex:
             log.warning("docs_index: no docs indexed")
             self.bm25 = None
             self._loaded = True
+            self._last_indexed_mtime = max_mtime
+            self._last_indexed_at = _time.time()
+            self._last_indexed_files = 0
             return 0
         self.bm25 = BM25Okapi([c["tokens"] for c in self.chunks])
         self._loaded = True
+        self._last_indexed_mtime = max_mtime
+        self._last_indexed_at = _time.time()
+        self._last_indexed_files = len(files_seen)
         log.info("docs_index: %d chunks across %d files",
-                 len(self.chunks),
-                 len({c["path"] for c in self.chunks}))
+                 len(self.chunks), self._last_indexed_files)
         return len(self.chunks)
+
+    # ── Refresh ─────────────────────────────────────────────────
+
+    def _current_max_mtime(self) -> float:
+        """Cheap scan — stat() every doc, return max mtime. No reads."""
+        m = 0.0
+        for p in self._walk():
+            try:
+                t = p.stat().st_mtime
+                if t > m:
+                    m = t
+            except OSError:
+                continue
+        return m
+
+    def refresh(self, force: bool = False) -> dict:
+        """Idempotent: rebuild only if any doc's mtime is newer than the
+        last indexed mtime. Returns a status dict with counts so callers
+        (chat tool, daemon) can report what happened.
+
+        Args:
+            force: rebuild even if nothing has changed.
+        """
+        if not self._loaded and not force:
+            self.load()
+            return {
+                "action": "initial_load",
+                "chunks": len(self.chunks),
+                "files":  self._last_indexed_files,
+                "indexed_at": self._last_indexed_at,
+            }
+        cur_mtime = self._current_max_mtime()
+        if not force and cur_mtime <= self._last_indexed_mtime:
+            return {
+                "action": "no_change",
+                "chunks": len(self.chunks),
+                "files":  self._last_indexed_files,
+                "indexed_at": self._last_indexed_at,
+                "last_doc_mtime": self._last_indexed_mtime,
+            }
+        chunks_before = len(self.chunks)
+        files_before  = self._last_indexed_files
+        self.load()
+        return {
+            "action": "force_reload" if force else "reindexed",
+            "chunks_before": chunks_before,
+            "chunks_after":  len(self.chunks),
+            "files_before":  files_before,
+            "files_after":   self._last_indexed_files,
+            "indexed_at":    self._last_indexed_at,
+            "last_doc_mtime": self._last_indexed_mtime,
+        }
+
+    def status(self) -> dict:
+        """Read-only snapshot of index state, for diagnostics."""
+        return {
+            "loaded":       self._loaded,
+            "chunks":       len(self.chunks),
+            "files":        self._last_indexed_files,
+            "indexed_at":   self._last_indexed_at,
+            "last_doc_mtime": self._last_indexed_mtime,
+        }
 
     # ── Query ───────────────────────────────────────────────────
 

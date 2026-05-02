@@ -102,4 +102,14 @@ TOOLS_SCHEMA: list = [
                    "description": "overview|severity|agents|reports|mcp|faq "
                                   "— legacy curated sections. Use query= "
                                   "for everything else."}}),
+
+    _fn("refresh_docs",
+        "Rebuild the docs RAG index if documentation files have changed "
+        "since the last index build. Call this when the user says "
+        "'refresh docs', 'reindex help', or after a `git pull` of new "
+        "documentation. Idempotent — no-op if nothing changed. Returns "
+        "status with chunk count before/after and which action was taken "
+        "(reindexed | no_change | initial_load).",
+        {"force": {"type": "boolean",
+                   "description": "Rebuild even if no doc changed. Default false."}}),
 ]

@@ -67,6 +67,10 @@ services:
       - LLM_MAX_TOKENS=${LLM_MAX_TOKENS:-1024}
       # Chat conversation S3 retention (auto-expires keys under chat/).
       - CHAT_HISTORY_RETENTION_DAYS=${CHAT_HISTORY_RETENTION_DAYS:-30}
+      # Docs RAG auto-refresh: how often to check for changed doc files.
+      # 0 / very low values clamp to 60s; default 5 min is plenty since
+      # docs change at most once per deploy.
+      - DOCS_REFRESH_INTERVAL_S=${DOCS_REFRESH_INTERVAL_S:-300}
     volumes:
       - patronai-models:/models
     ports:

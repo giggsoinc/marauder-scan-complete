@@ -28,7 +28,7 @@ from .tools        import (get_summary_stats, get_top_risky_users,
                             get_user_risk_profile, query_findings,
                             get_fleet_status, get_shadow_ai_census,
                             get_recent_activity, compare_periods)
-from .help         import get_help
+from .help         import get_help, refresh_docs
 from .tools_schema import TOOLS_SCHEMA
 from .prompts      import build_system_prompt
 from .llm          import get_client
@@ -56,7 +56,8 @@ _SCOPED_TOOLS = {
 
 # Tools that take **kwargs only (no scope).
 _UNSCOPED_TOOLS = {
-    "get_help": get_help,
+    "get_help":     get_help,
+    "refresh_docs": refresh_docs,
 }
 
 
