@@ -85,10 +85,18 @@ services:
       # First-deploy backfill: when no rollups exist yet, process the last
       # N days so chat has historical data to answer over from the start.
       - ROLLUP_INITIAL_BACKFILL_DAYS=${ROLLUP_INITIAL_BACKFILL_DAYS:-7}
-      # LLM read timeout (seconds) — LFM2.5-Thinking emits long reasoning
-      # before tool calls, so 60s isn't enough for tool-call loops.
+      # LLM read timeout (seconds) — even with the perf cap below,
+      # multi-turn tool-call loops on CPU can still take 30-60s.
+      # Anthropic / OpenAI cloud endpoints are much faster — drop to
+      # 60 if you swap LLM_PROVIDER over.
       - LLM_READ_TIMEOUT_S=${LLM_READ_TIMEOUT_S:-180}
-      - LLM_MAX_TOKENS=${LLM_MAX_TOKENS:-1024}
+      # Lowered 1024 → 384 on 2026-05-02 after CPU inference at 10 tok/s
+      # was burning 110 sec/turn on runaway thinking output. The system
+      # prompt caps user-facing answers at ≤100 words (~150 tokens);
+      # 384 leaves comfortable room for the **Sources:** footer + a
+      # few extra bullets without ever truncating real content.
+      # Increase if a larger model (Qwen2.5-7B+) needs more headroom.
+      - LLM_MAX_TOKENS=${LLM_MAX_TOKENS:-384}
       # Chat conversation S3 retention (auto-expires keys under chat/).
       - CHAT_HISTORY_RETENTION_DAYS=${CHAT_HISTORY_RETENTION_DAYS:-30}
       # Docs RAG auto-refresh: how often to check for changed doc files.

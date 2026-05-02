@@ -45,14 +45,33 @@ _CHAT_RETENTION_DAYS = int(os.environ.get("CHAT_HISTORY_RETENTION_DAYS", "30"))
 
 
 def _llama_server_thread() -> None:
-    """Background daemon: run llama-server; downloads model from HuggingFace on first boot."""
-    log.info("llama-server: starting on :%d — repo: %s", _LLM_PORT, _HF_REPO)
+    """Background daemon: run llama-server; downloads model from HuggingFace on first boot.
+
+    Performance flags (added 2026-05-02 after measuring 10 tok/s CPU
+    inference taking 60-150 sec per chat turn):
+      --threads <all-cores>  : llama.cpp defaults to ~half cores; the
+                                rest were idle. Empirically ~1.5× speedup
+                                at 100% CPU during a turn.
+      --predict <max>        : hard server-side cap on output tokens.
+                                Belt-and-braces with the client-side
+                                LLM_MAX_TOKENS so a runaway response
+                                can't blow past N tokens even if a
+                                client forgets to set max_tokens.
+                                Default 384 (≤100-word answers + Sources
+                                footer fit comfortably in 384 tokens).
+    """
+    threads = max(2, os.cpu_count() or 4)
+    predict = int(os.environ.get("LLM_MAX_TOKENS", "384"))
+    log.info("llama-server: starting on :%d — repo: %s — threads=%d predict=%d",
+             _LLM_PORT, _HF_REPO, threads, predict)
     # LLAMA_CACHE=/models routes the HuggingFace download to the named Docker volume.
     subprocess.Popen(
         ["llama-server",
          "--hf-repo", _HF_REPO,
-         "--port", str(_LLM_PORT), "--host", "127.0.0.1",
-         "--ctx-size", "8192"],
+         "--port",    str(_LLM_PORT), "--host", "127.0.0.1",
+         "--ctx-size", "8192",
+         "--threads",  str(threads),
+         "--predict",  str(predict)],
         stdout=subprocess.DEVNULL, stderr=None,
         env={**os.environ, "LLAMA_CACHE": "/models"},
     )
