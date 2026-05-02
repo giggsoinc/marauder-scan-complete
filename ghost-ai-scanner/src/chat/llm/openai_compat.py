@@ -1,7 +1,7 @@
 # =============================================================
 # FILE: src/chat/llm/openai_compat.py
-# VERSION: 1.3.0
-# UPDATED: 2026-04-30
+# VERSION: 1.4.0
+# UPDATED: 2026-05-02
 # OWNER: Giggso Inc (Ravi Venugopal)
 # PURPOSE: OpenAI-compatible LLM transport. Works with ANY
 #          endpoint that speaks /v1/chat/completions:
@@ -20,13 +20,22 @@
 #   v1.2.0  2026-04-29  Remove Qwen3-specific chat_template_kwargs;
 #                       model switched to LFM2.5-1.2B-Thinking.
 #   v1.3.0  2026-04-30  Read timeout 60→180 (LFM2.5-Thinking emits long
-#                       reasoning before tool calls); add max_tokens cap
-#                       so a runaway response can't exceed the window.
+#                       reasoning before tool calls); add max_tokens cap.
+#   v1.4.0  2026-05-02  Strip reasoning blocks from user-visible content.
+#                       LFM2.5-Thinking sometimes emits raw reasoning
+#                       ("Okay, let's tackle this user query…") into
+#                       message.content instead of message.reasoning_content.
+#                       The chat panel was showing this verbatim.
+#                       Now: `<think>…</think>` blocks removed; explicit
+#                       reasoning preambles stripped; if everything ends
+#                       up empty after stripping, fall back to the raw
+#                       text so the user gets *something*.
 # =============================================================
 
 import json
 import logging
 import os
+import re
 
 import requests
 
@@ -36,6 +45,37 @@ log = logging.getLogger("patronai.chat.llm.openai")
 
 _TIMEOUT    = int(os.environ.get("LLM_READ_TIMEOUT_S", "180"))
 _MAX_TOKENS = int(os.environ.get("LLM_MAX_TOKENS", "1024"))
+
+# Patterns thinking-class models emit when they leak reasoning into
+# message.content. We strip these before showing the answer.
+_THINK_BLOCK_RE = re.compile(
+    r"<think>.*?</think>|<thinking>.*?</thinking>|<reasoning>.*?</reasoning>",
+    re.IGNORECASE | re.DOTALL,
+)
+# A leading paragraph that's clearly the model thinking aloud. Keep
+# this list narrow — false positives here would corrupt real answers.
+_REASONING_LEAD_RE = re.compile(
+    r"^\s*(?:Okay|Alright|Hmm|Wait|Let me|Looking at|First[, ]|"
+    r"The user (?:wants|is asking|said))[^\n]*\n+",
+    re.IGNORECASE,
+)
+
+
+def _strip_reasoning(text: str) -> str:
+    """Remove visible reasoning leakage from a model's content field.
+
+    Order:
+      1. Drop explicit <think>/<thinking>/<reasoning> blocks.
+      2. Strip a single leading reasoning paragraph (Okay/Hmm/Wait/…).
+      3. If stripping leaves nothing, return the original text — better
+         to show messy reasoning than a blank panel.
+    """
+    if not text:
+        return text
+    out = _THINK_BLOCK_RE.sub("", text)
+    out = _REASONING_LEAD_RE.sub("", out)
+    out = out.strip()
+    return out if out else text
 
 
 class OpenAICompatClient(LLMClient):
@@ -87,6 +127,7 @@ class OpenAICompatClient(LLMClient):
             return {"content": None, "tool_calls": tcs, "raw_msg": msg}
 
         content = msg.get("content") or msg.get("reasoning_content") or "(no response)"
+        content = _strip_reasoning(content)
         return {"content": content, "tool_calls": None, "raw_msg": msg}
 
     def tool_result_msg(self, tool_call_id: str,
