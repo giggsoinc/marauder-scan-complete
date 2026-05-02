@@ -225,7 +225,15 @@ def _send_email(
 ) -> bool:
     """Send OTP + download link via SES. Returns True on success.
     SES region defaults to SES_REGION env var, falling back to AWS_REGION
-    so a deployment can put SES in a different region than the app."""
+    so a deployment can put SES in a different region than the app.
+
+    Side effect: triggers SES recipient verification via
+    email_utils.ensure_recipient_verified() before attempting send.
+    Idempotent — no-op if recipient is already verified. In SES sandbox
+    mode this lets first-time fleet recipients receive a click-to-verify
+    email from AWS even if they were never added through the normal
+    user-registration flow.
+    """
     import boto3
     region = (os.environ.get("SES_REGION")
               or os.environ.get("AWS_REGION", "us-east-1"))
@@ -234,6 +242,18 @@ def _send_email(
     if not os.environ.get("SES_SENDER_EMAIL"):
         log.warning("SES_SENDER_EMAIL not set; using fallback %s — verify "
                     "this address in SES or set SES_SENDER_EMAIL", sender)
+
+    # Best-effort recipient verification. Avoids the agent-deploy email
+    # silently failing when the recipient was never added as a user.
+    try:
+        from email_utils import ensure_recipient_verified  # type: ignore
+        verify = ensure_recipient_verified(recipient_email, region=region)
+        if verify.get("action") in ("verified", "pending"):
+            log.info("SES verify-email-identity triggered for %s — they "
+                     "must click the AWS link before this OTP email "
+                     "succeeds (sandbox-mode constraint).", recipient_email)
+    except Exception as exc:  # never let verification failure block send
+        log.debug("ensure_recipient_verified call failed (non-fatal): %s", exc)
 
     subject = "PatronAI Agent — Your Installation Package"
     body = (
