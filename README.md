@@ -391,6 +391,31 @@ Claude Desktop and any MCP-compatible agent over SSH stdio (V1, no HTTP port).
 
 ---
 
+## Notifications & On-Demand Action Items
+
+Three email paths, all powered by AWS SES (`SES_SENDER_EMAIL` /
+`SES_REGION` configured by `scripts/setup.sh`):
+
+| Trigger | Sent to | Where |
+|---|---|---|
+| **Welcome email** when an admin adds a new user | The new user | Settings → Users → **Add User**. Body explains role + dashboard URL + auto-triggers SES recipient verification (so subsequent emails to them succeed even in SES sandbox). |
+| **Agent installer OTP + download link** when an admin generates a package | The recipient typed in the form | Settings → **Deploy Agents** → fill form → Generate. |
+| **On-demand action-item alert** — bulleted summary of selected findings | `ALERT_RECIPIENTS` env var (comma-separated) | Manager → **Risks** tab → tick rows → **✉ Send Alert Email** button. |
+
+For background SNS / webhook alerts on HIGH and CRITICAL findings, see
+`ALERT_SNS_ARN`, `TRINITY_WEBHOOK_URL`, and `LOGANALYZER_WEBHOOK_URL`
+in [`ghost-ai-scanner/.env.example`](ghost-ai-scanner/.env.example).
+
+> **SES sandbox warning:** new SES accounts can only send to verified
+> recipients (200/day cap). Welcome flow auto-verifies registered
+> users; for one-off recipients (contractors, fleet users typed into
+> the deploy form), AWS sends them a click-to-verify email first — they
+> have to click before subsequent sends to them succeed. Long-term fix:
+> request **SES production access** in the AWS Console → SES →
+> Account dashboard. ~24h approval, removes the constraint.
+
+---
+
 ## Regression Testing
 
 ```bash

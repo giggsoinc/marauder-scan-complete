@@ -604,6 +604,20 @@ cat > "$REPO_DIR/grafana/datasources/s3.json" <<EOF
 EOF
 ok "grafana/datasources/s3.json generated"
 
+# ── STEP 16: Pre-fetch chat LLM model into the named volume ──
+# Without this, the first `docker compose up` triggers a 3-5 min
+# llama-server download in the background; chat returns "LLM
+# unreachable" during that window. Pre-fetching here means the
+# container starts with the model already in /models.
+step 16 "Pre-fetching chat LLM model (one-time, ~750 MB)"
+if [ -x "$SCRIPT_DIR/prefetch_model.sh" ]; then
+    bash "$SCRIPT_DIR/prefetch_model.sh" \
+        || warn "Model prefetch failed — chat will download on first boot instead (~3-5 min wait)."
+else
+    warn "scripts/prefetch_model.sh not found — skipping. Chat LLM will"
+    warn "download on first 'docker compose up' (3-5 min wait)."
+fi
+
 # ── Done ──────────────────────────────────────────────────────
 echo ""
 echo -e "${BOLD}${GREEN}"

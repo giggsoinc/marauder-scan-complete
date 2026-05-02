@@ -71,12 +71,21 @@ def render_inventory(events: list) -> None:
     render_drill_panel(_PANEL, events, limit=100)
 
     if not os.environ.get("CROWDSTRIKE_ENABLED", "false").lower() == "true":
+        # Neutral informational banner — NOT a warning. The default
+        # PatronAI hook agent already provides per-process visibility
+        # every 30 min; an EDR (CrowdStrike, SentinelOne, etc.) just
+        # adds continuous kernel-level telemetry. Most operators do
+        # not have or need this. Wording stays soft so the dashboard
+        # doesn't suggest something is broken when nothing is.
         st.markdown(
-            '<div style="background:rgba(210,153,34,.08);border:1px solid rgba(210,153,34,.3);'
-            'border-radius:6px;padding:10px 16px;margin:12px 0;'
-            'font-family:JetBrains Mono;font-size:11px;color:#9A6700;">'
-            '⚠ Endpoint protection offline — process visibility limited. '
-            'Showing network-layer attribution only.</div>',
+            '<div style="background:rgba(31,111,235,.05);border:1px solid rgba(31,111,235,.20);'
+            'border-radius:6px;padding:9px 14px;margin:12px 0;'
+            'font-family:JetBrains Mono;font-size:11px;color:#57606A;">'
+            'ⓘ EDR not configured. Process visibility comes from the '
+            'PatronAI hook agent (30-min cycle). Set '
+            '<code style="background:transparent;color:inherit">'
+            'CROWDSTRIKE_ENABLED=true</code> in <code style="background:transparent;'
+            'color:inherit">.env</code> to layer in continuous EDR telemetry.</div>',
             unsafe_allow_html=True,
         )
 

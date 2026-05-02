@@ -93,6 +93,16 @@ info "Starting stack: docker compose up -d $BUILD_FLAG"
 # shellcheck disable=SC2086
 docker compose up -d $BUILD_FLAG 2>&1 | sed 's/^/  /'
 
+# ── Step 3b — pre-fetch the LLM model into the named volume ──
+# Idempotent: skips if a .gguf already exists in the volume. On first
+# deploy this avoids the 3-5 min "LLM unreachable" window users see
+# while llama-server downloads the model in the background.
+if [ -x "$SCRIPT_DIR/prefetch_model.sh" ]; then
+    info "Ensuring chat LLM model is present (prefetch_model.sh)"
+    bash "$SCRIPT_DIR/prefetch_model.sh" || \
+        warn "Model prefetch returned non-zero — chat may take ~3-5 min to be available."
+fi
+
 # ── Step 4 — verify creds the same way that bit us last time ──
 info "Waiting 10s for the container to come up..."
 sleep 10
