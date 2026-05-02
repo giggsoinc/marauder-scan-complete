@@ -391,6 +391,154 @@ Claude Desktop and any MCP-compatible agent over SSH stdio (V1, no HTTP port).
 
 ---
 
+## Notifications & On-Demand Action Items
+
+All outbound email goes through one module — [`src/notify/email.py`](ghost-ai-scanner/src/notify/email.py) —
+which is the **single SES call site** for the codebase. Any new feature
+that needs to send email imports from here:
+
+```python
+from notify.email import send, send_welcome, send_agent_otp, send_alert, ensure_verified
+```
+
+Three convenience wrappers compose subject + body for each domain:
+
+| Trigger | Wrapper | Sent to | Where in UI |
+|---|---|---|---|
+| Admin adds a new user | `send_welcome(...)` | The new user | Settings → Users → **Add User** |
+| Admin generates an agent install package | `send_agent_otp(...)` | The recipient typed in the form | Settings → **Deploy Agents** → Generate |
+| **On-demand action-item alert** | `send_alert(recipients, events)` | `ALERT_RECIPIENTS` env var (comma-separated) | Manager → **Risks** → tick rows → **✉ Send Alert Email** |
+
+All three call `notify.email.send()` underneath, which (a) resolves
+`SES_SENDER_EMAIL` (or legacy `PATRONAI_FROM_EMAIL`) → falls back to
+`patronai@<company>.com` with a WARN log; (b) calls `ensure_verified()`
+on every recipient unless `auto_verify=False` so SES sandbox mode
+unblocks itself as new users are added; (c) logs the boto3 ErrorCode
+on failure so the next time something breaks you can `grep notify.email`
+and read the cause.
+
+For background SNS / webhook alerts on HIGH and CRITICAL findings see
+`ALERT_SNS_ARN`, `TRINITY_WEBHOOK_URL`, and `LOGANALYZER_WEBHOOK_URL`
+in [`ghost-ai-scanner/.env.example`](ghost-ai-scanner/.env.example).
+
+> **SES sandbox warning:** new SES accounts can send only to verified
+> recipients (200/day cap). The `notify.email.send()` path auto-verifies
+> recipients, but they still have to click AWS's verification email
+> before subsequent sends to them succeed. Long-term fix: request **SES
+> production access** in the AWS Console → SES → Account dashboard.
+> ~24h approval, removes the sandbox constraint entirely.
+
+---
+
+## Code Map
+
+Where to find things. This index is the source of truth — keep it up
+to date when you add or move modules.
+
+```
+patronai/
+├── README.md                                 # this file
+├── SECURITY.md                               # vulnerability reporting policy
+├── SECURITY_CONSIDERATIONS.md                # production hardening checklist
+├── docs/
+│   ├── quickstart-local.md                   # local Docker setup
+│   ├── github-metadata.md
+│   ├── launch-issues.md
+│   └── archive/                              # superseded HTML guides (Mac agent guide is here)
+└── ghost-ai-scanner/                         # the actual product
+    ├── main.py                               # container entrypoint — spawns scanner / chat / rollup / streamlit threads
+    ├── docker-compose.yml                    # 3 services: scanner, grafana, nginx
+    ├── Dockerfile / Dockerfile.grafana
+    ├── requirements.txt                      # all Python deps, license-pinned
+    ├── iam-policy.json                       # AWS IAM policy for the runtime role
+    │
+    ├── src/                                  # business logic
+    │   ├── bootstrap.py                      # validate_env, build_store, load_settings
+    │   ├── threads.py                        # scanner_loop, alerter_backlog, url_refresh_loop, streamlit_proc
+    │   ├── code_analyser.py                  # AMBIGUOUS-snippet classifier (llama-cli subprocess)
+    │   ├── code_fallback.py                  # regex fallback when classifier is offline
+    │   ├── rule_health.py                    # validate merged rule counts
+    │   │
+    │   ├── normalizer/                       # event flattening + provider-name normalisation
+    │   │   ├── schema.py                     # OCSF flat schema definition
+    │   │   ├── agent_explode.py              # agent payload → flat findings
+    │   │   └── provider_names.py             # raw provider → human name (e.g. claude.ai → "Anthropic Claude")
+    │   │
+    │   ├── matcher/                          # network-side rule engine
+    │   ├── alerter/dispatcher.py             # SNS + Trinity webhook fan-out
+    │   ├── ingestor/                         # S3-walk → pipeline → findings store
+    │   │
+    │   ├── store/                            # S3 persistence layer (BlobIndexStore)
+    │   │   ├── base_store.py                 # SigV4-forced boto3 client
+    │   │   ├── findings_store.py             # findings/YYYY/MM/DD/{sev}.jsonl
+    │   │   ├── agent_store.py                # OTP-gated agent installer packages
+    │   │   ├── users_store.py                # users/users.json — RBAC source of truth
+    │   │   └── …                             # cursor, dedup, identity, report, summary, settings
+    │   │
+    │   ├── jobs/                             # background workers spawned from main.py
+    │   │   ├── hourly_rollup.py              # findings → per-user / per-tenant dimension rollups
+    │   │   └── docs_refresh.py               # mtime-watch the docs RAG index
+    │   │
+    │   ├── query/                            # read-side helpers for chat tools
+    │   │   └── rollup_reader.py              # parallel S3 GETs + dimension-aware merge + LRU
+    │   │
+    │   ├── chat/                             # LLM agent (the "brain") — used by widget AND MCP server
+    │   │   ├── engine.py                     # tool-call loop
+    │   │   ├── tools.py                      # 8 analytics tools
+    │   │   ├── tools_schema.py               # JSON schemas
+    │   │   ├── prompts.py                    # system prompt builder
+    │   │   ├── help.py                       # get_help + refresh_docs
+    │   │   ├── docs_index.py                 # BM25 over docs/**/*.{md,html}
+    │   │   ├── history.py                    # S3 chat-history persistence + lifecycle policy
+    │   │   └── llm/                          # provider-agnostic transport
+    │   │       ├── __init__.py               # factory: env / SSM → client
+    │   │       ├── base.py                   # LLMClient ABC
+    │   │       ├── openai_compat.py          # llama.cpp / Ollama / OpenAI / Groq
+    │   │       └── anthropic.py              # Anthropic Messages API
+    │   │
+    │   └── notify/                           # SINGLE email surface for the codebase
+    │       ├── __init__.py                   # public re-exports
+    │       └── email.py                      # send() / send_welcome / send_agent_otp / send_alert / ensure_verified
+    │
+    ├── dashboard/                            # Streamlit UI (entry: ghost_dashboard.py)
+    │   ├── ghost_dashboard.py
+    │   ├── auth.py / auth_gate.py            # email-allowlist auth (SSO is roadmap)
+    │   └── ui/
+    │       ├── chat/widget.py                # ONLY chat code in dashboard/ — Streamlit panel
+    │       ├── manager_tab_*.py              # Manager view tabs (inventory, risks, actions, …)
+    │       ├── exec_tab_*.py / support_tab_*.py
+    │       ├── tabs/users.py                 # Users RBAC CRUD — calls notify.email.send_welcome
+    │       ├── tabs/deploy_agents.py         # Agent OTP packages — calls render_agent_package
+    │       └── …
+    │
+    ├── scripts/                              # operator scripts (NOT business logic)
+    │   ├── setup.sh                          # interactive first-run setup (creates AWS infra + .env)
+    │   ├── start.sh                          # safe `docker compose up` wrapper (env-shadow guard, STS verify)
+    │   ├── prefetch_model.sh                 # populate /models named volume before container start
+    │   ├── deploy_to_ec2.sh                  # SCP code → EC2 + remote install
+    │   ├── render_agent_package.py           # OTP + presigned URL + DMG/EXE builder; calls notify.email.send_agent_otp
+    │   ├── patronai_mcp_server.py            # FastMCP exposure of chat tools to Claude Desktop / Cursor
+    │   └── …
+    │
+    ├── config/                               # default rules + provider lists (CSV / YAML)
+    ├── agent/                                # hook-agent fragment templates (sh + ps1)
+    ├── grafana/ · nginx/                     # provisioning + reverse-proxy
+    ├── tests/                                # 397 unit tests + integration suite
+    └── docs/                                 # active product docs (HTML + MD)
+        ├── architecture_chat_mcp.html        # chat + MCP architecture deep-dive
+        ├── user_guide.html                   # end-user dashboard guide
+        ├── patronai-agent-{linux,windows}-guide.html
+        ├── chat-rollups.md                   # how the per-tenant hourly rollups work
+        ├── vpc_flow_filtering.md
+        └── archive/                          # superseded versions of older guides
+```
+
+**One-rule guideline:** if you're about to write a `boto3.client("ses")`
+call, stop and use `notify.email` instead. If your new feature needs
+something `notify.email` doesn't have, extend that module — don't fork.
+
+---
+
 ## Regression Testing
 
 ```bash

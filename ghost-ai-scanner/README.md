@@ -13,18 +13,28 @@ and supporting infrastructure.
 ```
 ghost-ai-scanner/
 ├── src/               Python source — scanner, matcher, normaliser, alerter
-│   ├── jobs/          Hourly S3 rollup job (chat data backend)
+│   ├── normalizer/    Event flattener + provider-name normalisation
+│   ├── matcher/       Network-side rule engine
+│   ├── alerter/       SNS + webhook fan-out
+│   ├── ingestor/      S3-walk → pipeline → findings store
+│   ├── store/         S3 persistence (BlobIndexStore + per-domain stores)
+│   ├── jobs/          Background workers — hourly_rollup, docs_refresh
 │   ├── query/         Rollup reader + per-user/tenant scoping
-│   └── normalizer/    Event flattener + provider-name normalisation
+│   ├── chat/          LLM agent (engine, tools, prompts, llm transport, docs RAG)
+│   └── notify/        Email — single SES call site (welcome, OTP, alert)
 ├── dashboard/         Streamlit UI (ghost_dashboard.py entry point)
+│   └── ui/chat/       Streamlit chat panel — pure UI, calls src/chat
 ├── agent/             Hook agent templates (bash + PowerShell fragments)
 ├── config/            Provider deny/allow lists and rules (CSV + YAML)
-├── scripts/           Deployment and maintenance scripts
-├── tests/             356 unit + integration tests
+├── scripts/           Operator scripts (setup, start, prefetch_model, deploy_to_ec2, MCP server)
+├── tests/             397 unit + integration tests
 ├── grafana/           Pre-built dashboard provisioning
 ├── nginx/             Reverse proxy config
 └── docs/              Technical deep-dives and inline HTML guides
 ```
+
+For the full per-file index see the [Code Map section in the root
+README](../README.md#code-map).
 
 ## Quick Commands
 

@@ -1,16 +1,22 @@
 # =============================================================
 # FILE: dashboard/ui/manager_tab_actions.py
-# VERSION: 1.0.0
-# UPDATED: 2026-04-19
+# VERSION: 2.0.0
+# UPDATED: 2026-05-02
 # OWNER: Giggso Inc
 # PURPOSE: Action helpers for the Manager Risks tab.
 #          mark_resolved — writes RESOLVED outcome back to S3 findings store.
 #          escalate      — POSTs events to Trinity via dispatcher.
-#          send_alert_email — sends SES summary to ALERT_RECIPIENTS.
+#          send_alert_email — thin shim: delegates to notify.email.send_alert.
 #          All functions are pure — no Streamlit calls inside.
-# DEPENDS: boto3, requests, alerter.dispatcher, blob_index_store
+# DEPENDS: requests, alerter.dispatcher, notify.email
 # AUDIT LOG:
 #   v1.0.0  2026-04-19  Initial — split from manager_tab_risks.py
+#   v2.0.0  2026-05-02  send_alert_email body collapsed to a one-line
+#                       call into notify.email.send_alert. The duplicated
+#                       boto3 SES path here used PATRONAI_FROM_EMAIL +
+#                       skipped recipient verification, both inconsistent
+#                       with the welcome / OTP paths. notify.email is
+#                       now the single SES call site for the codebase.
 # =============================================================
 
 import logging
@@ -79,35 +85,7 @@ def escalate(events: list) -> int:
 
 
 def send_alert_email(events: list, recipients: str) -> bool:
-    """
-    Send SES email summarising selected events to comma-separated recipients.
-    Returns True on success.
-    """
-    import boto3
-
-    from .time_fmt import fmt as _fmt_time
-    body_lines = [f"PatronAI Alert — {len(events)} event(s) require attention\n"]
-    for e in events[:10]:
-        body_lines.append(
-            f"  [{e.get('severity','?')}] {e.get('provider','?')} | "
-            f"{e.get('owner','unknown')} | {_fmt_time(e.get('timestamp'))}"
-        )
-    if len(events) > 10:
-        body_lines.append(f"  … and {len(events) - 10} more.")
-    body = "\n".join(body_lines)
-
-    try:
-        ses = boto3.client("ses", region_name=_AWS_REGION)
-        ses.send_email(
-            Source=os.environ.get("PATRONAI_FROM_EMAIL", "noreply@patronai.ai"),
-            Destination={"ToAddresses": [r.strip() for r in recipients.split(",")]},
-            Message={
-                "Subject": {"Data": f"PatronAI Alert — {len(events)} event(s)"},
-                "Body":    {"Text": {"Data": body}},
-            },
-        )
-        log.info("Alert email sent to %s", recipients)
-        return True
-    except Exception as e:
-        log.error("SES send_alert_email failed: %s", e)
-        return False
+    """Send a bulleted summary of N selected events to a comma-separated
+    recipient list. Thin shim — actual SES work lives in notify.email."""
+    from notify.email import send_alert
+    return send_alert(recipients=recipients, events=events)

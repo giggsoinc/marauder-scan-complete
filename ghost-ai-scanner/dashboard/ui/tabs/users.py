@@ -13,6 +13,9 @@
 #                       users_widgets.py to honour the 150-LOC cap.
 #   v2.1.0  2026-04-27  Audit trail: remove / add / edit all logged.
 #   v2.2.0  2026-04-28  Welcome email via SES (email_utils) on add.
+#   v2.3.0  2026-05-02  Welcome email path moved to notify.email.send_welcome
+#                       — single SES call site for the codebase. scripts/
+#                       no longer needs to be on sys.path from this file.
 # =============================================================
 
 import os
@@ -20,10 +23,8 @@ import sys
 
 import streamlit as st
 
-# Make src/ importable so we can reach UsersStore.
+# Make src/ importable so we can reach UsersStore + notify.email.
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..", "src"))
-# Make scripts/ importable for email_utils.
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..", "scripts"))
 
 from .users_widgets import (VALID_ROLES, role_pill, admin_badge,
                              render_edit_inline)
@@ -134,12 +135,12 @@ def _render_add_form(current_email: str, store) -> None:
                 st.success(f"Added {new_email.lower()}")
                 if notify and new_email and "@" in new_email:
                     try:
-                        from email_utils import send_welcome_email
-                        ok = send_welcome_email(
-                            recipient_email=new_email.lower(),
-                            recipient_name=new_email.split("@")[0],
-                            added_by=current_email,
+                        from notify.email import send_welcome
+                        ok = send_welcome(
+                            recipient=new_email.lower(),
+                            name=new_email.split("@")[0],
                             role=new_role,
+                            added_by=current_email,
                         )
                         st.caption("✉ Welcome email sent." if ok
                                    else "⚠ Welcome email failed — check SES config.")

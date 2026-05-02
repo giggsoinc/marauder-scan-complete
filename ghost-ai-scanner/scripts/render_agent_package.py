@@ -223,71 +223,15 @@ def _send_email(
     installer_url: str,
     company: str,
 ) -> bool:
-    """Send OTP + download link via SES. Returns True on success.
-    SES region defaults to SES_REGION env var, falling back to AWS_REGION
-    so a deployment can put SES in a different region than the app.
+    """Thin shim: delegates to notify.email.send_agent_otp.
 
-    Side effect: triggers SES recipient verification via
-    email_utils.ensure_recipient_verified() before attempting send.
-    Idempotent — no-op if recipient is already verified. In SES sandbox
-    mode this lets first-time fleet recipients receive a click-to-verify
-    email from AWS even if they were never added through the normal
-    user-registration flow.
+    Kept as a private function in this module so existing callers
+    don't move; all SES logic (sender resolution, region, recipient
+    verification, error logging) lives in src/notify/email.py.
     """
-    import boto3
-    region = (os.environ.get("SES_REGION")
-              or os.environ.get("AWS_REGION", "us-east-1"))
-    sender = (os.environ.get("SES_SENDER_EMAIL")
-              or f"patronai@{company.lower()}.com")
-    if not os.environ.get("SES_SENDER_EMAIL"):
-        log.warning("SES_SENDER_EMAIL not set; using fallback %s — verify "
-                    "this address in SES or set SES_SENDER_EMAIL", sender)
-
-    # Best-effort recipient verification. Avoids the agent-deploy email
-    # silently failing when the recipient was never added as a user.
-    try:
-        from email_utils import ensure_recipient_verified  # type: ignore
-        verify = ensure_recipient_verified(recipient_email, region=region)
-        if verify.get("action") in ("verified", "pending"):
-            log.info("SES verify-email-identity triggered for %s — they "
-                     "must click the AWS link before this OTP email "
-                     "succeeds (sandbox-mode constraint).", recipient_email)
-    except Exception as exc:  # never let verification failure block send
-        log.debug("ensure_recipient_verified call failed (non-fatal): %s", exc)
-
-    subject = "PatronAI Agent — Your Installation Package"
-    body = (
-        f"Hi {recipient_name},\n\n"
-        f"Your PatronAI agent installer is ready.\n\n"
-        f"Download link (expires in 48 hours):\n{installer_url}\n\n"
-        f"Your one-time installation code:\n\n"
-        f"    {otp}\n\n"
-        f"To install:\n"
-        f"  Mac/Linux: bash setup_agent.sh\n"
-        f"  Windows:   powershell -ExecutionPolicy Bypass -File setup_agent.ps1\n\n"
-        f"Enter the 6-digit code when prompted. It is single-use and expires in 48 hours.\n\n"
-        f"Your IT admin can also provide a one-click DMG (Mac) or EXE (Windows).\n\n"
-        f"Questions? Contact your IT administrator.\n\n"
-        f"— PatronAI · {company}\n"
-    )
-    try:
-        ses = boto3.client("ses", region_name=region)
-        ses.send_email(
-            Source=sender,
-            Destination={"ToAddresses": [recipient_email]},
-            Message={
-                "Subject": {"Data": subject},
-                "Body":    {"Text": {"Data": body}},
-            },
-        )
-        log.info("Install email sent to %s", recipient_email)
-        return True
-    except Exception as e:
-        # Surface boto3's error code (MessageRejected, MailFromDomainNotVerified,
-        # etc.) so the operator can act on it rather than guessing.
-        err_code = getattr(getattr(e, "response", {}), "get",
-                           lambda *_: {})("Error", {}).get("Code", "")
-        log.error("SES send failed for %s — sender=%s region=%s "
-                  "code=%s message=%s", recipient_email, sender, region,
-                  err_code or type(e).__name__, e)
-        return False
+    from notify.email import send_agent_otp
+    return send_agent_otp(recipient=recipient_email,
+                          name=recipient_name,
+                          otp=otp,
+                          installer_url=installer_url,
+                          company=company)
