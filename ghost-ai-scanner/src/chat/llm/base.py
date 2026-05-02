@@ -1,5 +1,5 @@
 # =============================================================
-# FILE: dashboard/ui/chat/llm/base.py
+# FILE: src/chat/llm/base.py
 # VERSION: 1.0.0
 # UPDATED: 2026-04-28
 # OWNER: Giggso Inc (Ravi Venugopal)

@@ -1,5 +1,5 @@
 # =============================================================
-# FILE: dashboard/ui/chat/history.py
+# FILE: src/chat/history.py
 # VERSION: 1.1.0
 # UPDATED: 2026-04-29
 # OWNER: Giggso Inc (Ravi Venugopal)

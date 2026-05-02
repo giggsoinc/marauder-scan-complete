@@ -47,6 +47,11 @@ watchdog>=4.0.0,<5.0.0         # Apache 2.0 — file system watcher for Marauder
 # ── Security ──────────────────────────────────────────────────
 bcrypt>=4.0.0,<5.0.0           # Apache 2.0 — OTP hashing for agent delivery
 
+# ── Chat / docs RAG ───────────────────────────────────────────
+rank-bm25>=0.2.2,<1.0.0        # Apache 2.0 — pure-Python BM25 over the
+                                # product docs (HTML+MD) for the chat
+                                # get_help(query=...) tool. No native deps.
+
 # ── Dev / test only (not installed in production image) ───────
 # pytest>=8.0.0
 # pytest-cov>=4.0.0

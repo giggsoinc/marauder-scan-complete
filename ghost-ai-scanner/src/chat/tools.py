@@ -1,7 +1,7 @@
 # =============================================================
-# FILE: dashboard/ui/chat/tools.py
-# VERSION: 2.0.0
-# UPDATED: 2026-04-29
+# FILE: src/chat/tools.py
+# VERSION: 2.1.0
+# UPDATED: 2026-05-02
 # OWNER: Giggso Inc (Ravi Venugopal)
 # PURPOSE: PatronAI chat — analytics tools backed by hourly S3 rollups.
 #          Volume-independent: each tool reads N small per-hour
@@ -13,19 +13,18 @@
 # AUDIT LOG:
 #   v1.0.0  2026-04-28  Initial — in-memory events list filtering.
 #   v2.0.0  2026-04-29  Rollup-backed; events arg dropped.
+#   v2.1.0  2026-05-02  Moved from dashboard/ui/chat/ to src/chat/.
+#                       Chat brain is no longer UI-coupled. sys.path
+#                       hack dropped — query/ is a sibling package.
 # =============================================================
 
 from __future__ import annotations
 
 import os
-import sys
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-# Make src/ importable from the dashboard package.
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..", "src"))
-
-from query.rollup_reader import read_dimension_range, default_window  # noqa: E402
+from query.rollup_reader import read_dimension_range, default_window
 
 _SEV_RANK = {"CRITICAL": 4, "HIGH": 3, "MEDIUM": 2, "LOW": 1, "UNKNOWN": 0}
 _BUCKET = os.environ.get("MARAUDER_SCAN_BUCKET", "")

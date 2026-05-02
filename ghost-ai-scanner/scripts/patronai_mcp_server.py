@@ -46,13 +46,13 @@ logging.basicConfig(stream=sys.stderr, level=logging.INFO,
                     format="%(levelname)s patronai_mcp %(message)s")
 log = logging.getLogger("patronai.mcp")
 
-# Resolve src/ on the path so BlobIndexStore is importable
+# Resolve src/ on the path so BlobIndexStore + chat tools are importable.
+# chat/ moved out of dashboard/ in 2026-05-02 — single src/ entry now suffices.
 _HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(_HERE, "..", "src"))
-sys.path.insert(0, os.path.join(_HERE, "..", "dashboard"))
 
 from fastmcp import FastMCP  # type: ignore
-from ui.chat.tools import (
+from chat.tools import (
     get_summary_stats, get_top_risky_users, get_user_risk_profile,
     query_findings, get_fleet_status, get_shadow_ai_census,
     get_recent_activity, compare_periods,

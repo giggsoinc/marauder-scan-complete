@@ -1,34 +1,32 @@
 # =============================================================
-# FILE: dashboard/ui/chat/engine.py
-# VERSION: 2.0.0
-# UPDATED: 2026-04-29
+# FILE: src/chat/engine.py
+# VERSION: 2.1.0
+# UPDATED: 2026-05-02
 # OWNER: Giggso Inc (Ravi Venugopal)
 # PURPOSE: PatronAI chat engine — transport-agnostic tool-call loop.
-#          v2: tools are rollup-backed and take (scope, scope_id) computed
+#          Tools are rollup-backed and take (scope, scope_id) computed
 #          once per turn from the current view + email + company.
 #          The legacy `events` arg is accepted but ignored.
-# DEPENDS: chat/tools.py, chat/prompts.py, chat/llm/, chat/tools_schema.py,
+# DEPENDS: chat.tools, chat.prompts, chat.llm, chat.tools_schema,
 #          query.rollup_reader (for scope resolution)
 # AUDIT LOG:
 #   v1.0.0  2026-04-28  Initial — in-memory events list.
 #   v2.0.0  2026-04-29  Rollup-backed; scope/scope_id passed to tools.
+#   v2.1.0  2026-05-02  Moved from dashboard/ui/chat/ to src/chat/.
+#                       sys.path hack dropped — query/ is sibling.
 # =============================================================
 
 import json
 import logging
 import os
-import sys
 
 import requests
-
-# Make src/ importable from the dashboard package.
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..", "src"))
 
 from .tools        import (get_summary_stats, get_top_risky_users,
                             get_user_risk_profile, query_findings,
                             get_fleet_status, get_shadow_ai_census,
                             get_recent_activity, compare_periods)
-from .help         import get_help
+from .help         import get_help, refresh_docs
 from .tools_schema import TOOLS_SCHEMA
 from .prompts      import build_system_prompt
 from .llm          import get_client
@@ -56,7 +54,8 @@ _SCOPED_TOOLS = {
 
 # Tools that take **kwargs only (no scope).
 _UNSCOPED_TOOLS = {
-    "get_help": get_help,
+    "get_help":     get_help,
+    "refresh_docs": refresh_docs,
 }
 
 

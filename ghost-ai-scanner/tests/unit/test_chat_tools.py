@@ -18,10 +18,10 @@ from pathlib import Path
 from unittest.mock import patch
 
 REPO = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(REPO / "dashboard"))
+# (removed: chat now lives under src/)
 sys.path.insert(0, str(REPO / "src"))
 
-from ui.chat.tools import (  # noqa: E402
+from chat.tools import (  # noqa: E402
     get_summary_stats, get_top_risky_users, get_user_risk_profile,
     query_findings, get_fleet_status, get_shadow_ai_census,
     get_recent_activity, compare_periods,
@@ -96,7 +96,7 @@ def _fake_empty_reader(*a, **kw):
 
 
 def test_summary_stats_tenant_scope():
-    with patch("ui.chat.tools.read_dimension_range", side_effect=_fake_reader):
+    with patch("chat.tools.read_dimension_range", side_effect=_fake_reader):
         r = get_summary_stats("tenant", "abc1234567890def", days_back=30)
     assert r["total_findings"] == 47 + 12
     assert r["severities"] == {"HIGH": 47, "MEDIUM": 12}
@@ -107,7 +107,7 @@ def test_summary_stats_tenant_scope():
 
 
 def test_summary_stats_user_scope_unique_users_is_one():
-    with patch("ui.chat.tools.read_dimension_range", side_effect=_fake_reader):
+    with patch("chat.tools.read_dimension_range", side_effect=_fake_reader):
         r = get_summary_stats("user", "abc1234567890def")
     assert r["unique_users"] == 1   # user-scope = themselves
 
@@ -115,7 +115,7 @@ def test_summary_stats_user_scope_unique_users_is_one():
 def test_summary_stats_empty_rollup_returns_no_data_envelope():
     """When nothing has been rolled up, tool returns the no_data envelope
     so the LLM can say so honestly instead of fabricating."""
-    with patch("ui.chat.tools.read_dimension_range", side_effect=_fake_empty_reader):
+    with patch("chat.tools.read_dimension_range", side_effect=_fake_empty_reader):
         r = get_summary_stats("tenant", "abc")
     assert r.get("no_data") is True
     assert "_citation" in r
@@ -125,7 +125,7 @@ def test_summary_stats_empty_rollup_returns_no_data_envelope():
 
 
 def test_top_risky_users_sorted_by_total_risk():
-    with patch("ui.chat.tools.read_dimension_range", side_effect=_fake_reader):
+    with patch("chat.tools.read_dimension_range", side_effect=_fake_reader):
         r = get_top_risky_users("tenant", "abc", n=5)
     rows = r["users"]
     assert rows[0]["user"] == "alice@x.com"
@@ -135,13 +135,13 @@ def test_top_risky_users_sorted_by_total_risk():
 
 
 def test_top_risky_users_caps_n():
-    with patch("ui.chat.tools.read_dimension_range", side_effect=_fake_reader):
+    with patch("chat.tools.read_dimension_range", side_effect=_fake_reader):
         r = get_top_risky_users("tenant", "abc", n=1)
     assert len(r["users"]) == 1
 
 
 def test_top_risky_users_no_data():
-    with patch("ui.chat.tools.read_dimension_range", side_effect=_fake_empty_reader):
+    with patch("chat.tools.read_dimension_range", side_effect=_fake_empty_reader):
         r = get_top_risky_users("tenant", "abc")
     assert r.get("no_data") is True
     assert "_citation" in r
@@ -151,7 +151,7 @@ def test_top_risky_users_no_data():
 
 
 def test_user_risk_profile_tenant_lookup_hits():
-    with patch("ui.chat.tools.read_dimension_range", side_effect=_fake_reader):
+    with patch("chat.tools.read_dimension_range", side_effect=_fake_reader):
         r = get_user_risk_profile("tenant", "abc", "alice@x.com")
     assert r["found"] is True
     assert r["total_findings"] == 30
@@ -159,13 +159,13 @@ def test_user_risk_profile_tenant_lookup_hits():
 
 
 def test_user_risk_profile_tenant_lookup_miss():
-    with patch("ui.chat.tools.read_dimension_range", side_effect=_fake_reader):
+    with patch("chat.tools.read_dimension_range", side_effect=_fake_reader):
         r = get_user_risk_profile("tenant", "abc", "nobody@x.com")
     assert r["found"] is False
 
 
 def test_user_risk_profile_user_scope_uses_severity_dim():
-    with patch("ui.chat.tools.read_dimension_range", side_effect=_fake_reader):
+    with patch("chat.tools.read_dimension_range", side_effect=_fake_reader):
         r = get_user_risk_profile("user", "abc", "alice@x.com")
     assert r["found"] is True
     assert r["total_findings"] == 47 + 12   # sum of severity counts
@@ -175,7 +175,7 @@ def test_user_risk_profile_user_scope_uses_severity_dim():
 
 
 def test_query_findings_severity_filter():
-    with patch("ui.chat.tools.read_dimension_range", side_effect=_fake_reader):
+    with patch("chat.tools.read_dimension_range", side_effect=_fake_reader):
         r = query_findings("tenant", "abc", severity="HIGH")
     matches = r["matches"]
     # OpenAI ChatGPT has 47 HIGH; Copilot has 0 HIGH so excluded.
@@ -184,13 +184,13 @@ def test_query_findings_severity_filter():
 
 
 def test_query_findings_no_filters_returns_all():
-    with patch("ui.chat.tools.read_dimension_range", side_effect=_fake_reader):
+    with patch("chat.tools.read_dimension_range", side_effect=_fake_reader):
         r = query_findings("tenant", "abc")
     assert r["match_count"] == 2
 
 
 def test_query_findings_user_filter():
-    with patch("ui.chat.tools.read_dimension_range", side_effect=_fake_reader):
+    with patch("chat.tools.read_dimension_range", side_effect=_fake_reader):
         r = query_findings("tenant", "abc", user="bob@x.com")
     # Only OpenAI ChatGPT has bob@x.com.
     assert {m["provider"] for m in r["matches"]} == {"OpenAI ChatGPT"}
@@ -200,7 +200,7 @@ def test_query_findings_user_filter():
 
 
 def test_fleet_status_counts_devices():
-    with patch("ui.chat.tools.read_dimension_range", side_effect=_fake_reader):
+    with patch("chat.tools.read_dimension_range", side_effect=_fake_reader):
         r = get_fleet_status("tenant", "abc")
     assert r["total_devices"] == 2
     assert r["top_devices"][0]["device"] == "alice-mbp"
@@ -210,7 +210,7 @@ def test_fleet_status_counts_devices():
 
 
 def test_shadow_ai_census_sorted_by_hits_desc():
-    with patch("ui.chat.tools.read_dimension_range", side_effect=_fake_reader):
+    with patch("chat.tools.read_dimension_range", side_effect=_fake_reader):
         r = get_shadow_ai_census("tenant", "abc")
     provs = r["providers"]
     assert provs[0]["provider"] == "OpenAI ChatGPT"
@@ -223,7 +223,7 @@ def test_shadow_ai_census_sorted_by_hits_desc():
 
 def test_shadow_ai_census_human_names_preserved():
     """Critical: provider names must already be human (normalised at rollup time)."""
-    with patch("ui.chat.tools.read_dimension_range", side_effect=_fake_reader):
+    with patch("chat.tools.read_dimension_range", side_effect=_fake_reader):
         names = [p["provider"]
                  for p in get_shadow_ai_census("tenant", "abc")["providers"]]
     assert "claude.ai" not in names
@@ -233,7 +233,7 @@ def test_shadow_ai_census_human_names_preserved():
 
 
 def test_shadow_ai_census_no_data():
-    with patch("ui.chat.tools.read_dimension_range", side_effect=_fake_empty_reader):
+    with patch("chat.tools.read_dimension_range", side_effect=_fake_empty_reader):
         r = get_shadow_ai_census("tenant", "abc")
     assert r.get("no_data") is True
     assert "_citation" in r
@@ -243,7 +243,7 @@ def test_shadow_ai_census_no_data():
 
 
 def test_recent_activity_returns_severity_breakdown():
-    with patch("ui.chat.tools.read_dimension_range", side_effect=_fake_reader):
+    with patch("chat.tools.read_dimension_range", side_effect=_fake_reader):
         r = get_recent_activity("tenant", "abc", hours=24)
     assert r["window_hours"] == 24
     assert r["total_findings"] == 47 + 12
@@ -254,7 +254,7 @@ def test_recent_activity_returns_severity_breakdown():
 
 
 def test_compare_periods_zero_when_identical():
-    with patch("ui.chat.tools.read_dimension_range", side_effect=_fake_reader):
+    with patch("chat.tools.read_dimension_range", side_effect=_fake_reader):
         r = compare_periods("tenant", "abc",
                             "2026-04-01", "2026-04-14",
                             "2026-04-15", "2026-04-29")

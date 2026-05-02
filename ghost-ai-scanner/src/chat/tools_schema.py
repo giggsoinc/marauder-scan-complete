@@ -1,5 +1,5 @@
 # =============================================================
-# FILE: dashboard/ui/chat/tools_schema.py
+# FILE: src/chat/tools_schema.py
 # VERSION: 2.0.0
 # UPDATED: 2026-04-29
 # OWNER: Giggso Inc (Ravi Venugopal)
@@ -86,11 +86,30 @@ TOOLS_SCHEMA: list = [
         required=["d1f", "d1t", "d2f", "d2t"]),
 
     _fn("get_help",
-        "Return PatronAI product documentation. Call when the user asks "
-        "'how does X work', 'what is X', or 'explain X'. "
-        "Valid topics: overview, severity, agents, reports, mcp, faq. "
-        "Empty topic returns all sections.",
-        {"topic": {**_STR,
+        "Search PatronAI product documentation. Call this for ANY 'how do "
+        "I / how to / what is / explain / uninstall / install / configure' "
+        "question. PREFER `query=` (free-text BM25 search across the full "
+        "HTML+MD docs) — returns the most relevant 3 passages with source "
+        "filenames. Use `topic=` only for the 6 high-level sections "
+        "(overview, severity, agents, reports, mcp, faq). If both are "
+        "empty, returns the topic catalogue.",
+        {"query": {**_STR,
+                   "description": "Free-text search query, e.g. "
+                                  "'how to uninstall the agent on mac', "
+                                  "'install Linux agent', 'what is "
+                                  "shadow AI'. Preferred over topic=."},
+         "topic": {**_STR,
                    "description": "overview|severity|agents|reports|mcp|faq "
-                                  "(empty = all topics)"}}),
+                                  "— legacy curated sections. Use query= "
+                                  "for everything else."}}),
+
+    _fn("refresh_docs",
+        "Rebuild the docs RAG index if documentation files have changed "
+        "since the last index build. Call this when the user says "
+        "'refresh docs', 'reindex help', or after a `git pull` of new "
+        "documentation. Idempotent — no-op if nothing changed. Returns "
+        "status with chunk count before/after and which action was taken "
+        "(reindexed | no_change | initial_load).",
+        {"force": {"type": "boolean",
+                   "description": "Rebuild even if no doc changed. Default false."}}),
 ]
