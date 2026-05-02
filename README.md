@@ -2,7 +2,7 @@
 
 [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-353%20passing-brightgreen.svg)](ghost-ai-scanner/tests/)
+[![Tests](https://img.shields.io/badge/tests-380%20passing-brightgreen.svg)](ghost-ai-scanner/tests/)
 [![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](ghost-ai-scanner/Dockerfile)
 
 **Open-source AI endpoint monitoring for shadow AI, ghost AI, and unmanaged model usage.**
@@ -15,8 +15,8 @@ It ingests VPC Flow Logs, Packetbeat, and Zeek telemetry, normalises to
 [OCSF](https://schema.ocsf.io/), and matches against a deny-all list of 70+ AI
 providers. A code-scanning layer (**Marauder Scan**) detects AI framework imports
 (LangChain, CrewAI, AutoGen, 40+ others), MCP server registrations, and hardcoded
-API keys at git commit time. Qwen 3 1.7B via llama.cpp classifies ambiguous code
-signals on-prem — never on edge devices.
+API keys at git commit time. An on-prem AI chat assistant (LFM2.5-1.2B-Thinking via
+llama.cpp) answers questions over your findings — data never leaves your environment.
 
 Single Docker container. Multi-cloud. Grafana dashboards pre-built and provisioned on
 first boot. Apache 2.0.
@@ -93,7 +93,7 @@ flowchart TD
         scanner["Scanner engine\nNormalise → Match → Alert"]
         dash["Streamlit UI\nExec · Manager · Support · Home"]
         grafana["Grafana\ndashboards"]
-        llm["Qwen 3 1.7B\ncode classifier"]
+        llm["LFM2.5-1.2B-Thinking\nchat LLM (llama.cpp)"]
     end
 
     hook -->|OCSF event| ocsf
@@ -106,9 +106,9 @@ flowchart TD
     config --> scanner
     scanner --> findings
     scanner -->|SNS / webhook| alerts["Alerts\n(SNS · Slack · PagerDuty)"]
-    llm -.->|classify ambiguous snippets| scanner
     findings --> dash
     findings --> grafana
+    dash <-.->|AI chat · tool calls| llm
 ```
 
 **Data never leaves your cloud account.** All telemetry writes to your own S3 bucket;
@@ -134,8 +134,9 @@ engine inside it.**
 > - **Email-only login.** PatronAI has no password field. Add your email to
 >   `ALLOWED_EMAILS` in `.env` and that becomes your login credential.
 > - **First-boot LLM download.** On first `docker compose up`, PatronAI
->   auto-downloads Qwen3-0.6B (~500 MB) into a Docker volume. The dashboard
->   opens immediately; AI chat activates once the download finishes (~2 min).
+>   auto-downloads LFM2.5-1.2B-Thinking (~750 MB) into a Docker volume. The
+>   dashboard opens immediately; AI chat activates once the download
+>   finishes (~3-5 min on a typical EC2 connection).
 > - **SNS confirmation email.** If you use `prereqs.sh`, AWS sends a
 >   subscription confirmation to `ADMIN_EMAILS`. You must click it — if you
 >   miss it, alert emails are silently dropped with no error logged.
@@ -218,7 +219,7 @@ bash teardown.sh
 | `AWS_REGION` | No | `us-east-1` | AWS region |
 | `PUBLIC_HOST` | No | — | EC2 public IP or DNS (no protocol) |
 | `STRICT_MIN_RULES` | No | `50` | Minimum provider rules before degraded alert |
-| `INCLUDE_CLASSIFIER` | No | `0` | `1` bakes Qwen 3 1.7B GGUF (~1 GB) into the image |
+| `INCLUDE_CLASSIFIER` | No | `0` | `1` bakes LFM2.5-1.2B-Thinking GGUF (~750 MB) into the image |
 | `LLM_PROVIDER` | No | `openai_compat` | LLM backend for AI chat: `openai_compat` or `anthropic` |
 | `LLM_BASE_URL` | No | `http://localhost:8080` | Base URL for OpenAI-compatible LLM endpoint |
 
@@ -368,13 +369,18 @@ Two pre-built dashboards provisioned on first boot:
 
 ## AI Chat Interface
 
-Every dashboard view includes a **🤖 Ask AI** widget (collapsed by default).
-Powered by llama.cpp (Qwen 3.5 9B, 4-bit) running on EC2 — no data leaves
-your environment. Supports tool calls for 9 analytics functions:
+Every dashboard view includes a persistent **🤖 Ask PatronAI** side panel.
+Powered by llama.cpp running [LiquidAI LFM2.5-1.2B-Thinking](https://huggingface.co/LiquidAI/LFM2.5-1.2B-Thinking-GGUF)
+(Q4_K_M, ~750 MB) on the same EC2 host — no data leaves your environment.
+Backed by per-user / per-tenant hourly S3 rollups so answers cite real
+data with S3 paths, not LLM hallucinations. BM25 retrieval over the
+HTML+MD docs answers product/how-to questions.
+
+Supports tool calls for 10 analytics + help functions:
 
 `get_summary_stats` · `get_top_risky_users` · `get_user_risk_profile` ·
 `query_findings` · `get_fleet_status` · `get_shadow_ai_census` ·
-`get_recent_activity` · `compare_periods` · `get_help`
+`get_recent_activity` · `compare_periods` · `get_help` · `refresh_docs`
 
 **Pluggable LLM:** set `LLM_PROVIDER=anthropic` or point `LLM_BASE_URL` at any
 OpenAI-compatible endpoint (Ollama, Groq, Together AI, LM Studio). API keys
