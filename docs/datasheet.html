@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PatronAI — Product Data Sheet</title>
+<meta name="description" content="PatronAI by Giggso Inc — open-source AI endpoint monitoring for shadow AI, ghost AI, and unmanaged model usage. Product data sheet.">
+<style>
+  @page { size: A4; margin: 18mm 14mm; }
+  :root {
+    --brand:#0b3d91; --brand2:#1769d8; --accent:#e87722;
+    --ink:#1a1a1a; --muted:#5a5a5a; --line:#d4d4d4;
+    --bg:#ffffff; --soft:#f5f7fb; --good:#1e7d3a; --warn:#b35a00;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; }
+  body {
+    font-family: "Helvetica Neue", Helvetica, Arial, "Segoe UI", sans-serif;
+    color: var(--ink); background: var(--bg); line-height: 1.45; font-size: 14px;
+  }
+  .sheet { max-width: 980px; margin: 0 auto; padding: 32px 36px 64px; }
+  /* ── Cover header ───────────────────────────────────────── */
+  .cover {
+    background: linear-gradient(135deg, var(--brand) 0%, var(--brand2) 100%);
+    color: #fff; padding: 36px 36px 28px; border-radius: 6px;
+    margin-bottom: 28px; position: relative; overflow: hidden;
+  }
+  .cover::after {
+    content: ""; position: absolute; right:-60px; top:-60px; width:240px; height:240px;
+    background: rgba(255,255,255,0.06); border-radius: 50%;
+  }
+  .cover .eyebrow {
+    text-transform: uppercase; letter-spacing: 2px; font-size: 11px;
+    opacity: 0.85; margin-bottom: 8px;
+  }
+  .cover h1 { font-size: 38px; margin: 0 0 6px; font-weight: 700; letter-spacing: -0.5px; }
+  .cover .tag { font-size: 16px; opacity: 0.95; margin-bottom: 18px; max-width: 720px; }
+  .cover .meta { display: flex; flex-wrap: wrap; gap: 14px 28px; font-size: 12px; opacity: 0.92; }
+  .cover .meta b { font-weight: 600; opacity: 1; }
+  /* ── Sections ───────────────────────────────────────────── */
+  h2 {
+    color: var(--brand); font-size: 20px; margin: 32px 0 10px;
+    padding-bottom: 6px; border-bottom: 2px solid var(--brand);
+  }
+  h3 { color: var(--ink); font-size: 15px; margin: 18px 0 6px; }
+  p { margin: 6px 0 10px; }
+  .muted { color: var(--muted); font-size: 12px; }
+  /* ── Tables ─────────────────────────────────────────────── */
+  table {
+    width: 100%; border-collapse: collapse; margin: 8px 0 14px;
+    font-size: 13px;
+  }
+  th, td {
+    border: 1px solid var(--line); padding: 8px 10px; vertical-align: top; text-align: left;
+  }
+  th { background: var(--soft); color: var(--brand); font-weight: 600; }
+  tr:nth-child(even) td { background: #fafbfd; }
+  /* ── Feature grid ───────────────────────────────────────── */
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 10px 0 16px; }
+  .card {
+    border: 1px solid var(--line); border-left: 4px solid var(--brand2);
+    padding: 12px 14px; border-radius: 4px; background: #fff;
+  }
+  .card h4 { margin: 0 0 4px; color: var(--brand); font-size: 14px; }
+  .card p { margin: 0; font-size: 13px; color: var(--ink); }
+  .pill {
+    display: inline-block; padding: 2px 8px; font-size: 11px; font-weight: 600;
+    border-radius: 999px; background: var(--soft); color: var(--brand); margin-right: 4px;
+  }
+  .pill.good { background:#e6f4ea; color:var(--good); }
+  .pill.warn { background:#fff1e0; color:var(--warn); }
+  ul { margin: 4px 0 12px; padding-left: 22px; }
+  li { margin: 3px 0; }
+  code { background: var(--soft); padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+  /* ── Footer ─────────────────────────────────────────────── */
+  footer {
+    margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--line);
+    font-size: 11px; color: var(--muted); display: flex; justify-content: space-between;
+  }
+  @media print {
+    .sheet { padding: 0; max-width: none; }
+    h2 { page-break-after: avoid; }
+    table, .card { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <!-- ── Cover ────────────────────────────────────────────── -->
+  <header class="cover">
+    <div class="eyebrow">Product Data Sheet</div>
+    <h1>PatronAI</h1>
+    <div class="tag">Open-source AI endpoint monitoring for shadow AI, ghost AI, and unmanaged model usage. Network · Code · Endpoint visibility in a single Docker container.</div>
+    <div class="meta">
+      <span><b>Product:</b> PatronAI / Marauder Scan</span>
+      <span><b>Vendor:</b> Giggso Inc</span>
+      <span><b>Release:</b> v1.0.0</span>
+      <span><b>Date:</b> 2026-05-02</span>
+      <span><b>License:</b> Apache 2.0</span>
+    </div>
+  </header>
+
+  <!-- ── Overview ─────────────────────────────────────────── -->
+  <section>
+    <h2>1. Product Overview</h2>
+    <p>
+      PatronAI helps security, platform, and AI-governance teams discover unknown AI
+      endpoints, detect abandoned AI assets, and monitor model usage across applications,
+      developer environments, and cloud services. It ingests network telemetry
+      (VPC Flow Logs · Packetbeat · Zeek), normalises events to the
+      <a href="https://schema.ocsf.io/">OCSF</a> schema, and matches against a
+      curated deny-all list of <b>70+ AI providers</b>.
+    </p>
+    <p>
+      A code-scanning layer (<b>Marauder Scan</b>) detects AI framework imports,
+      MCP server registrations, and hardcoded API keys at git-commit time. An on-prem
+      AI chat assistant (LFM2.5-1.2B-Thinking via llama.cpp) answers natural-language
+      questions over your findings — <b>data never leaves your environment</b>.
+    </p>
+    <div class="grid">
+      <div class="card"><h4>Single Container</h4><p>One Docker image. Scanner + Streamlit UI + Grafana + on-prem LLM. Deploys on a t3.large EC2 in under 10 minutes.</p></div>
+      <div class="card"><h4>Multi-Cloud Ready</h4><p>S3-native today; GCS, Azure Blob, OCI Object Storage on the v2.0 roadmap. Storage backend is pluggable.</p></div>
+      <div class="card"><h4>Zero Data Egress</h4><p>All telemetry stays in your AWS account. The on-prem LLM runs locally — no third-party AI API calls required.</p></div>
+      <div class="card"><h4>OCSF Native</h4><p>Every event normalised to OCSF 1.x. SIEM-ready out of the box.</p></div>
+    </div>
+  </section>
+
+  <!-- ── Key Capabilities ─────────────────────────────────── -->
+  <section>
+    <h2>2. Key Capabilities</h2>
+    <table>
+      <thead><tr><th style="width:24%">Capability</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><b>Shadow AI Detection</b></td><td>Network-layer matching against 70+ AI provider domains (OpenAI, Anthropic, Cohere, Mistral, Groq, HuggingFace, Bedrock, Vertex AI, Azure OpenAI, Perplexity, Replicate, Together AI, Stability AI, …). Alerts within one scan cycle (default 5 min).</td></tr>
+        <tr><td><b>Ghost AI Detection</b></td><td>Code-layer git pre-commit hook detects 40+ AI framework imports (LangChain, LlamaIndex, CrewAI, AutoGen, Haystack, DSPy, Semantic Kernel, …) and MCP server configs (Claude Desktop, Cursor, Continue, Cline).</td></tr>
+        <tr><td><b>Endpoint Hook Agent</b></td><td>Per-device agent (macOS · Linux · Windows). Scans pip / npm / brew / choco / winget packages, running processes, browser history (8 browsers), IDE plugins (VS Code, Cursor, JetBrains family), Docker containers, and shell history every 30 minutes.</td></tr>
+        <tr><td><b>API Key Scanning</b></td><td>Detects OpenAI <code>sk-proj-</code>, Anthropic <code>sk-ant-</code>, HuggingFace <code>hf_</code>, and generic bearer-token patterns at commit time and in code at rest.</td></tr>
+        <tr><td><b>Vector DB Discovery</b></td><td>Identifies Chroma, FAISS, LanceDB, Qdrant, Milvus on-disk artefacts in repos and home caches.</td></tr>
+        <tr><td><b>AI Inventory View</b></td><td>Aggregated per-owner, per-category, per-provider mind map. Click any node to drill into raw findings.</td></tr>
+        <tr><td><b>On-Prem AI Chat</b></td><td>LFM2.5-1.2B-Thinking GGUF (LiquidAI) running via llama.cpp inside the container. 8 native function-calling tools answer questions over findings + a BM25-indexed docs RAG over the user guide.</td></tr>
+        <tr><td><b>Hourly S3 Rollups</b></td><td>Per-user and per-tenant pre-aggregated dimension files (provider, user, severity, device, category) — chat answers stay sub-second at multi-million-finding volume.</td></tr>
+        <tr><td><b>Compliance Reporting</b></td><td>R6 Compliance report: SHA-256-hashed, immutable, one-click PDF audit trail for any time window.</td></tr>
+        <tr><td><b>Multi-Channel Alerting</b></td><td>SNS (email + SMS), Slack and Microsoft Teams incoming webhooks, SES per-user email distribution lists.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ── Architecture ─────────────────────────────────────── -->
+  <section>
+    <h2>3. Architecture</h2>
+    <p>Three layers feed a single S3 bucket; one Docker container reads from it. No external control plane.</p>
+    <table>
+      <thead><tr><th style="width:18%">Layer</th><th style="width:22%">Sources</th><th>Output</th></tr></thead>
+      <tbody>
+        <tr><td><b>Edge</b></td><td>Git pre-commit hook · Endpoint scan agent · Heartbeat (5 min)</td><td>OCSF events → <code>s3://&lt;bucket&gt;/ocsf/agent/scans/{token}/latest.json</code></td></tr>
+        <tr><td><b>Network</b></td><td>VPC Flow Logs · Packetbeat · Zeek</td><td>OCSF events → <code>s3://&lt;bucket&gt;/ocsf/network/...</code></td></tr>
+        <tr><td><b>Platform</b></td><td>Scanner engine + Streamlit UI + Grafana + llama-server + nginx</td><td>Findings → <code>findings/YYYY/MM/DD/{severity}.jsonl</code> · Rollups → <code>users/.../rollup/...</code> · Alerts → SNS / Slack / Teams</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ── Technical Specifications ─────────────────────────── -->
+  <section>
+    <h2>4. Technical Specifications</h2>
+    <table>
+      <thead><tr><th style="width:30%">Item</th><th>Specification</th></tr></thead>
+      <tbody>
+        <tr><td>Runtime</td><td>Python 3.12 · Streamlit 1.x · llama.cpp (llama-server)</td></tr>
+        <tr><td>Container Image</td><td>Single multi-stage Docker image; ~2.1 GB. Python + llama-server bundled.</td></tr>
+        <tr><td>Stack Composition</td><td>3 services via <code>docker-compose</code>: <b>scanner</b> (Streamlit + LLM), <b>grafana</b>, <b>nginx</b> (reverse proxy on :80)</td></tr>
+        <tr><td>Storage Backend</td><td>Amazon S3 (single bucket per tenant). SigV4 enforced. KMS-encrypted buckets supported.</td></tr>
+        <tr><td>Event Schema</td><td>OCSF 1.x normalised; raw provider field preserved + human-readable AI-tool name resolved at rollup time.</td></tr>
+        <tr><td>Authentication</td><td>Email-only allow-list (<code>ALLOWED_EMAILS</code>). Three role tiers: <b>Admin</b>, <b>Support</b>, <b>Manager</b>. SSO (OIDC / SAML + IdP MFA) on v1.1 roadmap.</td></tr>
+        <tr><td>Default Ports</td><td>80 (nginx) · 8501 (Streamlit) · 3000 (Grafana) · 8080 (llama-server, container-internal only)</td></tr>
+        <tr><td>Scan Cadence</td><td><code>SCAN_INTERVAL_SECS=300</code> (5 min) default · <code>DEDUP_WINDOW_MINUTES=60</code> · <code>LOOKBACK_MINUTES=60</code> on first boot</td></tr>
+        <tr><td>Rollup Cadence</td><td>Hourly at <code>:05</code> past the hour (UTC). 7-day initial backfill on first deploy.</td></tr>
+        <tr><td>LLM (default)</td><td>LiquidAI <b>LFM2.5-1.2B-Thinking-GGUF</b> (Q4_K_M, ~750 MB). Auto-downloaded into named Docker volume on first boot.</td></tr>
+        <tr><td>LLM Context</td><td>16,384 tokens per slot · single tenant slot · 384-token output cap. Env-tunable via <code>LLM_CTX_SIZE</code>, <code>LLM_PARALLEL_SLOTS</code>, <code>LLM_MAX_TOKENS</code>.</td></tr>
+        <tr><td>LLM Alternatives</td><td>OpenAI-compatible endpoint (Ollama, Groq, OpenAI, Together, vLLM) via <code>LLM_BASE_URL</code> + <code>LLM_API_KEY</code>. Recommended swap: LFM2.5-Instruct (no reasoning preamble, ~2-3× faster).</td></tr>
+        <tr><td>Docs RAG</td><td>BM25 over HTML + Markdown user guides via <code>rank-bm25</code>. No embeddings, no vector DB. Auto-refresh on file change (5 min poll).</td></tr>
+        <tr><td>Test Coverage</td><td>397 unit tests · pytest · CI-ready</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ── System Requirements ──────────────────────────────── -->
+  <section>
+    <h2>5. System Requirements</h2>
+    <h3>5.1 Server / Host</h3>
+    <table>
+      <thead><tr><th style="width:18%">Resource</th><th style="width:30%">Minimum</th><th>Recommended</th></tr></thead>
+      <tbody>
+        <tr><td>EC2 instance</td><td>t3.medium (2 vCPU · 4 GB)</td><td><b>t3.large</b> (2 vCPU · 8 GB) for production CPU LLM; <b>g5.xlarge</b> (~$1/h) for ~10× chat speedup</td></tr>
+        <tr><td>Disk</td><td>20 GB</td><td>40 GB (Docker volumes for models + Grafana data)</td></tr>
+        <tr><td>OS</td><td>Amazon Linux 2023 · Ubuntu 22.04+ · Debian 12+</td><td>Amazon Linux 2023</td></tr>
+        <tr><td>Docker</td><td>Docker 24.0+ with Compose v2</td><td>Latest stable</td></tr>
+        <tr><td>Network</td><td>Outbound HTTPS to S3 + HuggingFace (first boot)</td><td>VPC endpoint to S3; ALB + ACM TLS terminator in front of nginx</td></tr>
+      </tbody>
+    </table>
+    <h3>5.2 AWS Services</h3>
+    <ul>
+      <li><b>S3</b> — single bucket, lifecycle policy auto-applied (chat history 30-day TTL)</li>
+      <li><b>IAM</b> — instance profile recommended (kills static AWS keys); policy template provided</li>
+      <li><b>SNS</b> — auto-created by <code>prereqs.sh</code> for HIGH / CRITICAL alerts</li>
+      <li><b>SES</b> — sender + recipient verification handled at registration; production access required for &gt; 200 emails/day</li>
+      <li><b>KMS</b> — optional; SSE-KMS supported (S3 Select fallback to GetObject when <code>kms:Decrypt</code> not granted)</li>
+    </ul>
+    <h3>5.3 Endpoint Agent (per device)</h3>
+    <table>
+      <thead><tr><th>Platform</th><th>Package</th><th>Footprint</th></tr></thead>
+      <tbody>
+        <tr><td>macOS 12+</td><td>Signed DMG installer</td><td>~25 MB · &lt; 1 % CPU avg</td></tr>
+        <tr><td>Windows 10 / 11</td><td>EXE installer</td><td>~30 MB · runs as scheduled task</td></tr>
+        <tr><td>Linux (Ubuntu / RHEL / Amazon Linux)</td><td>tar.gz + systemd unit</td><td>~20 MB · runs as user-mode service</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ── Deployment ───────────────────────────────────────── -->
+  <section>
+    <h2>6. Deployment Options</h2>
+    <table>
+      <thead><tr><th style="width:22%">Mode</th><th style="width:18%">Status</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Single EC2 (Docker Compose)</td><td><span class="pill good">GA · v1.0</span></td><td>Recommended starter deployment. <code>bash scripts/start.sh</code> handles env hygiene, container rebuild, and STS verification.</td></tr>
+        <tr><td>Local / Air-gapped</td><td><span class="pill good">Supported</span></td><td>Set <code>INCLUDE_CLASSIFIER=1</code> to bake the GGUF model into the image (~750 MB extra). LocalStack works for the S3 backend.</td></tr>
+        <tr><td>Kubernetes (Helm + Terraform)</td><td><span class="pill warn">Roadmap · v2.0</span></td><td>EKS first; GKE / AKS once the multi-cloud storage abstraction lands.</td></tr>
+        <tr><td>Multi-cloud (GCS · Azure · OCI)</td><td><span class="pill warn">Roadmap · v2.0</span></td><td>Storage backend abstracted behind a <code>BlobIndexStore</code> interface.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ── Security ─────────────────────────────────────────── -->
+  <section>
+    <h2>7. Security &amp; Compliance</h2>
+    <ul>
+      <li><b>Data residency:</b> All findings, rollups, and chat history live in your S3 bucket. No vendor cloud plane.</li>
+      <li><b>Encryption:</b> SSE-S3 / SSE-KMS supported. SigV4 enforced on all S3 calls.</li>
+      <li><b>Auth:</b> Email allow-list today; SSO (OIDC / SAML + IdP MFA) on v1.1.</li>
+      <li><b>Network:</b> Internal LLM bound to <code>127.0.0.1</code>; reverse proxy via nginx; ALB + ACM TLS recommended in front (v1.1).</li>
+      <li><b>Audit trail:</b> Every finding immutable in S3; SHA-256-hashed compliance report.</li>
+      <li><b>Secret hygiene:</b> Grafana admin password fail-loud at boot if unset; no default credentials shipped.</li>
+      <li><b>Container hardening:</b> Per-service log rotation; healthchecks on all services; non-root container processes where supported.</li>
+      <li><b>Compliance mappings:</b> NIST CSF and ISO 27001 control mapping in PDF report (v1.2).</li>
+    </ul>
+  </section>
+
+  <!-- ── Integrations ─────────────────────────────────────── -->
+  <section>
+    <h2>8. Integrations</h2>
+    <table>
+      <thead><tr><th style="width:24%">Category</th><th>Integration</th></tr></thead>
+      <tbody>
+        <tr><td>Telemetry ingest</td><td>VPC Flow Logs · Packetbeat · Zeek</td></tr>
+        <tr><td>Alerting</td><td>Amazon SNS (email + SMS) · Slack incoming webhook · Microsoft Teams incoming webhook · SES email</td></tr>
+        <tr><td>Giggso TrinityOps</td><td>Native webhook fan-out for HIGH / CRITICAL findings via <code>TRINITY_WEBHOOK_URL</code>. Routes PatronAI events into TrinityOps incident workflows.</td></tr>
+        <tr><td>Giggso LogAnalyzer</td><td>Direct ingest URL via <code>LOGANALYZER_WEBHOOK_URL</code>. Forwards normalised OCSF events into LogAnalyzer for cross-product correlation.</td></tr>
+        <tr><td>Endpoint Detection (EDR)</td><td>CrowdStrike Falcon (via <code>CROWDSTRIKE_ENABLED=true</code>; Streaming-API ingest on v1.2)</td></tr>
+        <tr><td>LLM providers</td><td>Local: llama.cpp (default) · Ollama · LM Studio · vLLM. Cloud: OpenAI · Anthropic · Groq · Together (any OpenAI-compatible endpoint)</td></tr>
+        <tr><td>Claude Desktop</td><td>FastMCP server (<code>scripts/patronai_mcp_server.py</code>) exposes 8 chat tools over SSH stdio</td></tr>
+        <tr><td>Dashboards</td><td>Grafana (provisioned dashboards on first boot) · Streamlit UI</td></tr>
+        <tr><td>SIEM / SOC</td><td>OCSF-native S3 export · REST API on v1.1</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ── Performance ──────────────────────────────────────── -->
+  <section>
+    <h2>9. Performance &amp; Scale</h2>
+    <table>
+      <thead><tr><th style="width:34%">Metric</th><th>Reference</th></tr></thead>
+      <tbody>
+        <tr><td>Findings volume</td><td>Tested at multi-million row scale; hourly rollups keep chat sub-second regardless of total volume.</td></tr>
+        <tr><td>Scan latency</td><td>End-to-end ingest → finding → alert: under one scan cycle (default 5 min).</td></tr>
+        <tr><td>Chat answer latency (CPU, t3.large)</td><td>~2-5 s typical (Instruct variant); ~30-60 s (Thinking variant due to reasoning preamble).</td></tr>
+        <tr><td>Chat answer latency (GPU, g5.xlarge)</td><td>~0.5-1 s — recommended for &gt; 5 active analysts.</td></tr>
+        <tr><td>Alert dedup</td><td>60 min default; configurable via <code>DEDUP_WINDOW_MINUTES</code>.</td></tr>
+        <tr><td>Endpoint agent footprint</td><td>&lt; 1 % CPU avg · ~25 MB RAM steady state · runs every 30 min.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ── Roadmap ──────────────────────────────────────────── -->
+  <section>
+    <h2>10. Roadmap (Selected)</h2>
+    <table>
+      <thead><tr><th style="width:8%">Pri</th><th style="width:36%">Item</th><th style="width:14%">Release</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td><span class="pill">P0</span></td><td>SSO Auth (OIDC / SAML + IdP MFA)</td><td>v1.1</td><td>Replaces email allow-list gate.</td></tr>
+        <tr><td><span class="pill">P0</span></td><td>Risk Monitoring &amp; Recommendations via AI Agents</td><td>v1.1</td><td>Background agent surfaces patterns and recommended actions.</td></tr>
+        <tr><td><span class="pill">P0</span></td><td>MCP for Claude — LLM Outcomes</td><td>v1.1</td><td>Multi-step workflows + drafted action emails + bulk-resolve commands.</td></tr>
+        <tr><td><span class="pill">P0</span></td><td>Terraform module + Helm chart for Kubernetes</td><td>v2.0</td><td>EKS first.</td></tr>
+        <tr><td><span class="pill">P0</span></td><td>Multi-cloud storage backend (GCS · Azure Blob · OCI)</td><td>v2.0</td><td>Lands ahead of Kubernetes deploy to keep it cloud-agnostic.</td></tr>
+        <tr><td><span class="pill">P1</span></td><td>TLS / ALB + ACM in front of nginx</td><td>v1.1</td><td>Closes 8501 / 3000 from public internet.</td></tr>
+        <tr><td><span class="pill">P1</span></td><td>Streaming chat responses</td><td>v1.1</td><td>Perceived 2-4× speedup.</td></tr>
+        <tr><td><span class="pill">P1</span></td><td>REST API for findings</td><td>v1.1</td><td>SOC integration.</td></tr>
+        <tr><td><span class="pill">P1</span></td><td>EDR integration — CrowdStrike Falcon Streaming API</td><td>v1.2</td><td>Real telemetry ingest.</td></tr>
+      </tbody>
+    </table>
+    <p class="muted">Full roadmap: <code>Roadmap.csv</code> (47 items across P0 / P1 / P2 / OPS / DONE).</p>
+  </section>
+
+  <!-- ── Ordering & Support ───────────────────────────────── -->
+  <section>
+    <h2>11. Ordering &amp; Support</h2>
+    <table>
+      <thead><tr><th style="width:26%">Item</th><th>Detail</th></tr></thead>
+      <tbody>
+        <tr><td>License</td><td>Apache 2.0 — free for commercial use, modification, and redistribution.</td></tr>
+        <tr><td>Source code</td><td><code>https://github.com/giggsoinc/patronai</code></td></tr>
+        <tr><td>Documentation</td><td><code>docs/codebase-tree.html</code> · <code>docs/quickstart-local.md</code> · <code>ghost-ai-scanner/docs/user_guide.html</code></td></tr>
+        <tr><td>Container image</td><td>Built locally from <code>Dockerfile</code> via <code>docker compose build</code>. Pre-built registry image on roadmap.</td></tr>
+        <tr><td>Commercial support</td><td>Contact Giggso Inc — onboarding, custom rule packs, SOC-2 evidence package, dedicated Slack channel.</td></tr>
+        <tr><td>Vendor</td><td><b>Giggso Inc</b> — Ravi Venugopal (Founder)</td></tr>
+        <tr><td>Contact</td><td><a href="mailto:hello@giggso.com">hello@giggso.com</a></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <footer>
+    <span>© 2026 Giggso Inc. PatronAI is an Apache 2.0 open-source product. Specifications subject to change.</span>
+    <span>Doc v1.0 · 2026-05-02</span>
+  </footer>
+
+</div>
+</body>
+</html>
