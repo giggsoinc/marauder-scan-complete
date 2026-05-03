@@ -533,7 +533,40 @@ if [[ "$EC2_PICK" != "$CREATE_IDX" && -n "$INSTANCE_PROFILE_NAME" && -n "$INSTAN
       fi
     fi
   else
-    info "Attaching profile '$INSTANCE_PROFILE_NAME' to $INSTANCE_ID..."
+    # IAM is global + eventually consistent. EC2 (regional) cannot see a
+    # freshly-created instance profile for ~5-15s, which makes the next
+    # associate-iam-instance-profile call fail with
+    #   InvalidParameterValue: Invalid IAM Instance Profile name
+    # Always pause for human-in-the-loop confirmation: show the console
+    # link, wait for Enter, then verify with `aws iam get-instance-profile`
+    # before firing the associate. Up to 3 attempts, then abort.
+    echo ""
+    info "Next step: attach IAM instance profile to EC2."
+    echo "  → IAM Roles console (verify the profile exists):"
+    echo "    https://console.aws.amazon.com/iamv2/home#/roles/details/${ROLE_NAME}"
+    echo "  → IAM Instance Profiles (CLI confirmation also runs below):"
+    echo "    aws iam get-instance-profile --instance-profile-name $INSTANCE_PROFILE_NAME"
+    echo "  → Profile name: $INSTANCE_PROFILE_NAME"
+    echo ""
+    PROFILE_VISIBLE=0
+    for attempt in 1 2 3; do
+      ask "Press Enter once you can see the profile in the IAM console (Ctrl+C to abort):"
+      read -r _
+      info "Verifying via AWS CLI..."
+      if aws iam get-instance-profile \
+           --instance-profile-name "$INSTANCE_PROFILE_NAME" \
+           --region "$AWS_REGION" >/dev/null 2>&1; then
+        ok "IAM profile '$INSTANCE_PROFILE_NAME' confirmed visible to AWS."
+        PROFILE_VISIBLE=1
+        break
+      fi
+      warn "Profile not yet visible to AWS CLI (attempt ${attempt}/3)."
+      [[ "$attempt" -lt 3 ]] && info "Wait a few more seconds and try again."
+    done
+    if [[ "$PROFILE_VISIBLE" -eq 0 ]]; then
+      err "IAM profile '$INSTANCE_PROFILE_NAME' still not visible after 3 attempts. Aborting attach."
+    fi
+    info "Attaching profile to $INSTANCE_ID..."
     aws ec2 associate-iam-instance-profile \
       --instance-id "$INSTANCE_ID" \
       --iam-instance-profile "Name=${INSTANCE_PROFILE_NAME}" \
