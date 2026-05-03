@@ -97,6 +97,16 @@ services:
       # few extra bullets without ever truncating real content.
       # Increase if a larger model (Qwen2.5-7B+) needs more headroom.
       - LLM_MAX_TOKENS=${LLM_MAX_TOKENS:-384}
+      # llama-server slot count. CRITICAL — llama-server divides
+      # --ctx-size EVENLY across slots. Single-tenant chat needs 1 slot
+      # so each slot gets the full ctx-size budget. Bump only if you
+      # multi-tenant the chat panel (you'll also want to bump ctx-size).
+      - LLM_PARALLEL_SLOTS=${LLM_PARALLEL_SLOTS:-1}
+      # Per-slot context window. 16384 leaves comfortable headroom for
+      # system prompt + tool schemas + chat history + Thinking-model
+      # reasoning + answer + Sources footer. RAM cost ~250 MB per 8K
+      # token doubling on Q4_K_M.
+      - LLM_CTX_SIZE=${LLM_CTX_SIZE:-16384}
       # Chat conversation S3 retention (auto-expires keys under chat/).
       - CHAT_HISTORY_RETENTION_DAYS=${CHAT_HISTORY_RETENTION_DAYS:-30}
       # Docs RAG auto-refresh: how often to check for changed doc files.

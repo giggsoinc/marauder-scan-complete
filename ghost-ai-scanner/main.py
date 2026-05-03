@@ -13,6 +13,14 @@
 #                       LLAMA_CACHE=/models routes HF cache to named volume.
 #   v1.2.0  2026-04-29  Hourly S3 rollup scheduler (per-user + per-tenant
 #                       trees) + chat-history S3 lifecycle policy at startup.
+#   v1.3.0  2026-05-03  Fix llama-server 500 "Context size has been
+#                       exceeded": added --parallel 1 (was defaulting to
+#                       4 slots, each getting only ctx_size/4 = 2048
+#                       tokens — chat prompts of 3000-4000 tokens
+#                       exceeded that budget). Bumped --ctx-size 8192 →
+#                       16384 for comfortable Thinking-model headroom.
+#                       Both knobs env-tunable (LLM_PARALLEL_SLOTS,
+#                       LLM_CTX_SIZE).
 # =============================================================
 
 import glob
@@ -47,8 +55,7 @@ _CHAT_RETENTION_DAYS = int(os.environ.get("CHAT_HISTORY_RETENTION_DAYS", "30"))
 def _llama_server_thread() -> None:
     """Background daemon: run llama-server; downloads model from HuggingFace on first boot.
 
-    Performance flags (added 2026-05-02 after measuring 10 tok/s CPU
-    inference taking 60-150 sec per chat turn):
+    Performance flags:
       --threads <all-cores>  : llama.cpp defaults to ~half cores; the
                                 rest were idle. Empirically ~1.5× speedup
                                 at 100% CPU during a turn.
@@ -59,17 +66,43 @@ def _llama_server_thread() -> None:
                                 client forgets to set max_tokens.
                                 Default 384 (≤100-word answers + Sources
                                 footer fit comfortably in 384 tokens).
+      --parallel <slots>     : number of concurrent generation slots.
+                                CRITICAL — llama-server divides ctx-size
+                                EVENLY across slots. Default is 4, so
+                                with --ctx-size 8192 each slot only gets
+                                2048 tokens. Our chat prompts (system
+                                prompt + 8 tool schemas + chat history +
+                                tool results) easily reach 3000-4000
+                                tokens, exceeding the per-slot budget
+                                and triggering 500 'Context size has
+                                been exceeded'. Single-tenant chat needs
+                                exactly 1 slot — so each slot gets the
+                                full --ctx-size.
+                                Override with LLM_PARALLEL_SLOTS env if
+                                you ever multi-tenant the chat.
+      --ctx-size <N>         : per-slot context window (after --parallel
+                                division). Bumped 8192 → 16384 to give
+                                comfortable headroom for chat history +
+                                Thinking-model reasoning + tool results
+                                + answer + Sources footer. RAM cost
+                                ~250 MB per 8192 token doubling on Q4_K_M
+                                — fine on a t3.large. Override with
+                                LLM_CTX_SIZE env.
     """
-    threads = max(2, os.cpu_count() or 4)
-    predict = int(os.environ.get("LLM_MAX_TOKENS", "384"))
-    log.info("llama-server: starting on :%d — repo: %s — threads=%d predict=%d",
-             _LLM_PORT, _HF_REPO, threads, predict)
+    threads  = max(2, os.cpu_count() or 4)
+    predict  = int(os.environ.get("LLM_MAX_TOKENS", "384"))
+    parallel = int(os.environ.get("LLM_PARALLEL_SLOTS", "1"))
+    ctx_size = int(os.environ.get("LLM_CTX_SIZE", "16384"))
+    log.info("llama-server: starting on :%d — repo: %s — "
+             "threads=%d predict=%d parallel=%d ctx=%d",
+             _LLM_PORT, _HF_REPO, threads, predict, parallel, ctx_size)
     # LLAMA_CACHE=/models routes the HuggingFace download to the named Docker volume.
     subprocess.Popen(
         ["llama-server",
-         "--hf-repo", _HF_REPO,
-         "--port",    str(_LLM_PORT), "--host", "127.0.0.1",
-         "--ctx-size", "8192",
+         "--hf-repo",  _HF_REPO,
+         "--port",     str(_LLM_PORT), "--host", "127.0.0.1",
+         "--ctx-size", str(ctx_size),
+         "--parallel", str(parallel),
          "--threads",  str(threads),
          "--predict",  str(predict)],
         stdout=subprocess.DEVNULL, stderr=None,
