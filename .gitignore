@@ -52,3 +52,4 @@ assets/branding/*.jpg
 ghost-ai-scanner/assets/branding/*.png
 ghost-ai-scanner/assets/branding/*.svg
 ghost-ai-scanner/assets/branding/*.jpg
+*.md
