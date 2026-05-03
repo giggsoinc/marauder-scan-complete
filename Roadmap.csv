@@ -1,0 +1,47 @@
+id,title,category,priority,effort,status,owner,target_release,notes
+P0-1,SSO Auth (OIDC/SAML + MFA at IdP),AUTH,P0,L,planned,—,v1.1,"Replace email-allowlist gate in dashboard/auth.py + auth_gate.py. First IdP TBD (Google Workspace / Okta / Azure AD)."
+P0-2,Risk Monitoring & Recommendations via AI Agents,LLM,P0,L,design,—,v1.1,"Background AI agent that periodically analyses findings, identifies patterns, surfaces recommended actions. DESIGN FORK PENDING: passive (recommends, you act) vs active (agent acts, you audit). Default to passive for v1."
+P0-3,MCP for Claude — LLM Outcomes,LLM,P0,M,design,—,v1.1,"Extend scripts/patronai_mcp_server.py beyond the 8 raw analytics tools to expose ""outcomes"": multi-step workflows, drafted action emails, PDF report generation, bulk-resolve commands that Claude Desktop can drive."
+P0-4,Terraform for Kubernetes install,INFRA,P0,L,planned,—,v2.0,"Helm chart + Terraform module. EKS first; GKE/AKS once #5 storage abstraction lands. Replaces single-EC2 Docker deploy."
+P0-5,Multi-cloud storage backend (GCS/Azure Blob/OCI),INFRA,P0,L,planned,—,v2.0,"Abstract BlobIndexStore behind an interface ABC. S3 implementation exists; add GCS, Azure Blob, OCI Object Storage. Should land BEFORE #4 to make the K8s deploy cloud-agnostic."
+P1-1,EC2 Instance Profile (kill static AWS keys),SECURITY,P1,M,planned,—,—,"Moot once K8s lands (service accounts replace this). Useful interim if v1 EC2 deploys continue past v2.0."
+P1-2,TLS / ALB+ACM in front of nginx,SECURITY,P1,M,planned,—,v1.1,Close 8501/3000 from public internet; ALB with ACM-managed cert; redirect 80→443.
+P1-3,Backend download proxy (hide AWS access key from URLs),SECURITY,P1,M,planned,—,v1.1,"~150 LOC new endpoint. Customer URL becomes /agents/<token>?otp=<otp>; backend validates OTP and streams DMG from S3 server-side."
+P1-4,Streaming chat responses,LLM,P1,S,planned,—,v1.1,"~30 LOC in widget.py + openai_compat.py. Perceived 2-4× speedup. Real win on long answers."
+P1-5,Slack/Teams integration for alerts,FEATURE,P1,M,planned,—,v1.1,"New notify/slack.py + notify/teams.py modules alongside notify/email.py. Same convention: send_alert(channel, events)."
+P1-6,REST API for findings,FEATURE,P1,M,planned,—,v1.1,SOC integration. FastAPI sidecar reading from rollup_reader. Token-auth.
+P1-7,V1.1 per-user SMTP module via AWS Secrets Manager,FEATURE,P1,L,deferred,—,v1.1,"Per memory v1_1_email_smtp_module.md. Replaces SES sandbox + production-access dance with customer-supplied SMTP."
+P1-8,EDR integration (CrowdStrike Falcon real telemetry),FEATURE,P1,L,planned,—,v1.2,"Wire CROWDSTRIKE_ENABLED=true to actually do something. Extends scanner ingest to read Falcon Streaming API."
+P2-1,GPU instance for chat latency,LLM,P2,XS,operator-action,—,v1.0,Migrate to g5.xlarge (~$1/h) for ~10× chat speedup over CPU.
+P2-2,LFM2.5-Instruct as default chat model,LLM,P2,XS,planned,—,v1.0,"Drop -Thinking variant; ~2-3× faster (no reasoning preamble). Already documented as recommended swap in .env.example."
+P2-3,kms:Decrypt for S3 Select on encrypted findings,SECURITY,P2,XS,planned,—,v1.0,"Add to iam-policy.json + KMS key policy. Currently falling back to GetObject (slower, more bandwidth)."
+P2-4,Cost tracking for cloud LLM use,LLM,P2,M,planned,—,v1.2,"Per-token cost emission for OpenAI/Anthropic/Groq paths. Daily roll-up to S3."
+P2-5,/health endpoint + Prometheus metrics,OPS,P2,S,planned,—,v1.1,"Container exposes /metrics on port 9090 with rollup-job last-success time, LLM availability, S3 error rates."
+P2-6,CI workflow (pytest + bandit + pip-audit + mypy),OPS,P2,M,planned,—,v1.1,".github/workflows/ci.yml. Currently runs ad-hoc. Coverage threshold + mypy adoption are stretch goals."
+P2-7,Bulk-action UI on findings + snooze/SLA,FEATURE,P2,M,planned,—,v1.2,Resolve N at once + snooze with reason + SLA tracking on time-to-resolution.
+P2-8,More report types in Reports tab,FEATURE,P2,M,planned,—,v1.2,"Per-team, time-window, compliance-mapped (NIST/ISO) PDF reports."
+P2-9,Operator runbook docs (rotation / quarantine / sandbox→prod),DOCS,P2,S,planned,—,v1.1,"Distill the past few sessions' learnings into a runbook. SECURITY_CONSIDERATIONS.md is the start."
+P2-10,Multi-language UI,FEATURE,P2,L,planned,—,v2.0,Streamlit i18n. Lower priority until customer asks.
+P2-11,Auto-detect hook-agent presence; suppress EDR banner if any active,FEATURE,P2,XS,planned,—,v1.1,"~10 LOC in manager_tab_inventory.py. Today shows ""EDR not configured"" even when our agent IS providing visibility."
+P2-12,Promote macOS guide out of archive,DOCS,P2,XS,planned,—,v1.0,"Move docs/archive/patronai-agent-macos-guide.html → ghost-ai-scanner/docs/. Match Linux + Windows layout."
+P2-13,Per-user chat rate limiting,SECURITY,P2,S,planned,—,v1.1,Cap LLM calls per user per hour. Cost + abuse guard.
+P2-14,Architecture Decision Records (ADRs) for key design choices,DOCS,P2,M,planned,—,v1.1,"Capture: rollup-architecture, BM25-not-vectors, src/chat/ vs dashboard/ui/chat/ split, notify-as-single-module."
+P2-15,Threat model document,DOCS,P2,M,planned,—,v1.1,STRIDE + data-flow diagram + trust boundaries.
+OPS-1,Request SES production access,OPS,OPS,XS,operator-action,—,—,One-time AWS support ticket (~24h). Removes sandbox 200/day cap + recipient-verification requirement.
+OPS-2,Enable GitHub Push Protection + Secret Scanning + Dependabot,OPS,OPS,XS,operator-action,—,—,30 sec each at /settings/security_analysis.
+OPS-3,Pen test + formal threat model engagement,OPS,OPS,L,operator-action,—,—,Annual cadence. Coordinate with security-vendor.
+OPS-4,Rotate AWS access keys ≤ 90 days OR adopt Instance Profile,OPS,OPS,XS,operator-action,—,—,Tracked in SECURITY_CONSIDERATIONS.md.
+OPS-5,Audit CloudTrail monthly for unexpected IAM-user calls,OPS,OPS,XS,operator-action,—,—,Recurring task.
+DONE,Refactor: collapse 3 SES paths → src/notify/email.py,REFACTOR,DONE,M,merged,—,v1.0,refactor/notify-email PR
+DONE,Hourly S3 rollups for chat data backend,FEATURE,DONE,L,merged,—,v1.0,—
+DONE,BM25 docs RAG over HTML+MD with auto-refresh,LLM,DONE,M,merged,—,v1.0,docs/chat-rollups.md
+DONE,Citations on every chat tool result,LLM,DONE,S,merged,—,v1.0,—
+DONE,SES recipient auto-verify on registration,SECURITY,DONE,S,merged,—,v1.0,Superseded by notify.email
+DONE,Per-platform DMG/EXE filtering on agent deploy,UX,DONE,XS,merged,—,v1.0,—
+DONE,SigV4 forced on every S3 client,SECURITY,DONE,XS,merged,—,v1.0,Fixes SignatureDoesNotMatch under SSE-KMS
+DONE,scripts/start.sh + prefetch_model.sh,OPS,DONE,S,merged,—,v1.0,One-command safe restart
+DONE,EDR-not-configured banner reworded to neutral info,UX,DONE,XS,merged,—,v1.0,—
+DONE,docker-compose AWS_* env-shadow fix,OPS,DONE,XS,merged,—,v1.0,—
+DONE,Chat prompt: ≤100 words bulleted + mandatory Sources footer + reasoning strip,LLM,DONE,S,merged,—,v1.0,—
+DONE,LLM perf: --threads + --predict + max_tokens 384,LLM,DONE,XS,merged,—,v1.0,5-8× CPU speedup
+DONE,Docs aligned to LFM2.5 (Qwen refs purged),DOCS,DONE,XS,merged,—,v1.0,—

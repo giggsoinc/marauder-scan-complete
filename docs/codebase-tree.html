@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PatronAI — Codebase Tree</title>
+<link rel="icon" type="image/png" href="../ghost-ai-scanner/assets/branding/patronai-icon.png">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#f0f2f5;font-family:'IBM Plex Mono',monospace;padding:32px 20px;}
+.page{background:#fff;max-width:1320px;margin:0 auto;border-radius:12px;
+  box-shadow:0 2px 16px rgba(0,0,0,0.1);padding:40px;}
+.hdr{display:flex;justify-content:space-between;align-items:flex-start;
+  margin-bottom:24px;flex-wrap:wrap;gap:12px;}
+h1{font-size:20px;font-weight:700;color:#1B2A4A;font-family:'IBM Plex Sans',sans-serif;}
+.sub{color:#6c757d;font-size:11px;letter-spacing:1px;text-transform:uppercase;
+  margin-top:4px;font-family:'IBM Plex Sans',sans-serif;}
+.ver{display:inline-block;background:#2E5D9E;color:#fff;font-size:10px;
+  padding:2px 8px;border-radius:4px;margin-top:6px;}
+.note{color:#6c757d;font-family:'IBM Plex Sans',sans-serif;font-size:12px;
+  margin-bottom:20px;line-height:1.5;}
+.note code{background:#eef0f3;padding:1px 5px;border-radius:3px;font-size:11px;}
+.btn{background:#2E5D9E;color:#fff;border:none;padding:8px 20px;
+  border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;
+  font-family:'IBM Plex Sans',sans-serif;}
+.tree{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+.panel{background:#f8f9fa;border:1.5px solid #dee2e6;border-radius:10px;padding:20px;}
+.panel-title{font-size:11px;letter-spacing:2px;text-transform:uppercase;
+  color:#fff;background:#1B2A4A;padding:6px 12px;border-radius:6px;
+  margin-bottom:16px;display:inline-block;}
+.tree-line{display:flex;align-items:baseline;gap:0;margin:2px 0;line-height:1.6;}
+.indent-0{padding-left:0;}
+.indent-1{padding-left:18px;}
+.indent-2{padding-left:36px;}
+.indent-3{padding-left:54px;}
+.connector{color:#6c757d;font-size:13px;margin-right:4px;flex-shrink:0;}
+.dir{color:#2E5D9E;font-size:12px;font-weight:600;}
+.file{color:#1a1a2e;font-size:11px;}
+.file.business{color:#00884d;}
+.file.ui{color:#0969DA;}
+.file.script{color:#d4680a;}
+.file.config{color:#6c3483;}
+.file.test{color:#57606A;}
+.badge{display:inline-block;font-size:9px;padding:1px 5px;border-radius:3px;
+  margin-left:6px;vertical-align:middle;font-family:'IBM Plex Sans',sans-serif;font-weight:600;}
+.badge-business{background:#e6f5ee;color:#00884d;border:1px solid #00884d;}
+.badge-ui{background:#e7f1fb;color:#0969DA;border:1px solid #0969DA;}
+.badge-script{background:#fdf3e7;color:#d4680a;border:1px solid #d4680a;}
+.badge-config{background:#f0e8f6;color:#6c3483;border:1px solid #6c3483;}
+.badge-test{background:#eef0f3;color:#57606A;border:1px solid #57606A;}
+.comment{color:#6c757d;font-size:10px;margin-left:8px;}
+.legend-row{display:flex;gap:16px;flex-wrap:wrap;margin-top:16px;
+  padding:12px;background:#f8f9fa;border-radius:8px;border:1px solid #dee2e6;}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;
+  color:#6c757d;font-family:'IBM Plex Sans',sans-serif;}
+@media print{.btn{display:none;}body{background:#fff;padding:0;}.page{box-shadow:none;}}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="hdr">
+    <div>
+      <h1 style="display:flex;align-items:center;gap:12px;">
+        <img src="../ghost-ai-scanner/assets/branding/patronai-icon.png" alt="" width="28" height="28" style="border-radius:6px;">
+        PatronAI — Codebase Tree
+      </h1>
+      <div class="sub">One repo · Multi-cloud-ready · Single Docker stack · LLM chat over per-tenant S3 rollups</div>
+      <span class="ver">v3.0 · 2026-05-02</span>
+    </div>
+    <button class="btn" onclick="window.print()">Export / Print</button>
+  </div>
+
+  <div class="note">
+    Visual companion to the per-file <strong>Code Map</strong> in
+    <a href="../README.md#code-map">README.md</a> and the machine-readable
+    <a href="../CODE_MAP.csv">CODE_MAP.csv</a>. Colour codes by layer:
+    <span class="badge badge-business">BUSINESS</span> Python in <code>src/</code> ·
+    <span class="badge badge-ui">UI</span> Streamlit in <code>dashboard/</code> ·
+    <span class="badge badge-script">SCRIPT</span> operator scripts ·
+    <span class="badge badge-config">CONFIG</span> YAML / JSON / CSV ·
+    <span class="badge badge-test">TEST</span> pytest suite.
+  </div>
+
+  <div class="tree">
+
+    <!-- LEFT COLUMN — business logic + scripts -->
+    <div style="display:flex;flex-direction:column;gap:24px;">
+
+      <div class="panel">
+        <div class="panel-title">src/ — Business Logic</div>
+        <div class="tree-line indent-0"><span class="dir">ghost-ai-scanner/src/</span></div>
+
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file business">main.py</span><span class="badge badge-business">BIZ</span><span class="comment">container entrypoint — spawns scanner / alerter / rollup / docs-refresh / llama-server / streamlit threads</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file business">bootstrap.py</span><span class="comment">validate_env · build_store · load_settings · build_resolver · maybe_backfill</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file business">threads.py</span><span class="comment">scanner_loop · alerter_backlog · url_refresh_loop · streamlit_proc</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file business">code_analyser.py</span><span class="comment">AMBIGUOUS-snippet classifier · llama-cli subprocess</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file business">code_fallback.py</span><span class="comment">regex fallback when classifier unreachable</span></div>
+        <div class="tree-line indent-1"><span class="connector">└──</span><span class="file business">rule_health.py</span><span class="comment">validate merged rule counts · self-alert</span></div>
+
+        <div class="tree-line indent-1" style="margin-top:10px"><span class="connector">├──</span><span class="dir">normalizer/</span><span class="comment">  ← OCSF flat schema + flatteners</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file business">schema.py</span><span class="comment">FLAT_SCHEMA · empty_event helpers</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file business">agent_explode.py</span><span class="comment">ENDPOINT_SCAN payload → per-finding flat events</span></div>
+        <div class="tree-line indent-2"><span class="connector">└──</span><span class="file business">provider_names.py</span><span class="comment">claude.ai → "Anthropic Claude" · github.copilot → "GitHub Copilot"</span></div>
+
+        <div class="tree-line indent-1" style="margin-top:10px"><span class="connector">├──</span><span class="dir">matcher/</span><span class="comment">  ← network-side rule engine</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="dir">alerter/</span><span class="comment">  ← SNS + webhook fan-out (dispatcher.py)</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="dir">ingestor/</span><span class="comment">  ← S3-walk · pipeline · MCP-config-change detector</span></div>
+
+        <div class="tree-line indent-1" style="margin-top:10px"><span class="connector">├──</span><span class="dir">store/</span><span class="comment">  ← S3 persistence (BlobIndexStore + per-domain stores)</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file business">base_store.py</span><span class="comment">SigV4-forced boto3 client (used by every store)</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file business">findings_store.py</span><span class="comment">findings/YYYY/MM/DD/{sev}.jsonl · S3 Select reads</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file business">agent_store.py</span><span class="comment">OTP-gated agent installer packages · presigned URLs</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file business">users_store.py</span><span class="comment">users/users.json — RBAC source of truth</span></div>
+        <div class="tree-line indent-2"><span class="connector">└──</span><span class="comment">cursor_store · dedup_store · identity_store · summary_store · settings_store · report_store</span></div>
+
+        <div class="tree-line indent-1" style="margin-top:10px"><span class="connector">├──</span><span class="dir">jobs/</span><span class="comment">  ← background workers spawned from main.py</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file business">hourly_rollup.py</span><span class="comment">findings → per-user / per-tenant dimension files (chat data backend)</span></div>
+        <div class="tree-line indent-2"><span class="connector">└──</span><span class="file business">docs_refresh.py</span><span class="comment">mtime-watch the docs RAG index — rebuild on doc change</span></div>
+
+        <div class="tree-line indent-1" style="margin-top:10px"><span class="connector">├──</span><span class="dir">query/</span><span class="comment">  ← read-side helpers for chat tools</span></div>
+        <div class="tree-line indent-2"><span class="connector">└──</span><span class="file business">rollup_reader.py</span><span class="comment">parallel S3 GETs · dimension merge · 5-min LRU</span></div>
+
+        <div class="tree-line indent-1" style="margin-top:10px"><span class="connector">├──</span><span class="dir">chat/</span><span class="comment">  ← LLM agent · used by widget AND MCP server</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file business">engine.py</span><span class="comment">tool-call loop · scope/scope_id resolution per turn</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file business">tools.py</span><span class="comment">8 analytics tools backed by hourly rollups</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file business">tools_schema.py</span><span class="comment">JSON schemas for tools + get_help + refresh_docs</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file business">prompts.py</span><span class="comment">system prompt — bulleted ≤100 words · mandatory citations</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file business">help.py</span><span class="comment">get_help (BM25 query + curated topic) + refresh_docs</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file business">docs_index.py</span><span class="comment">BM25 over docs/**/*.{md,html} · pure rank_bm25 · no embeddings</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file business">history.py</span><span class="comment">S3 chat history · clear · 30-day lifecycle policy</span></div>
+        <div class="tree-line indent-2"><span class="connector">└──</span><span class="dir">llm/</span></div>
+        <div class="tree-line indent-3"><span class="connector">├──</span><span class="file business">__init__.py</span><span class="comment">factory: env / SSM → client</span></div>
+        <div class="tree-line indent-3"><span class="connector">├──</span><span class="file business">base.py</span><span class="comment">LLMClient ABC</span></div>
+        <div class="tree-line indent-3"><span class="connector">├──</span><span class="file business">openai_compat.py</span><span class="comment">llama.cpp / Ollama / OpenAI / Groq · strips reasoning leakage</span></div>
+        <div class="tree-line indent-3"><span class="connector">└──</span><span class="file business">anthropic.py</span><span class="comment">Anthropic Messages API</span></div>
+
+        <div class="tree-line indent-1" style="margin-top:10px"><span class="connector">└──</span><span class="dir">notify/</span><span class="comment">  ← SINGLE email surface for the codebase</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file business">__init__.py</span><span class="comment">re-exports: send · send_welcome · send_agent_otp · send_alert · ensure_verified</span></div>
+        <div class="tree-line indent-2"><span class="connector">└──</span><span class="file business">email.py</span><span class="comment">single boto3 SES call site · sender resolution · auto-verify recipients</span></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">scripts/ — Operator Tooling</div>
+        <div class="tree-line indent-0"><span class="dir">ghost-ai-scanner/scripts/</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file script">setup.sh</span><span class="badge badge-script">SCRIPT</span><span class="comment">interactive first-run · creates AWS infra · writes .env · prefetches LLM model</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file script">start.sh</span><span class="badge badge-script">SCRIPT</span><span class="comment">safe `docker compose up` wrapper · env-shadow guard · STS verify</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file script">prefetch_model.sh</span><span class="badge badge-script">SCRIPT</span><span class="comment">populate /models named volume before container boot · idempotent</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file script">deploy_to_ec2.sh</span><span class="badge badge-script">SCRIPT</span><span class="comment">SCP code → EC2 · install Docker · install LLM</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file script">render_agent_package.py</span><span class="badge badge-script">SCRIPT</span><span class="comment">OTP + presigned URL + DMG/EXE builder · delegates email to notify.email</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file script">patronai_mcp_server.py</span><span class="badge badge-script">SCRIPT</span><span class="comment">FastMCP exposure of 8 chat tools to Claude Desktop / Cursor over SSH stdio</span></div>
+        <div class="tree-line indent-1"><span class="connector">└──</span><span class="comment">build_agent_artifacts · scan_fragment_loader · refresh_eni_cache · simulate_events</span></div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN — UI, configs, S3, tests -->
+    <div style="display:flex;flex-direction:column;gap:24px;">
+
+      <div class="panel">
+        <div class="panel-title">dashboard/ — Streamlit UI</div>
+        <div class="tree-line indent-0"><span class="dir">ghost-ai-scanner/dashboard/</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file ui">ghost_dashboard.py</span><span class="badge badge-ui">UI</span><span class="comment">single-page entry · view router · 75/25 main+chat split</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file ui">auth.py · auth_gate.py</span><span class="badge badge-ui">UI</span><span class="comment">email-allowlist auth (SSO is roadmap P0 #1)</span></div>
+        <div class="tree-line indent-1"><span class="connector">└──</span><span class="dir">ui/</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="dir">chat/</span><span class="comment">  ← ONLY chat code in dashboard/</span></div>
+        <div class="tree-line indent-3"><span class="connector">├──</span><span class="file ui">widget.py</span><span class="badge badge-ui">UI</span><span class="comment">right-side chat panel · suggestions · Clear modal</span></div>
+        <div class="tree-line indent-3"><span class="connector">└──</span><span class="file ui">__init__.py</span><span class="comment">re-exports render_chat_panel</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file ui">manager_tab_inventory.py</span><span class="comment">per-asset table · neutral EDR-not-configured banner</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file ui">manager_tab_risks.py</span><span class="comment">findings table + Mark Resolved / Escalate / ✉ Send Alert Email</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file ui">manager_tab_actions.py</span><span class="comment">action helpers · send_alert_email shims to notify.email</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file ui">manager_tab_ai_inventory.py</span><span class="comment">AI tools mind map + treemap</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file ui">exec_tab_*.py</span><span class="comment">Exec view tabs (landscape · risk · exposure)</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file ui">support_tab_*.py</span><span class="comment">Support view tabs (fleet · health · signals · rules · coverage)</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file ui">tabs/users.py</span><span class="comment">RBAC CRUD · calls notify.email.send_welcome on add</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file ui">tabs/deploy_agents.py</span><span class="comment">agent OTP package generator · platform-filtered DMG/EXE links</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file ui">tabs/provider_lists.py</span><span class="comment">provider deny / allow list management</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file ui">data.py</span><span class="comment">cached S3 loaders (legacy · non-chat tabs)</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file ui">audit.py · audit_tail.py</span><span class="comment">user-action audit trail to ocsf/audit/</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file ui">styles.py · header.py · sidebar.py</span><span class="comment">layout primitives</span></div>
+        <div class="tree-line indent-2"><span class="connector">└──</span><span class="comment">filtered_table · clickable_metric · drill_panel · time_fmt · helpers · …</span></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Root + Configs</div>
+        <div class="tree-line indent-0"><span class="dir">ghost-ai-scanner/</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file config">docker-compose.yml</span><span class="badge badge-config">CONFIG</span><span class="comment">3 services: scanner · grafana · nginx · env_file=.env (no AWS_* shadowing)</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file config">Dockerfile</span><span class="badge badge-config">CONFIG</span><span class="comment">scanner image · llama.cpp baked in · LFM2.5 GGUF downloads at runtime</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file config">Dockerfile.grafana</span><span class="badge badge-config">CONFIG</span><span class="comment">Grafana + provisioned dashboards · GF_SECURITY_ADMIN_PASSWORD required</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file config">requirements.txt</span><span class="badge badge-config">CONFIG</span><span class="comment">all Python deps · pinned · license-categorised</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file config">iam-policy.json</span><span class="badge badge-config">CONFIG</span><span class="comment">AWS IAM policy for runtime role · SES verify + send + lifecycle perms</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="file config">.env.example</span><span class="badge badge-config">CONFIG</span><span class="comment">all env vars documented + perf notes</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="dir">config/</span><span class="comment">  ← provider lists + scanner rules</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file config">unauthorized.csv</span><span class="comment">70+ AI provider domains (Giggso baseline)</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file config">unauthorized_custom.csv</span><span class="comment">customer additions (UI-editable)</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file config">authorized.csv · authorized_code.csv</span><span class="comment">customer allow lists</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file config">eni_denylist.yaml</span><span class="comment">VPC ENI types to skip during normalisation</span></div>
+        <div class="tree-line indent-2"><span class="connector">└──</span><span class="file config">settings.json · providers.yaml</span><span class="comment">scanner defaults</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="dir">agent/</span><span class="comment">  ← hook-agent fragment templates (sh + ps1)</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="dir">grafana/</span><span class="comment">  ← provisioning + 1 baked dashboard (marauder-overview.json)</span></div>
+        <div class="tree-line indent-1"><span class="connector">└──</span><span class="dir">nginx/</span><span class="comment">  ← reverse proxy config</span></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">S3 Bucket Layout — Runtime State</div>
+        <div class="tree-line indent-0"><span class="dir">s3://patronai/</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="dir">findings/{Y}/{M}/{D}/{sev}.jsonl</span><span class="comment">flat events · S3-Select-readable</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="dir">users/{hash16}/rollup/{Y}/{M}/{D}/{H}/by_*.json</span><span class="comment">per-user dimension rollups (exec view)</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="dir">tenants/{hash16}/rollup/{Y}/{M}/{D}/{H}/by_*.json</span><span class="comment">per-tenant rollups (manager / support / home views)</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="dir">chat/{hash16}/{view}/{date}.jsonl</span><span class="comment">S3-persisted chat history · 30-day lifecycle</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="dir">config/HOOK_AGENTS/{token}/</span><span class="comment">OTP-gated agent installer packages</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="dir">ocsf/agent/heartbeats|scans/</span><span class="comment">edge-agent uploads (raw)</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="dir">ocsf/audit/{Y}/{M}/{D}/</span><span class="comment">user-action audit log entries</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="dir">summary/daily/{date}.json</span><span class="comment">pre-aggregated daily summaries (legacy)</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="dir">cursor/ · dedup/ · identity/</span><span class="comment">scanner state</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="dir">users/users.json</span><span class="comment">RBAC: role + is_admin per email</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="dir">rollup-meta/unknown_providers.jsonl</span><span class="comment">audit log for raw provider strings not yet in KNOWN_AI_TOOLS</span></div>
+        <div class="tree-line indent-1"><span class="connector">└──</span><span class="dir">reports/</span><span class="comment">{date}-report.pdf</span></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">tests/ — 397 passing</div>
+        <div class="tree-line indent-0"><span class="dir">ghost-ai-scanner/tests/</span></div>
+        <div class="tree-line indent-1"><span class="connector">├──</span><span class="dir">unit/</span><span class="comment">  ← 380+ pure-Python tests · mock S3 / SES / LLM at the seam</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file test">test_chat_tools.py</span><span class="badge badge-test">TEST</span><span class="comment">rollup-backed chat tool shapes + citations + no_data envelope</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file test">test_docs_index.py</span><span class="badge badge-test">TEST</span><span class="comment">BM25 docs RAG + HTML stripper void-tag regression guard</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file test">test_notify_email.py</span><span class="badge badge-test">TEST</span><span class="comment">unified email module + shim integration</span></div>
+        <div class="tree-line indent-2"><span class="connector">├──</span><span class="file test">test_secret_patterns.py</span><span class="badge badge-test">TEST</span><span class="comment">CI guard against AKIA leak in any tracked file</span></div>
+        <div class="tree-line indent-2"><span class="connector">└──</span><span class="comment">test_alerter · test_normalizer · test_matcher · test_users_store · test_agent_explode_phase1a · test_filtered_table · test_time_fmt · test_secret_redactor · test_mcp_config_scan · test_endpoint_scan_flow · test_findings_query · test_render_agent_package · …</span></div>
+        <div class="tree-line indent-1"><span class="connector">└──</span><span class="dir">integration/</span><span class="comment">  ← localstack-required pipeline tests</span></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="legend-row">
+    <div class="legend-item"><span class="badge badge-business">BUSINESS</span>Python modules under <code>src/</code> — UI-free</div>
+    <div class="legend-item"><span class="badge badge-ui">UI</span>Streamlit code under <code>dashboard/</code></div>
+    <div class="legend-item"><span class="badge badge-script">SCRIPT</span>Operator scripts under <code>scripts/</code> — never imported by app</div>
+    <div class="legend-item"><span class="badge badge-config">CONFIG</span>YAML / JSON / CSV / Dockerfiles · no logic</div>
+    <div class="legend-item"><span class="badge badge-test">TEST</span>pytest under <code>tests/</code></div>
+    <div class="legend-item" style="margin-left:auto;"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6c3483;">See <a href="../CODE_MAP.csv">CODE_MAP.csv</a> + <a href="../Roadmap.csv">Roadmap.csv</a></span></div>
+  </div>
+</div>
+</body>
+</html>

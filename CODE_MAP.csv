@@ -1,0 +1,101 @@
+path,layer,purpose,key_exports,depends_on,notes
+README.md,DOC,Project overview · Why · How It Works mermaid · Quickstart · env vars · Code Map section,—,—,Source of truth for top-level layout
+SECURITY.md,DOC,Vulnerability reporting policy,—,—,Standard GH security policy file
+SECURITY_CONSIDERATIONS.md,DOC,Production hardening checklist · CIDR + SSO + MFA + sandbox,—,—,Operator-facing
+CODE_MAP.csv,DOC,This file — machine-readable index of every module,—,—,Update when adding/moving modules
+Roadmap.csv,DOC,Backlog with priority + effort + status,—,—,Update when items land or shift priority
+docs/codebase-tree.html,DOC,Visual two-column codebase tree (printable),—,CODE_MAP.csv,v3.0 rewritten 2026-05-02
+docs/quickstart-local.md,DOC,Local Docker Desktop setup walkthrough,—,—,—
+docs/launch-issues.md,DOC,Open launch-time gotchas,—,—,—
+docs/github-metadata.md,DOC,GH repo settings checklist,—,—,—
+docs/archive/,DOC,Superseded docs · macOS agent guide still useful,—,—,Indexed by chat docs RAG
+ghost-ai-scanner/main.py,ENTRY,Container entrypoint · spawns scanner / alerter / rollup / docs-refresh / llama-server / streamlit threads,_llama_server_thread main,bootstrap rule_health threads jobs.hourly_rollup jobs.docs_refresh,Watchdog restarts container if any thread dies
+ghost-ai-scanner/docker-compose.yml,CONFIG,3 services: scanner / grafana / nginx · env_file=.env (no AWS_* shadowing),—,Dockerfile Dockerfile.grafana .env,v1.2.0 dropped AWS_* interpolation
+ghost-ai-scanner/Dockerfile,CONFIG,Scanner image · llama.cpp baked · model downloads at runtime via --hf-repo,—,requirements.txt,LFM2.5-1.2B-Thinking-GGUF default
+ghost-ai-scanner/Dockerfile.grafana,CONFIG,Grafana + provisioned dashboards · GF_SECURITY_ADMIN_PASSWORD required (no default),—,grafana/,No more change-me default
+ghost-ai-scanner/requirements.txt,CONFIG,All Python deps · pinned · license-categorised,—,—,fastmcp>=3.2 · rank-bm25
+ghost-ai-scanner/iam-policy.json,CONFIG,AWS IAM policy for runtime role,—,—,SES verify+send+lifecycle perms
+ghost-ai-scanner/.env.example,CONFIG,All env vars documented + perf notes,—,—,LFM2.5 + LLM_MAX_TOKENS=384
+ghost-ai-scanner/CHANGELOG.md,DOC,Phase-by-phase historical notes,—,—,Don't rewrite history
+ghost-ai-scanner/README.md,DOC,Inner-package README · directory tree · pointers to root README,—,—,Test count 397
+ghost-ai-scanner/src/bootstrap.py,BUSINESS,Validate env · build BlobIndexStore · load settings · build resolver · maybe_backfill,validate_env build_store load_settings build_resolver maybe_backfill seed_config_files,store/,Called once at startup
+ghost-ai-scanner/src/threads.py,BUSINESS,Long-running threads — scanner / alerter / url-refresh / streamlit subprocess,scanner_loop alerter_backlog url_refresh_loop streamlit_proc,store ingestor matcher alerter,—
+ghost-ai-scanner/src/code_analyser.py,BUSINESS,AMBIGUOUS-snippet classifier via llama-cli subprocess,classify_snippet,llama-cli,Returns JSON verdict
+ghost-ai-scanner/src/code_fallback.py,BUSINESS,Regex fallback when classifier unreachable,regex_fallback,—,Keeps scanner functional offline
+ghost-ai-scanner/src/rule_health.py,BUSINESS,Validate merged rule counts · self-alert if low,self_check_rules,store findings_store,—
+ghost-ai-scanner/src/normalizer/schema.py,BUSINESS,OCSF flat schema definition,FLAT_SCHEMA empty_event protocol_number infer_asset_type,—,Single source of truth for event shape
+ghost-ai-scanner/src/normalizer/agent_explode.py,BUSINESS,ENDPOINT_SCAN payload → per-finding flat events,explode_endpoint_findings,schema agent_explode_fields,Phase 1A Step 0
+ghost-ai-scanner/src/normalizer/provider_names.py,BUSINESS,raw provider → human name (claude.ai → Anthropic Claude),normalize_provider is_known reset_caches,unauthorized.csv,Loaded by hourly_rollup
+ghost-ai-scanner/src/matcher/,BUSINESS,Network-side rule engine · CSV-driven 4-outcome matcher,—,unauthorized*.csv authorized*.csv,—
+ghost-ai-scanner/src/alerter/dispatcher.py,BUSINESS,SNS publish + webhook fan-out,dispatch,boto3,Used by scanner + escalation UI button
+ghost-ai-scanner/src/ingestor/,BUSINESS,S3-walk → pipeline → findings store · MCP-config-change detector,—,store findings_store dedup_store,—
+ghost-ai-scanner/src/store/base_store.py,BUSINESS,Base class · SigV4-forced boto3 S3 client,BaseStore _S3_CLIENT_CONFIG,boto3,Every store inherits
+ghost-ai-scanner/src/store/findings_store.py,BUSINESS,findings/YYYY/MM/DD/{sev}.jsonl writes + S3 Select reads,FindingsStore,base_store,Scaling target — see jobs/hourly_rollup
+ghost-ai-scanner/src/store/agent_store.py,BUSINESS,OTP-gated agent installer packages,AgentStore HOOK_AGENTS_PREFIX PRESIGN_TTL,base_store bcrypt,Heartbeat + scan + URLs PUT/GET surface
+ghost-ai-scanner/src/store/users_store.py,BUSINESS,RBAC source of truth — users/users.json,UsersStore,base_store,role + is_admin per email
+ghost-ai-scanner/src/store/blob_index_store.py,BUSINESS,Coordinator · single entry point for all per-domain stores,BlobIndexStore,store/*,Imported as the public store API
+ghost-ai-scanner/src/jobs/hourly_rollup.py,BUSINESS,Hourly aggregation — findings → per-user + per-tenant dim files,scheduler_loop compute_hourly_rollup catch_up backfill,findings_store normalizer.provider_names,Chat data backend
+ghost-ai-scanner/src/jobs/docs_refresh.py,BUSINESS,Mtime-watch the docs RAG index · rebuild on change,docs_refresh_loop,chat.docs_index,Daemon spawned from main.py
+ghost-ai-scanner/src/query/rollup_reader.py,BUSINESS,Parallel S3 GETs · dimension-aware merge · 5-min LRU,read_dimension_range hash_email hash_company scope_for_view resolve_scope_id default_window,boto3,Read-side for chat.tools
+ghost-ai-scanner/src/chat/engine.py,BUSINESS,Tool-call loop · scope/scope_id resolution per turn,call_llm,chat.tools chat.help chat.prompts chat.llm,Transport-agnostic
+ghost-ai-scanner/src/chat/tools.py,BUSINESS,8 analytics tools backed by hourly rollups,get_summary_stats get_top_risky_users get_user_risk_profile query_findings get_fleet_status get_shadow_ai_census get_recent_activity compare_periods,query.rollup_reader,Citations on every result
+ghost-ai-scanner/src/chat/tools_schema.py,BUSINESS,JSON schemas for tools + get_help + refresh_docs,TOOLS_SCHEMA,—,OpenAI tool-call format
+ghost-ai-scanner/src/chat/prompts.py,BUSINESS,System prompt builder · ≤100 words · mandatory citations · no leaked reasoning,build_system_prompt,chat.tools,v3.0.0 hardened
+ghost-ai-scanner/src/chat/help.py,BUSINESS,get_help (BM25 query + curated topic) + refresh_docs,get_help refresh_docs,chat.docs_index,—
+ghost-ai-scanner/src/chat/docs_index.py,BUSINESS,"BM25 over docs/**/*.{md,html} · pure rank_bm25 · no embeddings",DocsIndex get_index reset_index,rank-bm25,In-memory singleton
+ghost-ai-scanner/src/chat/history.py,BUSINESS,S3 chat history persistence + clear + 30-day lifecycle policy,load_history append_history clear_history ensure_lifecycle_policy,boto3,—
+ghost-ai-scanner/src/chat/llm/__init__.py,BUSINESS,Factory · env / SSM → LLMClient,get_client,llm.openai_compat llm.anthropic,—
+ghost-ai-scanner/src/chat/llm/base.py,BUSINESS,LLMClient ABC,LLMClient,—,—
+ghost-ai-scanner/src/chat/llm/openai_compat.py,BUSINESS,OpenAI-compat transport — llama.cpp / Ollama / OpenAI / Groq · strips reasoning leakage,OpenAICompatClient,requests,180s read timeout · max_tokens cap
+ghost-ai-scanner/src/chat/llm/anthropic.py,BUSINESS,Anthropic Messages API client,AnthropicClient,anthropic,—
+ghost-ai-scanner/src/notify/__init__.py,BUSINESS,Public re-exports for notify.email,send send_welcome send_agent_otp send_alert ensure_verified,notify.email,—
+ghost-ai-scanner/src/notify/email.py,BUSINESS,SINGLE SES call site for the codebase,send send_welcome send_agent_otp send_alert ensure_verified _ses_region _ses_sender,boto3,Sender priority: SES_SENDER_EMAIL → PATRONAI_FROM_EMAIL → fallback
+ghost-ai-scanner/dashboard/ghost_dashboard.py,UI,Single-page Streamlit entry · view router · 75/25 main+chat split,main,ui.* chat.widget,—
+ghost-ai-scanner/dashboard/auth.py,UI,Email-allowlist auth (SSO is roadmap P0 #1),gate,users_store,—
+ghost-ai-scanner/dashboard/ui/chat/widget.py,UI,Right-side chat panel · suggestions · Clear modal,render_chat_panel,chat.engine chat.history,Only chat code in dashboard/
+ghost-ai-scanner/dashboard/ui/manager_tab_inventory.py,UI,Per-asset table · neutral EDR-not-configured banner,render_inventory,helpers filtered_table,—
+ghost-ai-scanner/dashboard/ui/manager_tab_risks.py,UI,Findings table + Mark Resolved / Escalate / ✉ Send Alert Email,render_risks,manager_tab_actions,—
+ghost-ai-scanner/dashboard/ui/manager_tab_actions.py,UI,Action helpers · send_alert_email shims to notify.email,mark_resolved escalate send_alert_email,notify.email alerter.dispatcher,—
+ghost-ai-scanner/dashboard/ui/manager_tab_ai_inventory.py,UI,AI tools mind map + treemap,render,manager_tab_ai_inventory_data ai_inventory_*,—
+ghost-ai-scanner/dashboard/ui/exec_view.py,UI,Exec view router (landscape · risk · exposure tabs),render,exec_tab_*,—
+ghost-ai-scanner/dashboard/ui/support_view.py,UI,Support view router (fleet · health · signals · rules · coverage),render,support_tab_*,—
+ghost-ai-scanner/dashboard/ui/tabs/users.py,UI,RBAC CRUD · calls notify.email.send_welcome on add,render,users_store users_widgets notify.email,—
+ghost-ai-scanner/dashboard/ui/tabs/deploy_agents.py,UI,Agent OTP package generator · platform-filtered DMG/EXE links,render,scripts.render_agent_package,—
+ghost-ai-scanner/dashboard/ui/tabs/provider_lists.py,UI,Provider deny / allow list management,render,store,—
+ghost-ai-scanner/dashboard/ui/data.py,UI,Cached S3 loaders for non-chat tabs,load_data load_yesterday_summary load_pipeline_state,store,Legacy — chat moved to rollup_reader
+ghost-ai-scanner/dashboard/ui/audit.py,UI,User-action audit trail to ocsf/audit/,write_user_action,store,—
+ghost-ai-scanner/dashboard/ui/styles.py,UI,Layout primitives · CSS injection,inject,—,—
+ghost-ai-scanner/dashboard/ui/header.py,UI,Page header,render_header,—,—
+ghost-ai-scanner/dashboard/ui/sidebar.py,UI,View navigation sidebar,render,users_store,—
+ghost-ai-scanner/dashboard/ui/filtered_table.py,UI,Global search bar wrapper for tables,filtered_table search_box apply_search_dicts,—,—
+ghost-ai-scanner/dashboard/ui/clickable_metric.py,UI,KPI tile with drill-down,clickable_metric static_metric,—,—
+ghost-ai-scanner/dashboard/ui/drill_panel.py,UI,Drill-down panel for KPI tiles,render_drill_panel,—,—
+ghost-ai-scanner/dashboard/ui/time_fmt.py,UI,Time formatting helper · TZ aware,fmt relative tooltip,—,Phase 1B
+ghost-ai-scanner/scripts/setup.sh,SCRIPT,Interactive first-run · creates AWS infra · writes .env · prefetches LLM model,—,aws CLI docker,Run once on EC2
+ghost-ai-scanner/scripts/start.sh,SCRIPT,Safe `docker compose up` wrapper · env-shadow guard · STS verify,—,docker prefetch_model.sh,—
+ghost-ai-scanner/scripts/prefetch_model.sh,SCRIPT,Populate /models named volume before container boot · idempotent,—,docker llama-cli,Avoids 3-5 min first-boot LLM download
+ghost-ai-scanner/scripts/deploy_to_ec2.sh,SCRIPT,SCP code → EC2 · install Docker · install LLM,—,aws CLI ssh scp,Mac → EC2 transfer
+ghost-ai-scanner/scripts/render_agent_package.py,SCRIPT,OTP + presigned URL + DMG/EXE builder,render_agent_package _send_email,store.agent_store notify.email build_agent_artifacts,Email delegated to notify.email
+ghost-ai-scanner/scripts/patronai_mcp_server.py,SCRIPT,FastMCP exposure of 8 chat tools · SSH stdio transport,8 @mcp.tool() functions,fastmcp chat.tools query.rollup_reader,V1: SSH-only · V2: SSE+JWT planned
+ghost-ai-scanner/scripts/build_agent_artifacts.py,SCRIPT,Build macOS DMG + Windows EXE one-click installers,_build_macos_dmg _build_windows_exe,genisoimage makensis,Called by render_agent_package
+ghost-ai-scanner/scripts/scan_fragment_loader.py,SCRIPT,Concatenate scan_*.py.frag → INLINE_SCAN_PYTHON for installer templates,load_scan_fragments,agent/install/scan_*.frag,—
+ghost-ai-scanner/scripts/refresh_eni_cache.py,SCRIPT,Populate ENI metadata cache (run once after first deploy),—,boto3 ec2,—
+ghost-ai-scanner/scripts/git-hooks/pre-commit,SCRIPT,Local pre-commit hook · scans staged files for AWS key patterns,—,—,Install via scripts/git-hooks/install.sh
+ghost-ai-scanner/config/unauthorized.csv,CONFIG,70+ AI provider domains (Giggso baseline),—,—,Reload every scan cycle
+ghost-ai-scanner/config/unauthorized_custom.csv,CONFIG,Customer additions (UI-editable),—,—,Custom wins on (domain port) collision
+ghost-ai-scanner/config/authorized.csv,CONFIG,Customer allow list — suppress alerts for approved endpoints,—,—,—
+ghost-ai-scanner/config/eni_denylist.yaml,CONFIG,VPC ENI types to skip during normalisation,—,—,5-type denylist
+ghost-ai-scanner/agent/install/,CONFIG,Hook-agent fragment templates (sh + ps1),—,scan_fragment_loader,Templates only — never the rendered output
+ghost-ai-scanner/grafana/dashboards/marauder-overview.json,CONFIG,Pre-built Grafana dashboard,—,—,Provisioned on first boot
+ghost-ai-scanner/nginx/nginx.conf,CONFIG,Reverse proxy config (Streamlit + Grafana subpaths),—,—,—
+ghost-ai-scanner/tests/unit/test_chat_tools.py,TEST,Rollup-backed chat tool shapes + citations + no_data,—,chat.tools,Mocks read_dimension_range
+ghost-ai-scanner/tests/unit/test_docs_index.py,TEST,BM25 docs RAG + HTML stripper void-tag regression guard,—,chat.docs_index,—
+ghost-ai-scanner/tests/unit/test_notify_email.py,TEST,Unified email module + shim integration,—,notify.email,17 tests covering all paths
+ghost-ai-scanner/tests/unit/test_secret_patterns.py,TEST,CI guard against AKIA leak in any tracked file,—,—,Catches --no-verify bypasses
+ghost-ai-scanner/tests/unit/test_alerter.py,TEST,SNS + webhook dispatcher,—,alerter.dispatcher,—
+ghost-ai-scanner/tests/unit/test_normalizer.py,TEST,OCSF flat schema + parsers,—,normalizer,—
+ghost-ai-scanner/tests/unit/test_matcher.py,TEST,CSV rule engine,—,matcher,—
+ghost-ai-scanner/tests/unit/test_users_store.py,TEST,RBAC CRUD + first-run env-var migration,—,store.users_store,—
+ghost-ai-scanner/tests/unit/test_agent_explode_phase1a.py,TEST,Endpoint scan flattening,—,normalizer.agent_explode,—
+ghost-ai-scanner/tests/unit/test_render_agent_package.py,TEST,OTP + presigned URL + DMG/EXE builder,—,scripts/render_agent_package,—
+ghost-ai-scanner/tests/integration/test_pipeline.py,TEST,Localstack-required end-to-end pipeline test,—,localstack,Skipped without localstack

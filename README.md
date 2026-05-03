@@ -435,6 +435,11 @@ in [`ghost-ai-scanner/.env.example`](ghost-ai-scanner/.env.example).
 Where to find things. This index is the source of truth — keep it up
 to date when you add or move modules.
 
+**Companion artifacts** (machine-readable):
+- [`CODE_MAP.csv`](CODE_MAP.csv) — every file with `path, layer, purpose, key_exports, depends_on, notes`. Greppable, AI-tool-ingestable.
+- [`Roadmap.csv`](Roadmap.csv) — backlog: P0/P1/P2/OPS items + done log with `id, title, category, priority, effort, status, owner, target_release, notes`.
+- [`docs/codebase-tree.html`](docs/codebase-tree.html) — printable visual tree of the same content (open in browser).
+
 ```
 patronai/
 ├── README.md                                 # this file
