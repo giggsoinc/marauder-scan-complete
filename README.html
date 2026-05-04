@@ -199,22 +199,48 @@ Full local guide: [`docs/quickstart-local.md`](docs/quickstart-local.md)
 
 ### 🚀 Deploy to production (AWS EC2)
 
-Run all commands from the repo root (`patronai/`).
+> **⚠️ VITAL — WHICH MACHINE ARE YOU ON?**
+>
+> The two scripts below run on **different machines**. Mixing them up is the #1 install-time confusion.
+>
+> | Script | Run from | Why |
+> |---|---|---|
+> | **`bash deploy_to_ec2.sh`** | **Your laptop** | Provisions a new EC2, asks for an SSH `.pem` key pair, SCPs the code over, and installs Docker remotely. **You are NOT yet on the EC2.** |
+> | **`bash scripts/start.sh`** | **Inside the EC2** (after SSH) | Just starts the containers in place. **No `.pem` prompt.** Use this for every redeploy / restart. |
+>
+> If a script asks for a `.pem` while you are *already SSH'd into the EC2* — you ran the wrong script. Use `scripts/start.sh` instead.
+
+---
+
+#### From your laptop (one time — provision EC2 + push code)
+
+Run from the repo root (`patronai/`):
 
 ```bash
-# Step 1 — Deploy EC2, transfer code, install Docker + LLM
+# Step 1 — Provision EC2, SCP code, install Docker (asks for .pem key)
 bash deploy_to_ec2.sh
+```
 
-# Step 2 — SSH in when the script finishes, then run interactive setup
-#   (creates S3 bucket, SNS topic, IAM role + policy, VPC Flow Logs, writes .env)
+When the script finishes it prints an `ssh` command. SSH into the new EC2.
+
+#### Inside the EC2 (configure + start the stack)
+
+```bash
+cd ~/PatronAI/ghost-ai-scanner
+
+# Step 2 — Interactive setup: creates S3 bucket, SNS topic, IAM role + policy,
+#          VPC Flow Logs, writes .env
 bash prereqs.sh
 
-# Step 3 — Start the stack  (3 containers: patronai, grafana, nginx)
-docker compose up -d
+# Step 3 — Start the stack (3 containers: patronai, grafana, nginx)
+#          start.sh handles env hygiene + image rebuild + STS sanity check
+bash scripts/start.sh
 
 # Step 4 — Populate ENI metadata cache (run once after first deploy)
 docker exec patronai python3 scripts/refresh_eni_cache.py
 ```
+
+**Subsequent restarts (e.g. after editing `.env` or pulling new code):** just re-run `bash scripts/start.sh` from inside the EC2. Do NOT re-run `deploy_to_ec2.sh` — that is for fresh provisioning only.
 
 | Surface | URL |
 |---|---|
@@ -866,22 +892,48 @@ Full local guide: [`docs/quickstart-local.md`](docs/quickstart-local.md)
 
 ### 🚀 Deploy to production (AWS EC2)
 
-Run all commands from the repo root (`patronai/`).
+> **⚠️ VITAL — WHICH MACHINE ARE YOU ON?**
+>
+> The two scripts below run on **different machines**. Mixing them up is the #1 install-time confusion.
+>
+> | Script | Run from | Why |
+> |---|---|---|
+> | **`bash deploy_to_ec2.sh`** | **Your laptop** | Provisions a new EC2, asks for an SSH `.pem` key pair, SCPs the code over, and installs Docker remotely. **You are NOT yet on the EC2.** |
+> | **`bash scripts/start.sh`** | **Inside the EC2** (after SSH) | Just starts the containers in place. **No `.pem` prompt.** Use this for every redeploy / restart. |
+>
+> If a script asks for a `.pem` while you are *already SSH'd into the EC2* — you ran the wrong script. Use `scripts/start.sh` instead.
+
+---
+
+#### From your laptop (one time — provision EC2 + push code)
+
+Run from the repo root (`patronai/`):
 
 ```bash
-# Step 1 — Deploy EC2, transfer code, install Docker + LLM
+# Step 1 — Provision EC2, SCP code, install Docker (asks for .pem key)
 bash deploy_to_ec2.sh
+```
 
-# Step 2 — SSH in when the script finishes, then run interactive setup
-#   (creates S3 bucket, SNS topic, IAM role + policy, VPC Flow Logs, writes .env)
+When the script finishes it prints an `ssh` command. SSH into the new EC2.
+
+#### Inside the EC2 (configure + start the stack)
+
+```bash
+cd ~/PatronAI/ghost-ai-scanner
+
+# Step 2 — Interactive setup: creates S3 bucket, SNS topic, IAM role + policy,
+#          VPC Flow Logs, writes .env
 bash prereqs.sh
 
-# Step 3 — Start the stack  (3 containers: patronai, grafana, nginx)
-docker compose up -d
+# Step 3 — Start the stack (3 containers: patronai, grafana, nginx)
+#          start.sh handles env hygiene + image rebuild + STS sanity check
+bash scripts/start.sh
 
 # Step 4 — Populate ENI metadata cache (run once after first deploy)
 docker exec patronai python3 scripts/refresh_eni_cache.py
 ```
+
+**Subsequent restarts (e.g. after editing `.env` or pulling new code):** just re-run `bash scripts/start.sh` from inside the EC2. Do NOT re-run `deploy_to_ec2.sh` — that is for fresh provisioning only.
 
 | Surface | URL |
 |---|---|

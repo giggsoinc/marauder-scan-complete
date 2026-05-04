@@ -52,3 +52,7 @@ assets/branding/*.jpg
 ghost-ai-scanner/assets/branding/*.png
 ghost-ai-scanner/assets/branding/*.svg
 ghost-ai-scanner/assets/branding/*.jpg
+# But ALWAYS keep the directory itself tracked — Dockerfile's
+# COPY assets/ ./assets/ fails if the dir is missing on a fresh clone.
+!assets/branding/.gitkeep
+!ghost-ai-scanner/assets/branding/.gitkeep
