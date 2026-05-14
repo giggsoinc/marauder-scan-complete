@@ -9,11 +9,14 @@
 #          and prints the JSON to stdout. The bash wrapper PUTs it to S3.
 # AUDIT LOG:
 #   v1.0.0  2026-04-25  Initial. Group 2 — fragment refactor.
-#   v2.0.0  2026-04-26  Phase 1A. Calls 4 new emitters (mcp_configs,
-#                       agents_workflows, tools_code, vector_dbs).
-#                       Adds scan_kind tag (`baseline` first run, then
-#                       `recurring`). Clears first_run flag once the
-#                       payload is built. Adds repo discovery summary.
+#   v2.0.0  2026-04-26  Phase 1A. Four new emitters + scan_kind tag.
+#   v2.1.0  2026-05-11  Add snapshot_hash — SHA-256 over the canonical
+#                       findings list. Server uses it for cheap "same
+#                       state as last cycle" detection (short-circuits
+#                       redundant explode + write). Companion to the
+#                       server-side findings_compact job. Enables future
+#                       v3 agent delta-emission (send hash only, omit
+#                       findings array if hash matches the previous send).
 # =============================================================
 
 _findings: list = []
@@ -38,6 +41,24 @@ def _count(kind: str) -> int:
 
 _scan_kind = "baseline" if IS_FIRST_RUN else "recurring"
 
+
+def _snapshot_hash(findings_list):
+    """SHA-256 over the canonical sort of (type, key) tuples per finding.
+    Server short-circuits when this matches the previous scan's hash —
+    no explode, no findings_store write, no false-noise alerts."""
+    import hashlib
+    keys = []
+    for _f in findings_list:
+        _t = _f.get("type", "")
+        # Pick the most stable distinguishing field per category.
+        _k = (_f.get("domain") or _f.get("name") or _f.get("plugin_id")
+              or _f.get("image") or _f.get("server_name")
+              or _f.get("filename") or _f.get("signal") or "")
+        keys.append(f"{_t}|{_k}")
+    keys.sort()
+    return hashlib.sha256("\n".join(keys).encode()).hexdigest()[:16]
+
+
 _payload = {
     "event_type":   "ENDPOINT_SCAN",
     "source":       "patronai_scan_agent",
@@ -51,6 +72,7 @@ _payload = {
     "os_name":      OS_NAME,
     "timestamp":    NOW,
     "scan_kind":    _scan_kind,
+    "snapshot_hash": _snapshot_hash(_findings),
     "authorized":   AUTH_LIST,
     "repos_discovered": [{"name": r.get("name"),
                           "remote_host": r.get("remote_host"),

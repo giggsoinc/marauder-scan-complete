@@ -14,13 +14,14 @@
 #   v1.2.0  2026-04-29  Hourly S3 rollup scheduler (per-user + per-tenant
 #                       trees) + chat-history S3 lifecycle policy at startup.
 #   v1.3.0  2026-05-03  Fix llama-server 500 "Context size has been
-#                       exceeded": added --parallel 1 (was defaulting to
-#                       4 slots, each getting only ctx_size/4 = 2048
-#                       tokens — chat prompts of 3000-4000 tokens
-#                       exceeded that budget). Bumped --ctx-size 8192 →
-#                       16384 for comfortable Thinking-model headroom.
-#                       Both knobs env-tunable (LLM_PARALLEL_SLOTS,
-#                       LLM_CTX_SIZE).
+#                       exceeded": added --parallel 1 + ctx 16384.
+#   v1.4.0  2026-05-11  Wire findings_compact daemon. Collapses raw
+#                       findings/ (which append every 30 min) into a
+#                       deduped findings_current/ view keyed on
+#                       finding_signature. Also auto-resolves
+#                       signatures unseen for STALE_CYCLES (default 24
+#                       cycles). Fixes 1-laptop-shows-1020-endpoints
+#                       and 50-alerts-from-1-snapshot dashboard noise.
 # =============================================================
 
 import glob
@@ -43,8 +44,9 @@ sys.path.insert(0, "src")
 from bootstrap   import validate_env, build_store, load_settings, build_resolver, maybe_backfill, seed_config_files
 from rule_health  import self_check_rules
 from threads      import scanner_loop, alerter_backlog, url_refresh_loop, streamlit_proc
-from jobs.hourly_rollup import scheduler_loop as rollup_scheduler_loop
-from jobs.docs_refresh  import docs_refresh_loop
+from jobs.hourly_rollup    import scheduler_loop as rollup_scheduler_loop
+from jobs.docs_refresh     import docs_refresh_loop
+from jobs.findings_compact import scheduler_loop as compact_scheduler_loop
 
 _HF_REPO  = os.environ.get("LLM_MODEL_REPO", "LiquidAI/LFM2.5-1.2B-Thinking-GGUF")
 _LLM_PORT = int(os.environ.get("LLM_SERVER_PORT", "8080"))
@@ -141,6 +143,7 @@ def main():
         threading.Thread(target=alerter_backlog,     args=(store, resolver, settings, stop), name="alerter",        daemon=True),
         threading.Thread(target=url_refresh_loop,    args=(store, stop),                     name="url_refresh",    daemon=True),
         threading.Thread(target=rollup_scheduler_loop, args=(stop, _ROLLUP_OFFSET_MIN),      name="rollup_scheduler", daemon=True),
+        threading.Thread(target=compact_scheduler_loop, args=(store, stop),                   name="findings_compact", daemon=True),
         threading.Thread(target=docs_refresh_loop,   args=(stop,),                           name="docs_refresh",   daemon=True),
         threading.Thread(target=streamlit_proc,      args=(stop,),                           name="streamlit",      daemon=True),
     ]

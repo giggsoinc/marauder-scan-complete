@@ -18,12 +18,35 @@
 #                       and _provider_for(). Identity bundle untouched.
 # =============================================================
 
+import hashlib
 import json
 import logging
 
 from .schema import empty_event
 
 log = logging.getLogger("marauder-scan.normalizer.agent_explode")
+
+
+def _finding_signature(event: dict) -> str:
+    """Stable hash for entity-level dedup across re-emissions.
+
+    Two findings with the same signature represent the SAME real-world
+    fact — e.g. "Cursor is running on this MacBook" — even when the
+    agent re-emits the scan every 30 min. The findings_compact background
+    job (src/jobs/findings_compact.py) merges them into a single row with
+    first_seen / last_seen / occurrences, so the dashboard shows 1 finding
+    not 21.
+
+    Key dimensions: device + provider + category + the distinctive name
+    field (process_name OR dst_domain depending on category).
+    """
+    key = "|".join([
+        event.get("device_uuid") or event.get("device_id") or "",
+        event.get("provider", ""),
+        event.get("category", ""),
+        event.get("process_name") or event.get("dst_domain") or "",
+    ])
+    return hashlib.sha256(key.encode()).hexdigest()[:16]
 
 # Severity tier per finding type. Drives alerter routing — HIGH+ goes to
 # SNS / Trinity / SES; MEDIUM/LOW land on dashboard only.
@@ -124,6 +147,10 @@ def explode_endpoint_findings(raw: dict, company: str, bind_identity) -> list:
         _copy_phase_1a_fields(event, f)
         # Pass through scan_kind so dashboard can split baseline vs recurring.
         event["scan_kind"] = raw.get("scan_kind", "recurring")
+        # Stable signature for entity-level dedup. Same Cursor process
+        # on the same device produces the same signature every cycle —
+        # findings_compact uses it to collapse 21 hourly rows into 1.
+        event["finding_signature"] = _finding_signature(event)
         event["notes"] = json.dumps({
             "scan_id": sid, "finding": f, "token": raw.get("token", ""),
         })

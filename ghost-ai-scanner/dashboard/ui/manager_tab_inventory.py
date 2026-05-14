@@ -1,17 +1,22 @@
 # =============================================================
 # FILE: dashboard/ui/manager_tab_inventory.py
-# VERSION: 2.1.0
-# UPDATED: 2026-04-28
+# VERSION: 2.2.0
+# UPDATED: 2026-05-11
 # OWNER: Giggso Inc (Ravi Venugopal)
 # PURPOSE: Inventory tab — asset metrics, CrowdStrike banner, asset table.
-#          v2: correct asset key (device_id > src_hostname > src_ip) and
-#          owner attribution (email > owner) so each asset shows its real
-#          user instead of collapsing to the last network event's owner.
 # AUDIT LOG:
 #   v1.0.0  2026-04-19  Initial
 #   v2.0.0  2026-04-27  Fix asset key + owner attribution for mixed
 #                       network/endpoint event streams.
 #   v2.1.0  2026-04-28  Add ?view=user_detail hyperlink on OWNER column.
+#   v2.2.0  2026-05-11  KPI bug fix — "Endpoints" / "Cloud Instances"
+#                       were counting EVENT ROWS (1 laptop with 1020
+#                       scan events showed Endpoints=1020). Now counts
+#                       DISTINCT DEVICES via _asset_key. Labels
+#                       renamed Endpoints→Devices, Cloud Instances→
+#                       Cloud Hosts. Adds a small "Scan Events" line
+#                       under each card to preserve the volume signal
+#                       without conflating it with device count.
 # =============================================================
 
 import os
@@ -23,6 +28,7 @@ from .helpers          import sev_badge
 from .filtered_table   import search_box, apply_search_dicts
 from .clickable_metric import clickable_metric, static_metric
 from .drill_panel      import render_drill_panel
+from .ai_posture_card  import render_ai_posture
 
 _PANEL = "mgr_inventory"
 
@@ -41,7 +47,7 @@ def _owner_of(e: dict) -> str:
 
 
 def render_inventory(events: list) -> None:
-    """Asset summary KPIs, endpoint-protection banner, and asset table."""
+    """AI Posture card (headline) → KPI cards → asset table."""
     q = search_box("inventory", placeholder="search owner / IP / MAC …")
     if q:
         events = apply_search_dicts(events, q)
@@ -49,25 +55,45 @@ def render_inventory(events: list) -> None:
     keys = [_asset_key(e) for e in events]
     unique_keys = list(dict.fromkeys(keys))
 
-    laptops = sum(1 for e in events if e.get("asset_type") == "laptop")
-    ec2s    = sum(1 for e in events if e.get("asset_type") == "ec2")
-    # Count assets that have at least one ENDPOINT_FINDING (actual outcome
-    # for exploded scan findings — not ALERT which is the un-exploded summary).
-    with_ai = len({_asset_key(e) for e in events
-                   if e.get("outcome") == "ENDPOINT_FINDING"})
+    # Headline — aggregated AI Posture card. Single risk score +
+    # per-category breakdown replaces the count-of-everything KPI noise.
+    # When compacted findings_current rows are available they're used;
+    # otherwise we degrade gracefully to raw events.
+    device_label = unique_keys[0] if len(unique_keys) == 1 else f"{len(unique_keys)} devices"
+    render_ai_posture(events, device_label=device_label)
+
+    # KPIs count DISTINCT DEVICES, not event rows. A laptop emitting a
+    # scan every 30 min must show as 1 device + N scan events, never
+    # as N "endpoints". The pre-2.2.0 sum() over events.asset_type was
+    # the source of the inflated 1020 figure customers were seeing.
+    laptop_devices = len({_asset_key(e) for e in events
+                          if e.get("asset_type") == "laptop"})
+    cloud_devices  = len({_asset_key(e) for e in events
+                          if e.get("asset_type") == "ec2"})
+    with_ai        = len({_asset_key(e) for e in events
+                          if e.get("outcome") == "ENDPOINT_FINDING"})
+
+    # Volume signals — preserved but shown beneath the device counts so
+    # the operator can still see "1 device, 1020 scan events" at a glance.
+    laptop_events = sum(1 for e in events if e.get("asset_type") == "laptop")
+    cloud_events  = sum(1 for e in events if e.get("asset_type") == "ec2")
+    ai_events     = sum(1 for e in events if e.get("outcome") == "ENDPOINT_FINDING")
 
     c1, c2, c3, c4 = st.columns(4)
     static_metric(c1,    "Total Assets",    len(unique_keys))
-    clickable_metric(c2, "Endpoints",       laptops,
+    clickable_metric(c2, "Devices",         laptop_devices,
                      panel_key=_PANEL, drill_field="asset_type",
-                     drill_value="laptop", drill_label="Asset = laptop")
-    clickable_metric(c3, "Cloud Instances", ec2s,
+                     drill_value="laptop", drill_label="Asset = laptop",
+                     sub_label=f"{laptop_events} scan events")
+    clickable_metric(c3, "Cloud Hosts",     cloud_devices,
                      panel_key=_PANEL, drill_field="asset_type",
-                     drill_value="ec2", drill_label="Asset = ec2")
+                     drill_value="ec2", drill_label="Asset = ec2",
+                     sub_label=f"{cloud_events} scan events")
     clickable_metric(c4, "With AI Events",  with_ai,
                      panel_key=_PANEL, drill_field="outcome",
                      drill_value="ENDPOINT_FINDING",
-                     drill_label="Endpoint findings")
+                     drill_label="Endpoint findings",
+                     sub_label=f"{ai_events} findings")
     render_drill_panel(_PANEL, events, limit=100)
 
     if not os.environ.get("CROWDSTRIKE_ENABLED", "false").lower() == "true":

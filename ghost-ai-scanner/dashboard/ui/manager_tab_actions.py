@@ -1,22 +1,22 @@
 # =============================================================
 # FILE: dashboard/ui/manager_tab_actions.py
-# VERSION: 2.0.0
-# UPDATED: 2026-05-02
+# VERSION: 2.1.0
+# UPDATED: 2026-05-11
 # OWNER: Giggso Inc
 # PURPOSE: Action helpers for the Manager Risks tab.
-#          mark_resolved — writes RESOLVED outcome back to S3 findings store.
-#          escalate      — POSTs events to Trinity via dispatcher.
-#          send_alert_email — thin shim: delegates to notify.email.send_alert.
+#          mark_resolved      — writes RESOLVED outcome back to S3.
+#          escalate           — POSTs to Trinity via dispatcher.
+#          send_alert_email   — thin shim → notify.email.send_alert.
+#          authorize_for_user — appends to per-user authorized list
+#                               on S3; agent picks up on next scan.
 #          All functions are pure — no Streamlit calls inside.
-# DEPENDS: requests, alerter.dispatcher, notify.email
+# DEPENDS: requests, alerter.dispatcher, notify.email, services.authorize
 # AUDIT LOG:
 #   v1.0.0  2026-04-19  Initial — split from manager_tab_risks.py
-#   v2.0.0  2026-05-02  send_alert_email body collapsed to a one-line
-#                       call into notify.email.send_alert. The duplicated
-#                       boto3 SES path here used PATRONAI_FROM_EMAIL +
-#                       skipped recipient verification, both inconsistent
-#                       with the welcome / OTP paths. notify.email is
-#                       now the single SES call site for the codebase.
+#   v2.0.0  2026-05-02  send_alert_email → notify.email single call site.
+#   v2.1.0  2026-05-11  Add authorize_for_user — closes the noise loop
+#                       by teaching the agent which tools the operator
+#                       has approved for a given user.
 # =============================================================
 
 import logging
@@ -89,3 +89,15 @@ def send_alert_email(events: list, recipients: str) -> bool:
     recipient list. Thin shim — actual SES work lives in notify.email."""
     from notify.email import send_alert
     return send_alert(recipients=recipients, events=events)
+
+
+def authorize_for_user(store, email: str, events: list) -> int:
+    """Append every distinct provider in `events` to the user's
+    authorized list on S3. Agent fetches the list at next scan and
+    filters those providers from emission — closing the noise loop
+    at source. Idempotent; returns the new total entry count.
+    Server-side `findings_compact` then auto-resolves the open
+    findings within the stale-window cycle."""
+    from services.authorize import authorize  # local — avoid hard dep on streamlit entry
+    providers = sorted({e.get("provider", "") for e in events if e.get("provider")})
+    return authorize(store, email, providers)

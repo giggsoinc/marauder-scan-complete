@@ -19,10 +19,11 @@ import sys
 import pandas as pd
 import streamlit as st
 
-from .helpers              import sev_badge
-from .manager_tab_actions  import mark_resolved, escalate, send_alert_email
-from .time_fmt             import fmt as fmt_time
-from .filtered_table       import filtered_table
+from .helpers                 import sev_badge
+from .manager_tab_actions     import mark_resolved, escalate, send_alert_email
+from .time_fmt                import fmt as fmt_time
+from .filtered_table          import filtered_table
+from .category_grouped_risks  import render_grouped_risks
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 
@@ -32,9 +33,21 @@ _REGION = os.environ.get("AWS_REGION", "us-east-1")
 _SEV_ORDER = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2}
 
 
-def render_risks(events: list) -> None:
-    """Selectable alert table + Mark Resolved / Escalate / Email actions."""
-    alerts = sorted(      # .get() guards missing severity on endpoint events
+def render_risks(events: list, store=None, owner_email: str = "") -> None:
+    """Two views in one tab:
+       1) Grouped view (default) — collapsible category cards with
+          bulk-authorize on each category. Reads compacted rows.
+       2) Flat alert list — legacy table with Mark/Escalate/Email.
+    Operator can switch between them via a single toggle."""
+    grouped = st.toggle("Grouped view (recommended)", value=True,
+                        key="risks_grouped_toggle")
+    if grouped:
+        render_grouped_risks(events, store=store, owner_email=owner_email)
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.caption("Switch off Grouped view above to see the flat alert table.")
+        return
+
+    alerts = sorted(
         [e for e in events if e.get("severity") in _SEV_ORDER],
         key=lambda x: (_SEV_ORDER.get(x.get("severity", ""), 9),
                        x.get("timestamp", "")),
