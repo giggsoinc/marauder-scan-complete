@@ -1,0 +1,81 @@
+{
+  "project": "PatronAI",
+  "version": "1.0",
+  "stack": {
+    "work_type": "code",
+    "language": ["python3.13", "shell"],
+    "frontend": ["none"],
+    "data": ["s3"],
+    "db": [],
+    "infra": ["docker-compose"],
+    "cloud": "aws",
+    "libraries": []
+  },
+  "standards": "raven-v1",
+  "min_compatible_version": "1.0",
+  "approval_mode": "first_responder",
+  "approval_mode_version": "1.0",
+  "approval_mode_changeable": true,
+  "guard": {
+    "enabled": true,
+    "version": "1.0",
+    "git": {
+      "force_push": "hard_block",
+      "branch_deletion": "approval_flow",
+      "file_deletion": "approval_flow",
+      "deletion_flag": "GUARD:ALLOW-DELETE"
+    },
+    "db": {
+      "mass_deletion_threshold": 100,
+      "truncation": "hard_block",
+      "schema_drop": "hard_block",
+      "index_deletion": "approval_flow"
+    },
+    "infra": {
+      "s3_delete": "approval_flow",
+      "terraform_state": "hard_block",
+      "vm_terminate": "approval_flow",
+      "network_change": "approval_flow"
+    },
+    "firewall": {
+      "open_world": "hard_block",
+      "rule_change": "approval_flow",
+      "egress_change": "approval_flow"
+    },
+    "incidents": {
+      "p1_sla_minutes": 15,
+      "p2_sla_minutes": 60,
+      "p3_sla_hours": 24
+    }
+  },
+  "offline": {
+    "cache_ttl_hours": 24,
+    "allow_commits_offline": false
+  },
+  "style": {
+    "max_lines_per_file": 150,
+    "require_type_hints": true,
+    "require_docstrings": true,
+    "require_logging": true,
+    "forbid_print_statements": true,
+    "max_function_lines": 50,
+    "require_base_classes": true
+  },
+  "architecture": {
+    "require_diagram": true,
+    "require_versioning": true,
+    "diagram_file": ".raven/architecture.md",
+    "version_bump_on_change": true
+  },
+  "_layer": "project",
+  "changelog": [
+    {
+      "version": "1.0",
+      "changed_by": "giggso.ravi@gmail.com",
+      "changed_at": "2026-05-16T03:20:49.287628+00:00",
+      "changes": "Initial project manifest — PatronAI, python3.13 + shell, aws, docker-compose, guard enabled, S3-only persistence",
+      "pr": "pending",
+      "approved_by": "giggso.ravi@gmail.com"
+    }
+  ]
+}
