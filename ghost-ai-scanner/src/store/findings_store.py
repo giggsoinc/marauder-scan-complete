@@ -13,6 +13,8 @@
 #   v1.0.2  2026-05-01  Quote-escape owner/provider in S3 Select SQL;
 #                       clamp limit to int range. Fixes potential SQL
 #                       injection via tainted owner/provider strings.
+#   v1.1.0  2026-05-17  Add read_compacted() — reads findings_current/
+#                       by_signature.jsonl which has signal_class field.
 # =============================================================
 
 import json
@@ -168,6 +170,33 @@ class FindingsStore(BaseStore):
         # infer_schema_length=None: scan all rows before locking schema so
         # mixed network/endpoint events (different column types) don't crash.
         return pl.from_dicts(all_rows, infer_schema_length=None)
+
+    def read_compacted(self, target_date: str, limit: int = 2000) -> pl.DataFrame:
+        """Read findings_current/YYYY/MM/DD/by_signature.jsonl.
+        Returns rows enriched with signal_class/persistence_days by compact job."""
+        path = target_date.replace("-", "/")
+        key  = f"findings_current/{path}/by_signature.jsonl"
+        raw  = self._get(key)
+        if not raw:
+            return pl.DataFrame()
+        rows: list[dict] = []
+        for line in raw.decode(errors="replace").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                rows.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+            if len(rows) >= limit:
+                break
+        if not rows:
+            return pl.DataFrame()
+        try:
+            return pl.from_dicts(rows, infer_schema_length=None)
+        except Exception as exc:
+            log.error("read_compacted parse failed for %s: %s", target_date, exc)
+            return pl.DataFrame()
 
     def list_dates(self, prefix: str = "findings/") -> list:
         """List all dates that have findings in S3."""

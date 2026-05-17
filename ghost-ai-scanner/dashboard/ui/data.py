@@ -1,7 +1,7 @@
 # =============================================================
 # FILE: dashboard/ui/data.py
-# VERSION: 2.1.0
-# UPDATED: 2026-04-27
+# VERSION: 2.2.0
+# UPDATED: 2026-05-17
 # OWNER: Giggso Inc (Ravi Venugopal)
 # PURPOSE: Cached data loaders for the PatronAI dashboard.
 #          Loads real S3 data only — no synthetic fallback.
@@ -14,10 +14,12 @@
 #   v1.1.0  2026-04-19  7-day lookback, full stderr logging
 #   v2.0.0  2026-04-20  Remove synthetic demo fallback — real data only
 #   v2.1.0  2026-04-27  Role-scoped: exec → filtered to own email only.
+#   v2.2.0  2026-05-17  Read compacted view (findings_current/) first —
+#                       has signal_class/persistence_days from classifier.
+#                       Add load_ghost_events() + load_signal_events().
 # =============================================================
 
 import os
-import sys
 import logging
 from datetime import date, timedelta
 
@@ -36,14 +38,15 @@ _EMPTY_SUMMARY = {
 }
 
 if not BUCKET:
-    print("[data.py] WARNING: MARAUDER_SCAN_BUCKET not set.", file=sys.stderr)
+    log.warning("MARAUDER_SCAN_BUCKET not set")
 
 
 @st.cache_data(ttl=60)
 def load_data(email: str = "", role: str = "") -> tuple:
     """
     Return (events, summary). Both empty when S3 unavailable.
-    Walks back up to 7 days for findings data.
+    Reads compacted view (findings_current/) first — has signal_class.
+    Falls back to raw findings/ if compacted is empty.
     Role scoping: exec → filter events to caller's email only.
     """
     if not BUCKET:
@@ -57,13 +60,15 @@ def load_data(email: str = "", role: str = "") -> tuple:
         for days_back in range(0, 8):
             check_date = (date.today() - timedelta(days=days_back)).isoformat()
             try:
-                df_raw = store.findings.read(check_date, limit=500)
+                df = store.findings.read_compacted(check_date, limit=2000)
+                if df.is_empty():
+                    df = store.findings.read(check_date, limit=500)
             except Exception as exc:
-                print(f"[data.py] findings.read({check_date}): {exc}", file=sys.stderr)
+                log.warning("findings read(%s): %s", check_date, exc)
                 continue
-            if not df_raw.is_empty():
-                events = df_raw.to_dicts()
-                print(f"[data.py] {len(events)} events from {check_date}", file=sys.stderr)
+            if not df.is_empty():
+                events = df.to_dicts()
+                log.debug("%d events from %s", len(events), check_date)
                 if role == "exec" and email:
                     em = email.lower()
                     events = [
@@ -71,16 +76,36 @@ def load_data(email: str = "", role: str = "") -> tuple:
                         if (e.get("owner", "") or "").lower() == em
                         or (e.get("email", "") or "").lower() == em
                     ]
-                    print(f"[data.py] exec scope → {len(events)} for {email}",
-                          file=sys.stderr)
+                    log.debug("exec scope → %d for %s", len(events), email)
                 return events, summary
 
-        print(f"[data.py] No findings in last 7 days for bucket={BUCKET}", file=sys.stderr)
+        log.debug("No findings in last 7 days for bucket=%s", BUCKET)
         return [], summary
 
     except Exception as exc:
-        print(f"[data.py] S3 load failed: {type(exc).__name__}: {exc}", file=sys.stderr)
+        log.error("S3 load failed: %s: %s", type(exc).__name__, exc)
         return [], _EMPTY_SUMMARY
+
+
+@st.cache_data(ttl=60)
+def load_ghost_events(email: str = "", role: str = "") -> list:
+    """Return only GHOST-classified events. Empty list when no data."""
+    events, _ = load_data(email=email, role=role)
+    return [e for e in events if e.get("signal_class") == "GHOST"]
+
+
+@st.cache_data(ttl=60)
+def load_signal_events(email: str = "", role: str = "") -> dict:
+    """
+    Return events grouped by signal_class.
+    Keys: GHOST, NOISE, NO_ISSUE, UNCLASSIFIED (legacy rows without the field).
+    """
+    events, _ = load_data(email=email, role=role)
+    buckets: dict[str, list] = {"GHOST": [], "NOISE": [], "NO_ISSUE": [], "UNCLASSIFIED": []}
+    for e in events:
+        sc = e.get("signal_class") or "UNCLASSIFIED"
+        buckets.setdefault(sc, []).append(e)
+    return buckets
 
 
 @st.cache_data(ttl=60)

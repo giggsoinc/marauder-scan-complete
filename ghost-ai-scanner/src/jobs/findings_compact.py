@@ -19,8 +19,9 @@
 #          One-shot: compact_window(start_iso, end_iso).
 # DEPENDS: store.findings_store, store.base_store
 # AUDIT LOG:
-#   v1.0.0  2026-05-11  Initial. Ships with the
-#                       fix/dashboard-noise-drama-mode branch.
+#   v1.0.0  2026-05-11  Initial. Ships with fix/dashboard-noise-drama-mode.
+#   v1.1.0  2026-05-17  Wire signal_classifier.enrich_signal() — adds
+#                       signal_class/reason/persistence_days/scan_frequency_pct.
 # =============================================================
 
 import json
@@ -109,7 +110,7 @@ def compact_day(store, day_iso: str) -> dict:
     now    = datetime.now(timezone.utc)
     cutoff = now - timedelta(seconds=STALE_CYCLES * SCAN_INTERVAL_S)
     auto_resolved = 0
-    out_lines = []
+    out_rows = []
     for sig, slot in by_sig.items():
         sample = dict(slot["sample"] or {})
         sample["finding_signature"] = sig
@@ -123,7 +124,16 @@ def compact_day(store, day_iso: str) -> dict:
             auto_resolved += 1
         else:
             sample["status"] = "open"
-        out_lines.append(json.dumps(sample))
+        out_rows.append(sample)
+
+    # Signal classification — adds signal_class/reason/persistence_days/scan_frequency_pct
+    try:
+        from jobs.signal_classifier import enrich_signal
+        out_rows = enrich_signal(out_rows)
+    except Exception as exc:
+        log.warning("signal_classifier unavailable: %s", exc)
+
+    out_lines = [json.dumps(r) for r in out_rows]
 
     # Replace the day's compacted view in one atomic put — idempotent
     # by design, so re-running for the same day produces identical output.
