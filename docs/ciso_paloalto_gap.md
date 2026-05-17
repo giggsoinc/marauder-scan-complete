@@ -1,8 +1,30 @@
 # PatronAI — CISO Gap Analysis vs Palo Alto AI Security
 **Author:** Giggso Inc / Ravi Venugopal  
-**Reviewed:** 2026-05-16  
+**Reviewed:** 2026-05-17  
 **Raven:** v2.9.0  
-**Status:** Draft — Drama Discussions appended below
+**Status:** v2 Strategy — Giggso-native partners, no external commercial SaaS
+
+---
+
+## ⚡ Strategy Update — 2026-05-17
+
+Original plan used Cloudflare Zero Trust, GreyNoise, and AWS Security Hub as external partners.
+**Revised strategy:** zero external commercial dependencies. All gaps closed using:
+
+| Gap | Original Partner | Revised Approach |
+|---|---|---|
+| Enforcement (Gap 1) | Cloudflare Zero Trust | AWS Route53 Resolver DNS Firewall + hook agent hosts-file |
+| DLP (Gap 2) | Cloudflare Workers | Python proxy container in docker-compose.yml |
+| SOAR Response (Gap 3) | AWS Lambda + EventBridge | **Prism7** (Giggso) via structured email — 90s IAM shutdown |
+| Threat Intel (Gap 4) | GreyNoise + GitHub | AlienVault OTX (free) + GitHub + MITRE ATLAS (free) |
+| SIEM (Gap 5) | AWS Security Hub → Splunk | **v2 only** — OpenSearch in docker-compose (open-source) |
+| UEBA Anomaly (Gap 6) | Internal anomaly_score.py | **Log Analyzer** (Giggso) via S3 — PatronAI writes, Log Analyzer polls |
+| Compliance (Gap 7) | Internal YAML | Internal YAML — unchanged |
+
+**Integration model:**
+- **Log Analyzer** reads `findings_current/` from S3 (PatronAI's compacted findings) → writes anomaly findings back to `anomalies/` prefix → PatronAI ingestor picks up on next scan cycle as `source="log_analyzer"`
+- **Prism7** receives structured email from `src/notify/email.py` → parses subject + JSON body → runs playbook (IAM revoke, team alert, ticket) in 90 seconds
+- **No Lambda, no EventBridge, no new AWS managed services** beyond Route53 Resolver DNS Firewall
 
 ---
 
@@ -63,32 +85,40 @@ PatronAI today covers the **detect** leg only. This document maps the seven capa
 ### Problem
 By the time PatronAI fires an alert, data is already at OpenAI. A 30-minute endpoint scan cycle means 30 minutes of undetected exfiltration per event.
 
-### Partner Solution: Cloudflare Zero Trust Gateway
-Cloudflare Gateway runs as a DNS + HTTP proxy between users and internet. Deploy via WARP client on endpoints or DNS-over-HTTPS. PatronAI already has the provider list — the gap is enforcement.
+### Revised Solution: AWS Route53 Resolver DNS Firewall (VPC) + Hook Agent hosts-file (endpoints)
+Two-layer enforcement. VPC layer catches server-side traffic. Endpoint layer catches developer laptops. Both are AWS-native or in-product — no external partner.
 
 ### Implementation Plan
-1. **`jobs/cloudflare_sync.py`** — reads `config/unauthorized.csv` + `providers.yaml`, calls Cloudflare Gateway DNS Policies API to block every unauthorized AI domain. Runs hourly after rollup job.
-2. **Alerter extension** — on CRITICAL finding, `alerter.py` calls Cloudflare API to temporarily block the source device IP for 4 hours via Zero Trust Network Rules.
-3. **Authorize sync** — per-user allow lists in `services/authorize.py` synced to Cloudflare Gateway "exclude" rules so approved users bypass the block.
+
+**Layer 1 — VPC: Route53 Resolver DNS Firewall**
+1. **`jobs/dns_firewall_sync.py`** — reads `config/providers.yaml` + `unauthorized.csv`, calls `boto3.client('route53resolver')` to create/update a DNS Firewall domain list with all unauthorized AI provider domains. Runs hourly after rollup job.
+2. **Firewall rule group** — associates domain list with customer VPC via `create_firewall_rule_group`. Action=BLOCK for unauthorized, Action=ALLOW for authorized. Idempotent — safe to re-run.
+3. **Immediate unblock** — `services/dns_firewall.py:unblock_domain(domain)` calls Route53 Resolver API directly. Wired to "Unblock Now" button in dashboard.
+
+**Layer 2 — Endpoint: Hook agent hosts-file enforcement**
+1. **`scripts/enforce_hosts.py`** (runs inside hook agent on each scan cycle) — fetches current unauthorized domain list from `s3://patronai/config/enforcement_blocklist.json`, writes entries to `/etc/hosts` (macOS/Linux) or `C:\Windows\System32\drivers\etc\hosts` (Windows).
+2. Requires hook agent running with elevated privileges (same privilege level as process scanning).
+3. Entries written with `# patronai-managed` comment for clean removal on authorize.
 
 ### Architecture
 ```
 PatronAI providers.yaml
         │
         ▼
-cloudflare_sync.py (hourly)
-        │
-        ▼
-Cloudflare Zero Trust DNS Policy
-        │
-        ├── Block: api.openai.com, api.anthropic.com, ... (70+ domains)
-        └── Exclude: authorized users from authorize.py
+dns_firewall_sync.py (hourly)
+        ├── Route53 Resolver DNS Firewall (VPC — blocks EC2 / ECS / server-side)
+        └── s3://patronai/config/enforcement_blocklist.json
+                │
+                ▼
+            enforce_hosts.py (in hook agent, every 30 min)
+                └── /etc/hosts update (developer laptops)
 ```
 
 ### Constraints
-- Requires WARP client deployed to all managed endpoints (MDM push)
-- DNS-level blocking can be bypassed via personal VPN
-- Cloudflare cost: Free (≤50 users) → $7/user/month Zero Trust
+- Route53 Resolver DNS Firewall: ~$0.60/domain list/month + $0.60/million queries — negligible
+- Hosts-file enforcement bypassed by hardcoded IP (rare) or personal hotspot (DNS bypass)
+- Hosts-file updates need elevated privileges on endpoint — agent must run as admin/root
+- Route53 Resolver scope is VPC only — does not protect traffic from on-prem or remote devices not using VPN
 
 ---
 
@@ -97,23 +127,27 @@ Cloudflare Zero Trust DNS Policy
 ### Problem
 PatronAI sees `api.openai.com:443` in flow logs. It cannot determine if the payload contains "explain Python loops" or the full customer database. Palo Alto decrypts TLS inline and scans the body.
 
-### Partner Solution: Cloudflare AI Gateway + Workers
-Cloudflare AI Gateway proxies AI API calls. A Cloudflare Worker intercepts and inspects the request body before forwarding.
+### Revised Solution: Python DLP Proxy Container (docker-compose)
+A lightweight HTTP proxy container runs alongside the PatronAI scanner in docker-compose. Developer endpoints that configure `HTTP_PROXY` / `HTTPS_PROXY` to point at this container have AI API calls intercepted and inspected before forwarding. No external service. No cloud cost. Zero new AWS infrastructure.
 
 ### Implementation Plan
-1. **Cloudflare AI Gateway** — route all approved AI API calls through `gateway.ai.cloudflare.com`. Provides request metadata, token counts, model used → logs to PatronAI S3 via R2 binding.
-2. **`cloudflare/dlp_worker.js`** — deployed via `wrangler` from EC2:
-   - Intercepts AI API requests
-   - Runs 5 regex patterns: PAN, SSN, AWS key (`AKIA`), email lists, internal IP ranges in payload
-   - On hit → returns 403 + `X-PatronAI-Block: DLP-{pattern}` + logs to S3
-   - On clean → forwards to AI provider
-3. **New ingestor source** — `source_hint = "cloudflare_dlp"` normalizer path reads block events from S3 into findings store.
+1. **`services/dlp_proxy/proxy.py`** — aiohttp-based HTTP CONNECT proxy, listens on port 8080. Intercepts CONNECT tunnels to domains matching `providers.yaml`. Forwards all other traffic unmodified.
+2. **`services/dlp_proxy/inspect.py`** — runs 4 regex patterns on decrypted request body:
+   - PAN: `\b(?:\d{4}[\s-]?){3}\d{4}\b`
+   - SSN: `\b\d{3}-\d{2}-\d{4}\b`
+   - AWS key: `AKIA[0-9A-Z]{16}`
+   - Bulk email (≥10 addresses in single payload — single address is context, not exfiltration)
+   - Patterns reused from `matcher/code_engine.py` — no new regex invention
+3. **On DLP hit** — proxy returns 403 + `X-PatronAI-Block: DLP-{pattern}` header + writes block event to `s3://patronai/findings/dlp/YYYY/MM/DD/{uuid}.jsonl`
+4. **New ingestor source** — `source_hint="dlp_proxy"` normalizer reads block events from `findings/dlp/` into findings store with `category="dlp_block"`
+5. **docker-compose.yml** — add `dlp-proxy` service (Python 3.13-slim, expose 8080). Endpoints set `HTTP_PROXY=http://patronai-proxy:8080` via MDM or dev onboarding doc.
+6. **Opt-in by default** — proxy only intercepts domains in `providers.yaml`. Clean pass-through for all other traffic.
 
 ### Constraints
-- Cloudflare Workers have 10ms CPU time limit — complex regex on large payloads risks timeout
-- Requires customers to route API calls through Cloudflare (not browser traffic)
-- Opt-in feature; not retroactive
-- Workers cost: Free tier (100k req/day) → $5/month Paid
+- Requires developer endpoints to configure proxy — cannot force without MDM (same constraint as any proxy solution)
+- TLS inspection requires CA cert installed on developer machine — documented in onboarding guide
+- Only catches API calls, not browser-based ChatGPT sessions (same limit as Palo Alto for browser traffic without SSL forward proxy)
+- Zero managed service cost — fully containerized, runs on existing EC2
 
 ---
 
@@ -122,34 +156,36 @@ Cloudflare AI Gateway proxies AI API calls. A Cloudflare Worker intercepts and i
 ### Problem
 PatronAI fires SNS → human reads it in 4 hours → opens ticket → maybe revokes access. Palo Alto XSOAR runs a playbook in 90 seconds: disable account → create ticket → notify manager → add to watchlist.
 
-### Partner Solution: AWS EventBridge + Lambda (zero new infra)
-EventBridge subscribes to existing SNS topic and routes by severity + outcome to Lambda playbooks.
-
-### Implementation Plan
-1. **`scripts/response_playbook.py`** deployed as Lambda:
+### Solution: Prism7 (Giggso) via Structured Email
+### ✅ `src/notify/email.py` with full SES `send()` already exists — this gap is ~20 lines of new code.
 
 ```
-CRITICAL finding
-    ├── Revoke user via authorize.py (API call to EC2)
-    ├── Cloudflare API → block device IP for 4 hours
-    ├── POST to Slack #security-incidents
-    ├── Create Jira ticket (P1)
-    ├── Write incident to s3://patronai/incidents/YYYY/MM/DD/{uuid}.json
-    └── If outcome=PERSONAL_KEY → GitHub API revoke token
-
-HIGH finding
-    ├── Slack DM to user's manager
-    └── Create Jira ticket (P2)
+PatronAI dispatcher.py  →  send_prism7_alert()  →  SES  →  Prism7 inbound parser
+                                                              │  playbook match
+                                                              ▼
+                                                   CRITICAL+PERSONAL_KEY → IAM revoke (90s)
+                                                   CRITICAL → Slack + PagerDuty
+                                                   HIGH → manager DM + ticket
+                                                   Any → s3://patronai/incidents/{uuid}.json
 ```
 
-2. **Confirm mode** — first deployment uses `"auto_response": "confirm"` in settings.json. Lambda sends Slack message with Approve/Reject buttons before executing revoke. Graduate to `"auto_response": "execute"` after 30 days of validated findings.
+### What's Left (PatronAI side — ~20 lines total)
+1. **`src/notify/email.py`** — add `send_prism7_alert(finding: dict) -> bool`:
+   - Subject: `[PatronAI:{severity}] {outcome} | {owner} → {provider}`
+   - Body: OCSF finding dict serialized as JSON
+   - To: `PRISM7_INBOUND_EMAIL` from `.env`
+   - Calls existing `send()` — zero new SES logic
+2. **`alerter/dispatcher.py`** — add `results["prism7"] = _fire_prism7(finding)`. Guard: only fires if `PRISM7_INBOUND_EMAIL` set in `.env`.
 
-3. **`alerter/dispatcher.py` extension** — add fourth channel: `results["eventbridge"] = _fire_eventbridge(payload)`. 30-line addition.
+### What Prism7 Handles (zero PatronAI work)
+- All playbook logic: IAM revoke, Slack, PagerDuty, Jira tickets, confirm mode
+- Writing incident records back to `s3://patronai/incidents/`
+- The 90-second SLA
 
 ### Constraints
-- Auto-revoke on false positive = angry employee → must ship with confirm mode
-- Jira/Slack require API tokens in AWS Secrets Manager (not `.env`)
-- Lambda free tier: 1M invocations/month → effectively free at PatronAI scale
+- Prism7 deployed independently — PatronAI has no visibility into its execution
+- If Prism7 is down, SNS still fires as fallback — silent SOAR failure is acceptable
+- All playbook config lives in Prism7, not PatronAI — clean separation
 
 ---
 
@@ -158,20 +194,24 @@ HIGH finding
 ### Problem
 PatronAI's provider list is a static YAML. When a new AI provider launches tomorrow, PatronAI is blind until someone manually edits `providers.yaml`. Palo Alto Unit 42 pushes updates in real-time.
 
-### Partner Solution: GreyNoise + GitHub Advisory + auto-YAML update
+### Revised Solution: AlienVault OTX + GitHub + MITRE ATLAS (all free, no account for some)
 
 ### Implementation Plan
-1. **`jobs/threat_intel_refresh.py`** — nightly job:
-   - **GreyNoise Community API** (free, 1000 req/day): classify new unknown domains seen in findings. If AI provider or cloud exit node → auto-add to `providers.yaml`.
-   - **GitHub search API**: search for new MCP server registrations (`"mcpServers"` in JSON). Extract domains, cross-reference against known providers, flag net-new AI endpoints.
-   - **URLhaus** (free): check new domains against malicious URL list. AI-themed phishing domains caught.
-2. **GuardDuty findings import** — if GuardDuty fires on same EC2 instance, import findings into PatronAI's findings store as `source = "guardduty"`. Zero overlap with existing infra.
-3. **Auto-PR gate** — new providers added to YAML via a branch + `[INTEL:AUTO]` commit tag. Operator reviews weekly.
+1. **`jobs/threat_intel_refresh.py`** — nightly job, three free sources:
+   - **AlienVault OTX** (free API, 10k req/day — permanent free tier): `GET /api/v1/indicators/domain/{domain}/reputation` to classify new unknown domains from findings. API key in `.env` as `OTX_API_KEY`. No credit card required.
+   - **GitHub search API**: search for new MCP server registrations (`"mcpServers"` in JSON). Extract and cross-reference domains against `providers.yaml`. Use `GITHUB_TOKEN` in `.env` for 5000 req/hour (vs 60 unauthenticated).
+   - **MITRE ATLAS** (`atlas.mitre.org/data/ATLAS.yaml` — public GitHub, no auth): download nightly. Parse adversarial ML technique IDs → map to PatronAI `outcome` values. Auto-tag findings with ATLAS technique IDs (e.g., `AML.T0047` — ML Supply Chain Compromise).
+   - **URLhaus** (free): check new domains against phishing/malware blocklist.
+2. **Multi-source threshold** — domain only auto-added to `providers.yaml` if seen in ≥2 independent sources. Single-source additions go to `config/pending_intel.yaml` for weekly human review.
+3. **`config/atlas_map.yaml`** — maps PatronAI `outcome` values to ATLAS technique IDs. Shown on finding detail panel in dashboard.
+4. **Auto-PR gate** — new `providers.yaml` entries committed on branch `chore/intel-refresh-{date}` with `[INTEL:AUTO]` tag. Operator reviews weekly via PR.
+5. **GuardDuty import** — GuardDuty findings → SNS → PatronAI ingestor as `source="guardduty"`. Ships in same sprint as threat intel job (shared infrastructure).
 
 ### Constraints
-- GreyNoise community API: 1000 req/day limit. Not suitable for active scanning — use for enrichment only (enrich findings, not scan all domains)
-- GitHub API: 60 unauthenticated req/hour. Use authenticated token for 5000/hour.
-- Auto-YAML update needs human review gate to prevent poisoned intel injection
+- AlienVault OTX: free account registration required once. No rate-limit issues at PatronAI scale.
+- GitHub token optional but strongly recommended — unauthenticated rate limit (60/hr) is insufficient for nightly enrichment
+- MITRE ATLAS YAML is a weekly release cadence — nightly download is safe, content changes slowly
+- Multi-source threshold prevents poisoned intel injection from any single malicious or misconfigured source
 
 ---
 
@@ -180,30 +220,22 @@ PatronAI's provider list is a static YAML. When a new AI provider launches tomor
 ### Problem
 Enterprise security teams run Splunk or Microsoft Sentinel. PatronAI findings live in S3. No bridge exists. This is a top-3 enterprise buying objection.
 
-### Partner Solution: AWS Security Hub ASFF export
+### Revised Solution: Deferred to v2 — OpenSearch in docker-compose
 
-### Implementation Plan
-1. **`services/security_hub.py`** — translates PatronAI finding to ASFF (Amazon Security Finding Format):
+### v1 Decision
+SIEM integration is deferred from v1. Enterprise customers that need a SIEM bridge today are unblocked via S3: any SIEM with an S3 connector (Splunk, Sentinel, QRadar) can be configured to read `s3://patronai/findings_current/` directly — standard configuration that the customer's SIEM team already knows. PatronAI documents the S3 path and schema in the operator guide. No code changes required.
 
-```python
-asff = {
-    "SchemaVersion": "2018-10-08",
-    "Id": finding["event_id"],
-    "GeneratorId": "patronai-scanner",
-    "Types": ["Software and Configuration Checks/Industry and Regulatory Standards/AI-Access"],
-    "Severity": {"Label": finding.get("severity", "MEDIUM")},
-    "Title": f"Unauthorized AI access: {finding.get('provider')}",
-    "Description": f"{finding.get('owner')} → {finding.get('provider')} via {finding.get('src_ip')}",
-}
-```
-
-2. Wire into `alerter/dispatcher.py` as fifth dispatch channel — `results["security_hub"] = _fire_security_hub(asff)`.
-3. Security Hub natively fans out to: Splunk (Security Hub add-on), Microsoft Sentinel (AWS connector), QRadar (IBM plugin), Chronicle (Google). Customer connects their SIEM to Security Hub — PatronAI needs zero per-SIEM code.
+### v2 Plan: Self-Hosted OpenSearch in docker-compose
+1. **`docker-compose.yml`** — add `opensearch` service (single-node, opensearch:2.x, 2GB heap). Add `opensearch-dashboards` service (Kibana-compatible UI). Both run on existing EC2.
+2. **`services/opensearch_writer.py`** — after each findings compact cycle, writes new findings to index `patronai-findings-{YYYY.MM.DD}`. ILM policy: 90-day retention, auto-delete older indices.
+3. **SIEM connectors**: Splunk (OpenSearch plugin), Microsoft Sentinel (Azure Monitor via Logstash), QRadar (DSM for Elasticsearch-compatible sources) all have native connectors — PatronAI needs zero per-SIEM code.
+4. **OpenSearch Dashboards** (bundled, zero extra cost): provides Kibana-grade search/visualization for customers without a corporate SIEM.
 
 ### Constraints
-- Security Hub: $0.001 per finding. At 1000 findings/day = $1/day = $365/year per customer
-- Requires Security Hub enabled in customer's AWS account (5-minute setup)
-- ASFF has a 240KB size limit per finding — no risk at PatronAI event size
+- OpenSearch 2GB heap requires EC2 t3.medium minimum — evaluate RAM headroom before v2 planning
+- Single-node OpenSearch has no replication — acceptable for governance/audit use case, not SOC-grade
+- Adds docker-compose service operational complexity — not acceptable for v1 scope
+- v2 target: after PatronAI v1 is validated in production with ≥3 customers
 
 ---
 
@@ -212,33 +244,43 @@ asff = {
 ### Problem
 PatronAI treats a user's first-ever hit on `api.openai.com` at 3am from a new country identically to their daily normal call from the office. Palo Alto flags the anomaly. PatronAI doesn't.
 
-### Partner Solution: In-product, using existing rollup data
-The hourly rollup already has `first_seen`, `last_seen`, `by_hour` per user. Baseline comparison is missing.
+### Solution: Log Analyzer (Giggso) via S3
+### ✅ `findings_compact.py` already writes `findings_current/YYYY/MM/DD/by_signature.jsonl` to S3. PatronAI's side of the data contract is already fulfilled.
 
-### Implementation Plan
-1. **`scoring/anomaly_score.py`**:
+```
+✅ PatronAI jobs/findings_compact.py
+    └── already writes → s3://patronai/findings_current/YYYY/MM/DD/by_signature.jsonl
 
-```python
-def anomaly_flags(current_finding: dict, user_rollup: dict) -> list:
-    flags = []
-    # NEW_PROVIDER — provider never seen for this user in 30-day rollup
-    known = set(user_rollup.get("by_provider", {}).keys())
-    if current_finding.get("provider") not in known:
-        flags.append("NEW_PROVIDER")
-    # OFF_HOURS — timezone-aware, compares to user's historical hour distribution
-    # VOLUME_SPIKE — 10x normal hourly rate for this user
-    # GEO_ANOMALY — new country code (requires geo_country field, already in schema)
-    return flags
+Log Analyzer (separate Giggso product — zero PatronAI work on this side)
+    ├── polls findings_current/ (read-only IAM role)
+    ├── runs anomaly detection
+    └── writes → s3://patronai/anomalies/YYYY/MM/DD/{batch}.jsonl
+
+PatronAI log_analyzer_reader.py  ←  reads anomalies/  ←  new ingestor (small)
 ```
 
-2. Wire `anomaly_flags()` into `alerter/alerter.py` — enriches finding with `anomaly_flags: [...]` before dispatch.
-3. Dashboard: anomaly badge on risk card + filter by anomaly type.
-4. **Timezone awareness** — resolve user timezone from identity store before applying off-hours check. Remote-first teams span multiple timezones; naive UTC comparison generates massive noise.
+### What's Left (PatronAI side — one new ingestor module)
+1. **`src/ingestor/log_analyzer_reader.py`** — reads `s3://patronai/anomalies/` using `CursorStore` (same pattern as every other ingestor). Normalizes to OCSF schema with `source="log_analyzer"`, `category="anomaly"`. Skips malformed JSON (log + continue).
+2. **Severity mapping** — `source=="log_analyzer"` → auto-set severity=HIGH.
+3. **Dashboard badge** — "AI Anomaly" badge on risk card for `source=log_analyzer` findings.
+4. **IAM role doc** — Log Analyzer gets read-only on `findings_current/`, write-only on `anomalies/`. Document in operator guide.
+
+### S3 Contract (PatronAI reads this format from Log Analyzer)
+```json
+{"anomaly_id": "uuid", "user_email": "user@corp.com",
+ "anomaly_type": "VOLUME_SPIKE|OFF_HOURS|NEW_PROVIDER|GEO_ANOMALY",
+ "provider": "openai", "detected_at": "ISO-8601",
+ "baseline_value": 12, "observed_value": 147, "confidence": 0.91}
+```
+
+### What Log Analyzer Handles (zero PatronAI work)
+- All anomaly detection logic, baselines, timezone-aware off-hours, geo-resolution
+- Dedup of its own output
+- Its own polling schedule
 
 ### Constraints
-- New customers have zero baseline for 30 days — anomaly scoring must be disabled or muted for first month
-- 30-day rollup baseline is weak. Palo Alto uses 90 days minimum. Recommend 60-day lookback once data exists.
-- GEO_ANOMALY requires `geo_country` to be populated consistently — currently sparse for endpoint scan events
+- No Log Analyzer deployed = no UEBA (feature gracefully absent, not broken — no crash)
+- IAM setup required once per customer deployment
 
 ---
 
@@ -247,7 +289,7 @@ def anomaly_flags(current_finding: dict, user_rollup: dict) -> list:
 ### Problem
 PatronAI generates PDFs. A CISO presenting to the board or auditor needs to say "we are NIST AI RMF Govern 1.1 compliant" not "here is a SHA-256 hash." PatronAI doesn't speak that language.
 
-### Partner Solution: Config YAML + reporter extension (internal only)
+### Solution: Config YAML + reporter extension (internal — unchanged from original plan)
 
 ### Implementation Plan
 1. **`config/compliance_map.yaml`**:
@@ -289,17 +331,17 @@ frameworks:
 
 ## Priority Roadmap
 
-| Sprint | Gap | Partner | Effort | CISO Impact |
+| Sprint | Gap | Approach | Real Effort | CISO Impact |
 |---|---|---|---|---|
-| **1** | Gap 1 — Cloudflare Enforcement | Cloudflare Zero Trust | 3 days | Blocks data exfil before it happens |
-| **1** | Gap 3 — SOAR Response | AWS Lambda (existing) | 2 days | Automated remediation in 90 seconds |
-| **2** | Gap 2 — DLP / AI Gateway | Cloudflare Workers | 5 days | Payload inspection, prompt blocking |
-| **2** | Gap 5 — SIEM Security Hub | AWS Security Hub | 1 day | Enterprise SIEM compatibility |
-| **3** | Gap 4 — Threat Intel Refresh | GreyNoise + GitHub API | 3 days | Self-updating provider list |
-| **3** | Gap 6 — UEBA Anomaly | Internal (rollup data) | 3 days | Behavioral baseline, anomaly alerts |
-| **4** | Gap 7 — Compliance Mapping | Config YAML + reporter | 2 days | NIST AI RMF / EU AI Act audit-ready |
+| **1** | Gap 3 — SOAR | Prism7 — 20 lines wired to existing email.py | **0.5 days** ✅ already built | Automated remediation in 90 seconds |
+| **1** | Gap 1 — DNS Enforcement | Route53 DNS Firewall + hosts-file agent | **4.5 days** | Blocks exfil at VPC + endpoint layer |
+| **2** | Gap 2 — DLP Proxy | Python proxy container in docker-compose | **5 days** | Payload inspection, AWS key / PAN blocking |
+| **2** | Gap 4 — Threat Intel | AlienVault OTX + GitHub + MITRE ATLAS | **4 days** | Self-updating provider list, ATLAS tagging |
+| **3** | Gap 6 — UEBA | Log Analyzer via S3 — one new ingestor reader | **1.75 days** ✅ S3 write already done | Behavioral anomaly detection |
+| **3** | Gap 7 — Compliance | Config YAML + reporter extension | **2.5 days** | NIST AI RMF / EU AI Act audit-ready |
+| **v2** | Gap 5 — SIEM | OpenSearch in docker-compose | **2.5 days** | Enterprise SIEM compatibility |
 
-**Total: ~19 engineering days. Zero new AWS infrastructure. Zero new containers.**
+**v1 total: ~18 engineering days of net-new code. Gap 3 and Gap 6 infrastructure already exists — just wiring.**
 
 ---
 
@@ -307,9 +349,9 @@ frameworks:
 
 **Inline TLS decryption for browser traffic cannot be closed without infrastructure change.**
 
-When a user opens ChatGPT in a browser and types a prompt, PatronAI sees a connection to `chat.openai.com`. The Cloudflare Worker DLP only catches API calls routed through your approved gateway. A user hitting ChatGPT's website directly bypasses everything.
+When a user opens ChatGPT in a browser and types a prompt, PatronAI sees a connection to `chat.openai.com`. The DLP proxy container only catches API calls routed through it via `HTTP_PROXY`. A user hitting ChatGPT's website directly bypasses everything — browser traffic does not honor `HTTP_PROXY` env vars.
 
-Palo Alto closes this with SSL Forward Proxy — MITM at network layer, decrypt → inspect → re-encrypt. That requires either an NGFW appliance or Prisma Access. The only no-infra alternative is Cloudflare WARP client pushed via MDM to every managed endpoint, which acts as a full device proxy.
+Palo Alto closes this with SSL Forward Proxy — MITM at network layer, decrypt → inspect → re-encrypt. That requires either an NGFW appliance or Prisma Access. Without that infrastructure, the only mitigation is DNS blocking (Gap 1: Route53 DNS Firewall) which blocks the domain entirely rather than inspecting the payload. PatronAI v1 accepts this gap honestly: payload inspection covers API traffic only, not browser sessions.
 
 ---
 
@@ -340,7 +382,9 @@ Panel:
 
 ---
 
-## Debate 1 — Cloudflare Gateway Enforcement (Gap 1)
+## Debate 1 — DNS Enforcement (Gap 1)
+
+> ⚡ **Post-debate strategy:** Original proposal used Cloudflare Zero Trust Gateway. Revised approach: AWS Route53 Resolver DNS Firewall (VPC) + hook agent hosts-file enforcement (endpoints). Debate below reflects original analysis; verdicts updated in summary table.
 
 **Scene:** The proposal is to use Cloudflare Zero Trust Gateway to block unauthorized AI domains. 3-day sprint. Sounds clean. Is it?
 
@@ -376,7 +420,9 @@ Ravi (Founder): Agreed. Sprint 1 must include: cloudflare_sync.py hourly job + i
 
 ---
 
-## Debate 2 — DLP / Cloudflare Workers (Gap 2)
+## Debate 2 — DLP / Proxy Inspection (Gap 2)
+
+> ⚡ **Post-debate strategy:** Original proposal used Cloudflare Workers. Revised approach: Python DLP proxy container in docker-compose (aiohttp, port 8080). Same 4 regex patterns, zero external dependency. Debate below reflects original analysis; verdicts updated in summary table.
 
 **Scene:** The DLP proposal routes AI API calls through a Cloudflare Worker that inspects the request body for PAN, SSN, AWS keys, and email lists. 5-day estimate. This one has more moving parts.
 
@@ -412,6 +458,8 @@ Ravi (Founder): Consensus: DLP ships with 4 patterns (PAN, SSN, AWS key, bulk em
 
 ## Debate 3 — Automated Response / SOAR (Gap 3)
 
+> ⚡ **Post-debate strategy:** Original proposal used AWS Lambda + EventBridge. Revised approach: Prism7 (Giggso) via structured email — PatronAI sends JSON email, Prism7 parses and executes playbook in 90 seconds. S3 action queue pattern preserved. Debate below reflects original analysis; verdicts updated in summary table.
+
 **Scene:** Lambda playbook that auto-revokes users, blocks IPs, creates Jira tickets. The "confirm mode" is proposed as a safety valve. Is it enough?
 
 **Round 1**
@@ -446,6 +494,8 @@ Ravi (Founder): That's the right call. Lambda → S3 action queue → EC2 scanne
 
 ## Debate 4 — Threat Intelligence Refresh (Gap 4)
 
+> ⚡ **Post-debate strategy:** GreyNoise replaced with AlienVault OTX (free, 10k req/day). MITRE ATLAS added as third free source. Multi-source threshold and auto-PR gate retained. Debate below reflects original analysis; verdicts updated in summary table.
+
 **Scene:** GreyNoise + GitHub scrape to auto-update providers.yaml. Auto-PR gate for human review.
 
 **Round 1**
@@ -478,7 +528,9 @@ Ravi (Founder): GuardDuty import moves to Sprint 3 alongside the threat intel jo
 
 ---
 
-## Debate 5 — SIEM Integration / Security Hub (Gap 5)
+## Debate 5 — SIEM Integration (Gap 5)
+
+> ⚡ **Post-debate strategy:** AWS Security Hub deferred entirely. v1 ships with documented S3 path for customer-owned SIEM connectors. Full SIEM integration moves to v2 via self-hosted OpenSearch in docker-compose. Debate below reflects original analysis; verdicts updated in summary table.
 
 **Scene:** 1-day effort, ASFF format, fans out to Splunk/Sentinel/QRadar. Sounds too easy. Is it?
 
@@ -513,6 +565,8 @@ Ravi (Founder): Ship Splunk. Document Sentinel path as reference architecture. Q
 ---
 
 ## Debate 6 — UEBA / Behavioral Baseline (Gap 6)
+
+> ⚡ **Post-debate strategy:** Internal `anomaly_score.py` replaced by Log Analyzer (Giggso) via S3. PatronAI writes `findings_current/` → Log Analyzer polls → writes `anomalies/` → PatronAI ingestor reads `source="log_analyzer"`. Clean decoupling. 14-day grace period and NEW_PROVIDER-first phasing retained. Debate below reflects original analysis; verdicts updated in summary table.
 
 **Scene:** anomaly_score.py using existing 30-day rollup data. Flags: NEW_PROVIDER, OFF_HOURS, VOLUME_SPIKE, GEO_ANOMALY.
 
@@ -584,16 +638,17 @@ Ravi (Founder): Right call. v1 maps GDPR and SOC2 unconditionally. NIST AI RMF m
 
 ## Drama Verdicts Summary
 
-| Gap | Original Recommendation | Drama Amendment |
+| Gap | Drama Recommendation | Post-Drama Strategy Revision |
 |---|---|---|
-| Gap 1 — Enforcement | Cloudflare Gateway, 3 days | Add immediate-unblock UI (required). WARP rollout is customer-owned. Enforcement gated by settings flag. |
-| Gap 2 — DLP | Cloudflare Worker, 5 days | Hard dependency on Gap 1. Benchmark Worker CPU on P99 payload. 4 patterns in v1 (drop internal IP). |
-| Gap 3 — SOAR | Lambda playbook, 2 days | PERSONAL_KEY + MCP_CONFIG_CHANGED → auto-execute. Rest = confirm mode. Response via S3 action queue, not EC2 API. All creds via Secrets Manager. |
-| Gap 4 — Threat Intel | GreyNoise + GitHub, 3 days | GreyNoise community insufficient at scale — use with 7-day domain cache. Multi-source threshold to prevent poisoned intel. GuardDuty import added to same sprint. |
-| Gap 5 — SIEM | Security Hub, 1 day | Revise to 4 days (1 dev + 3 validation/docs). Severity filter required for cost control. Splunk first, Sentinel as reference architecture only. |
-| Gap 6 — UEBA | anomaly_score.py, 3 days | Ship NEW_PROVIDER only in sprint 3. 14-day grace period for onboarding. All other flags → v2 milestone. MaxMind GeoLite2 dependency added. |
-| Gap 7 — Compliance | YAML mapping, 2 days | Bump to 3 days. 90-day staleness banner. EU AI Act tagged "conditional." GDPR + SOC2 unconditional only in v1. |
+| Gap 1 — Enforcement | Cloudflare Gateway + immediate-unblock UI. WARP = customer-owned. Enforcement behind settings flag. | **Revised:** Route53 Resolver DNS Firewall (VPC) + hook agent hosts-file (endpoint). No Cloudflare dependency. Unblock-now API call wired to Route53 Resolver. 4 days. |
+| Gap 2 — DLP | Cloudflare Worker. Hard dependency on Gap 1. Benchmark CPU. 4 patterns. | **Revised:** Python DLP proxy container in docker-compose (aiohttp). Same 4 patterns from code_engine.py. Depends on Gap 1 enforcement to capture non-proxy traffic. 5 days. |
+| Gap 3 — SOAR | PERSONAL_KEY + MCP_CONFIG_CHANGED → auto-execute. S3 action queue. Secrets Manager for creds. | **Revised:** Prism7 (Giggso) via structured email. PatronAI sends JSON email, Prism7 executes playbook in 90s. S3 action queue pattern still applies for revoke. 2 days. |
+| Gap 4 — Threat Intel | GreyNoise (7-day cache). Multi-source threshold. GuardDuty import. | **Revised:** AlienVault OTX (free, 10k/day) replaces GreyNoise. MITRE ATLAS added. Multi-source threshold retained. GuardDuty import retained. 3 days. |
+| Gap 5 — SIEM | Security Hub ASFF. 4 days. Severity filter. Splunk first. | **Revised:** Deferred to v2. v1: document S3 path for customer SIEM connectors. v2: OpenSearch in docker-compose. 0 days v1. |
+| Gap 6 — UEBA | NEW_PROVIDER first. 14-day grace period. Other flags → v2. MaxMind GeoLite2 added. | **Revised:** Log Analyzer (Giggso) via S3. PatronAI writes findings_current/, Log Analyzer writes anomalies/ back. 14-day grace period retained. 3 days. |
+| Gap 7 — Compliance | 3 days. 90-day staleness banner. EU AI Act "conditional." GDPR + SOC2 unconditional. | **Unchanged.** 3 days. Same approach. |
 
 ---
 
-*Drama session closed — Andie v5.0 — 2026-05-16*
+*Drama session closed — Andie v5.0 — 2026-05-16*  
+*Strategy revision applied — 2026-05-17*
