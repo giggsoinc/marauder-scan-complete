@@ -1,7 +1,7 @@
 # =============================================================
 # FILE: dashboard/ui/manager_tab_risks.py
-# VERSION: 2.0.0
-# UPDATED: 2026-04-19
+# VERSION: 2.1.0
+# UPDATED: 2026-05-17
 # OWNER: Giggso Inc
 # PURPOSE: Risks tab — open alert list with row selection + real actions.
 #          Mark Resolved writes to S3 findings store.
@@ -11,6 +11,7 @@
 # AUDIT LOG:
 #   v1.0.0  2026-04-19  Initial — extracted from steve_dashboard / manager_view
 #   v2.0.0  2026-04-19  st.dataframe row selection + real Mark/Escalate/Email
+#   v2.1.0  2026-05-17  Add signal_class as first column in flat table.
 # =============================================================
 
 import os
@@ -62,7 +63,7 @@ def render_risks(events: list, store=None, owner_email: str = "") -> None:
         st.info("No open alerts.")
         return
 
-    _COLS = ["timestamp", "severity", "provider", "owner",
+    _COLS = ["signal_class", "timestamp", "severity", "provider", "owner",
              "department", "src_ip", "mac_address", "source", "outcome"]
     # Pre-format timestamps so the table renders DD-MMM-YY HH:MM:SS TZ
     # in the viewer's local time, not the raw ISO microsecond string.
