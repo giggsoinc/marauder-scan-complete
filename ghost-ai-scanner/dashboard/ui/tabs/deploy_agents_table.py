@@ -24,9 +24,10 @@ _HOOK_PREFIX = "config/HOOK_AGENTS"
 _UNINSTALL_TTL = 3600   # presigned URL valid for 1 hour
 
 _STATUS_BADGE = {
-    "pending":   '<span class="badge badge-medium">PENDING</span>',
-    "installed": '<span class="badge badge-clean">INSTALLED</span>',
-    "failed":    '<span class="badge badge-critical">FAILED</span>',
+    "pending":      '<span class="badge badge-medium">PENDING</span>',
+    "installed":    '<span class="badge badge-clean">INSTALLED</span>',
+    "uninstalled":  '<span class="badge badge-low">UNINSTALLED</span>',
+    "failed":       '<span class="badge badge-critical">FAILED</span>',
 }
 
 

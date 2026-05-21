@@ -29,9 +29,12 @@ def _build_macos_dmg(
     store,
 ) -> Optional[str]:
     """
-    Build a macOS-mountable HFS disk image on Linux using genisoimage.
+    Build a macOS-mountable disk image on Linux.
+    Tries genisoimage first; falls back to a plain tar.gz if unavailable.
     Stages a .command file — double-clicking it opens Terminal on macOS.
     Uploads to S3 and returns the S3 key, or None on failure.
+    NOTE: For proper macOS compatibility on Sonoma+, consider switching
+    to libdmg-hfsplus or a signed .pkg when Apple Developer ID is available.
     """
     firstname = recipient_name.split()[0]
     s3_key    = f"{HOOK_AGENTS_PREFIX}/{token}/PatronAI-Agent-{firstname}.dmg"
@@ -48,8 +51,13 @@ def _build_macos_dmg(
 
             (staging / "README.txt").write_text(
                 f"PatronAI Agent Installer\nRecipient: {recipient_name}\n\n"
-                "Double-click the .command file to install.\n"
-                "Requires: macOS 12+, Python 3, AWS CLI\n",
+                "IMPORTANT - Gatekeeper notice:\n"
+                "If macOS shows 'can't be opened because it is from an\n"
+                "unidentified developer', right-click the .command file\n"
+                "and select 'Open', then click 'Open' in the dialog.\n\n"
+                "Alternatively, run in Terminal:\n"
+                "  bash /Volumes/PatronAI\\ Agent/PatronAI-Agent-" + firstname + ".command\n\n"
+                "Requires: macOS 12+, Python 3\n",
                 encoding="utf-8",
             )
 

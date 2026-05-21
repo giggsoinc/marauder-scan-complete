@@ -57,7 +57,10 @@ while IFS= read -r -d '' GIT_DIR; do
   HOOK_PATH="$GIT_DIR/hooks/pre-commit"
   if [ -L "$HOOK_PATH" ] && [ "$(readlink "$HOOK_PATH")" = "$HOOK_SCRIPT" ]; then
     rm "$HOOK_PATH"
-    if [ -f "${HOOK_PATH}.backup" ]; then
+    if [ -f "${HOOK_PATH}.pre-patronai-backup" ]; then
+      mv "${HOOK_PATH}.pre-patronai-backup" "$HOOK_PATH"
+      _ok "Restored original hook in: $(dirname "$GIT_DIR")"
+    elif [ -f "${HOOK_PATH}.backup" ]; then
       mv "${HOOK_PATH}.backup" "$HOOK_PATH"
       _ok "Restored original hook in: $(dirname "$GIT_DIR")"
     else

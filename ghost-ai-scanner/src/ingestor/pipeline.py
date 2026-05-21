@@ -81,6 +81,14 @@ class Pipeline:
             log.debug(f"HEARTBEAT recorded: {event.get('src_hostname')}")
             return "HEARTBEAT"
 
+        # UNINSTALLED — agent notifying it was removed. Write finding and
+        # update the agent's status.json so the fleet view shows it.
+        if event.get("outcome") == "UNINSTALLED":
+            self._store.findings.write(event)
+            self._update_agent_status(event)
+            log.info(f"UNINSTALLED recorded: {event.get('src_hostname')} email={event.get('email')}")
+            return "UNINSTALLED"
+
         # Skip events with no destination info — nothing to match
         if not event.get("dst_domain") and not event.get("dst_port"):
             log.debug("Event has no dst_domain or dst_port — skipped")
@@ -120,3 +128,28 @@ class Pipeline:
                 f"(scan={ev.get('scan_id','')[:30]})"
             )
         return "ENDPOINT_FINDING"
+
+    def _update_agent_status(self, event: dict) -> None:
+        """Update agent status.json in S3 to 'uninstalled' when UNINSTALLED event received."""
+        import json as _json
+        from datetime import datetime, timezone
+        try:
+            notes = _json.loads(event.get("notes", "{}"))
+            token = notes.get("token", "")
+            if not token:
+                return
+            status_key = f"config/HOOK_AGENTS/{token}/status.json"
+            status = {
+                "token":          token,
+                "status":         "uninstalled",
+                "event_type":     "UNINSTALLED",
+                "device_id":      event.get("src_hostname", ""),
+                "email":          event.get("email", ""),
+                "timestamp":      event.get("timestamp", datetime.now(timezone.utc).isoformat()),
+                "uninstalled_at": event.get("timestamp", datetime.now(timezone.utc).isoformat()),
+                "updated_at":     datetime.now(timezone.utc).isoformat(),
+            }
+            self._store._put(status_key, _json.dumps(status).encode(), "application/json")
+            log.info("Agent status updated to 'uninstalled' for token=%s", token[:8])
+        except Exception as e:
+            log.error("_update_agent_status failed: %s", e)

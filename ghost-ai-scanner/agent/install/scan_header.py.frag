@@ -29,7 +29,7 @@ AGENT_DIR = Path(os.path.expanduser("~/.patronai")) if OS_NAME != "windows" \
 def _load_config() -> dict:
     """Read ~/.patronai/config.json; return {} if missing or unreadable."""
     try:
-        return json.loads((AGENT_DIR / "config.json").read_text())
+        return json.loads((AGENT_DIR / "config.json").read_text(encoding="utf-8-sig"))
     except Exception:
         return {}
 
