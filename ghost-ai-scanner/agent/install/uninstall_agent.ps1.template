@@ -47,7 +47,7 @@ Get-ChildItem -Path $env:USERPROFILE -Recurse -Depth 6 `
         $content = Get-Content $hook -Raw -ErrorAction SilentlyContinue
         if ($content -match "patronai") {
             Remove-Item $hook -Force
-            $backup = "${hook}.backup"
+            $backup = "${hook}.pre-patronai-backup"
             if (Test-Path $backup) { Move-Item $backup $hook }
             $removed++
         }

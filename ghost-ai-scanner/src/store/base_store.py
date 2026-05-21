@@ -60,15 +60,18 @@ class BaseStore:
             log.error(f"S3 get failed [{key}]: {e}")
             return b""
 
-    def _put(self, key: str, body: bytes, content_type: str = "application/json") -> bool:
+    def _put(self, key: str, body: bytes, content_type: str = "application/json", content_disposition: str = "") -> bool:
         """Write bytes to S3. Returns True on success."""
         try:
-            self.s3.put_object(
-                Bucket=self.bucket,
-                Key=key,
-                Body=body,
-                ContentType=content_type,
-            )
+            params = {
+                "Bucket": self.bucket,
+                "Key": key,
+                "Body": body,
+                "ContentType": content_type,
+            }
+            if content_disposition:
+                params["ContentDisposition"] = content_disposition
+            self.s3.put_object(**params)
             return True
         except Exception as e:
             log.error(f"S3 put failed [{key}]: {e}")

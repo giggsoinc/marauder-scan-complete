@@ -26,13 +26,19 @@ ONLINE_THRESHOLD = timedelta(minutes=15)
 _BADGE_ONLINE  = '<span class="badge badge-clean">ONLINE</span>'
 _BADGE_OFFLINE = '<span class="badge badge-medium">OFFLINE</span>'
 _BADGE_PENDING = '<span class="badge badge-low">PENDING</span>'
+_BADGE_UNINSTALLED = '<span class="badge badge-low">UNINSTALLED</span>'
 
 
 def _resolve_status(entry: dict, now: datetime) -> tuple:
-    """Return (badge_html, last_seen_str, bucket: online|offline|pending)."""
+    """Return (badge_html, last_seen_str, bucket: online|offline|pending|uninstalled)."""
     ts_str  = entry.get("ts_str", "")
     ev_type = entry.get("ev_type", "")
     s3_mtime = entry.get("s3_mtime")  # datetime | None
+
+    # Agent explicitly reported uninstall
+    if ev_type == "UNINSTALLED":
+        label = ts_str[:16] if ts_str else "—"
+        return _BADGE_UNINSTALLED, label, "uninstalled"
 
     if ev_type == "HEARTBEAT" and ts_str:
         try:

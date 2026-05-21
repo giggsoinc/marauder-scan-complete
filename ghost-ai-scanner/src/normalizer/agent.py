@@ -49,6 +49,8 @@ def parse(raw: dict, company: str = "") -> Optional[dict]:
         return _parse_process_signal(raw, company)
     elif event_type == "HEARTBEAT":
         return _parse_heartbeat(raw, company)
+    elif event_type == "UNINSTALLED":
+        return _parse_uninstalled(raw, company)
     elif event_type == "ENDPOINT_SCAN":
         return _parse_endpoint_scan(raw, company)
     else:
@@ -137,6 +139,23 @@ def _parse_heartbeat(raw: dict, company: str) -> dict:
         "token":          raw.get("token", ""),
     })
     log.debug(f"HEARTBEAT from {event['src_hostname']} email={event['email']} ips={event['ip_set']}")
+    return event
+
+
+def _parse_uninstalled(raw: dict, company: str) -> dict:
+    """Agent uninstall notification — marks agent as uninstalled."""
+    event = empty_event("agent_heartbeat", company)
+    _bind_identity(event, raw)
+    event["timestamp"]    = raw.get("uninstalled_at", raw.get("timestamp", event["timestamp"]))
+    event["outcome"]      = "UNINSTALLED"
+    event["severity"]     = "LOW"
+    import json
+    event["notes"] = json.dumps({
+        "event_type":     "UNINSTALLED",
+        "token":          raw.get("token", ""),
+        "uninstalled_at": raw.get("uninstalled_at", ""),
+    })
+    log.info(f"UNINSTALLED from {event['src_hostname']} email={event['email']} token={raw.get('token','')}")
     return event
 
 

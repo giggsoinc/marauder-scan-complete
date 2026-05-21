@@ -161,9 +161,11 @@ def render_agent_package(
 
         # Overwrite sh; upload ps1 alongside it
         store._put(f"{HOOK_AGENTS_PREFIX}/{token}/setup_agent.sh",
-                   sh_script.encode(),  "text/plain")
+                   sh_script.encode(),  "application/octet-stream",
+                   content_disposition="attachment; filename=setup_agent.sh")
         store._put(f"{HOOK_AGENTS_PREFIX}/{token}/setup_agent.ps1",
-                   ps1_script.encode(), "text/plain")
+                   ps1_script.encode(), "application/octet-stream",
+                   content_disposition="attachment; filename=setup_agent.ps1")
 
         # Render and store personalised uninstall scripts (token baked in)
         uninstall_ctx = {
