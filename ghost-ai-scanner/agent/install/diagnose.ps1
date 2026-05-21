@@ -1,6 +1,15 @@
 # =============================================================
 # PatronAI Agent - Diagnostic Script (Windows)
+# FILE: ~/.patronai/diagnose.ps1  (after install — installer copies this here)
+# VERSION: 1.0.1
+# UPDATED: 2026-05-21
+# OWNER: Giggso Inc (Ravi Venugopal)
+# PURPOSE: One-command self-test for Windows hook-agent recipients.
+#          Mirrors agent/install/diagnose.sh.
 # USAGE: powershell -ExecutionPolicy Bypass -File ~/.patronai/diagnose.ps1
+# AUDIT LOG:
+#   v1.0.0  2026-04-25  Initial. Step 0 — local diagnostics.
+#   v1.0.1  2026-05-21  Updated for Windows compatibility.
 # =============================================================
 $ErrorActionPreference = "Continue"
 
